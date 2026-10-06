@@ -10,6 +10,7 @@
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
     <script src="script.js" defer></script>
+    <script src="reading.js" defer></script>
 </head>
 <body>
     <div class="page-shell">
@@ -50,6 +51,7 @@
                 <button class="content-tab" id="conjugation-tab" type="button" role="tab" aria-selected="false" aria-controls="conjugation-panel" tabindex="-1">Verb conjugation</button>
                 <button class="content-tab" id="nominal-conjugation-tab" type="button" role="tab" aria-selected="false" aria-controls="nominal-conjugation-panel" tabindex="-1">Adjective &amp; noun forms</button>
                 <button class="content-tab" id="pitch-tab" type="button" role="tab" aria-selected="false" aria-controls="pitch-panel" tabindex="-1">Pitch practice</button>
+                <button class="content-tab" id="reading-tab" type="button" role="tab" aria-selected="false" aria-controls="reading-panel" tabindex="-1">Reading help</button>
             </div>
 
             <section class="dictionary-layout tab-panel" id="vocabulary-panel" role="tabpanel" aria-labelledby="vocabulary-tab" tabindex="0" aria-label="Dictionary entries">
@@ -134,6 +136,16 @@
                                 <label class="ws-type"><input type="checkbox" data-ws-type="jp2en" checked><span>Japanese → English</span></label>
                                 <label class="ws-type"><input type="checkbox" data-ws-type="write" checked><span>Write your own</span></label>
                         </fieldset>
+                        <label class="worksheet-length">
+                            <span>Worksheet length</span>
+                            <select id="worksheet-length">
+                                <option value="0">Standard (one per grammar point)</option>
+                                <option value="10">Short · about 10 questions</option>
+                                <option value="20">Medium · about 20 questions</option>
+                                <option value="30">Long · about 30 questions</option>
+                                <option value="50">Extra long · about 50 questions</option>
+                            </select>
+                        </label>
                         <div class="grammar-grid" id="grammar-grid" aria-live="polite"></div>
                         <p class="grammar-page-status" id="grammar-page-status" aria-live="polite"></p>
                         <button class="load-more grammar-load-more" id="grammar-load-more" type="button" hidden>Load more patterns</button>
@@ -451,6 +463,82 @@
                         <p id="pitch-result"></p>
                         <div id="pitch-missed" class="pitch-missed"></div>
                         <button class="practice-start" id="pitch-again" type="button">Practice again</button>
+                    </div>
+                </section>
+
+                <section class="reading-panel tab-panel" id="reading-panel" role="tabpanel" aria-labelledby="reading-tab" tabindex="0" aria-hidden="true" hidden>
+                    <div class="nominal-conjugation-heading">
+                        <p class="eyebrow section-eyebrow">READING HELP</p>
+                        <h3>Reading help</h3>
+                        <p>Three short training modes that build the habits you need for long reading passages: spotting stacked grammar, finding sentence breaks, and separating what was said or thought.</p>
+                    </div>
+                    <div class="rh-modes" id="rh-setup">
+                        <article class="rh-mode-card">
+                            <span class="rh-mode-num" aria-hidden="true">1</span>
+                            <h4>Grammar stacking</h4>
+                            <p>A verb has had one to four grammar patterns added in a row. Enter the letters of the patterns, in order, using the table.</p>
+                            <p class="rh-mode-example" lang="ja">買う → 買ってもらえるかもしれない<br><span>l + i + d</span></p>
+                            <label>Patterns stacked
+                                <select id="rh-steps">
+                                    <option value="0" selected>Random (1–4)</option>
+                                    <option value="1">1</option>
+                                    <option value="2">2</option>
+                                    <option value="3">3</option>
+                                    <option value="4">4</option>
+                                </select>
+                            </label>
+                            <label>Verb level
+                                <select id="rh-level">
+                                    <option value="N5">N5 verbs</option>
+                                    <option value="N4" selected>N5–N4 verbs</option>
+                                    <option value="N3">N5–N3 verbs</option>
+                                </select>
+                            </label>
+                            <label>Questions
+                                <select id="rh-count-stack"><option value="10" selected>10</option><option value="20">20</option><option value="30">30</option></select>
+                            </label>
+                            <button class="practice-start" type="button" data-rh-start="stack">Start →</button>
+                        </article>
+                        <article class="rh-mode-card">
+                            <span class="rh-mode-num" aria-hidden="true">2</span>
+                            <h4>Sentence breaks</h4>
+                            <p>Long sentences are easier to read in chunks. Tap between words to place a “/” after the particles and endings that signal a break.</p>
+                            <p class="rh-mode-example" lang="ja">雨なので<b>/</b>今日はうちで映画を見ます。</p>
+                            <label>Questions
+                                <select id="rh-count-breaks"><option value="10" selected>10</option><option value="20">20</option><option value="30">30</option></select>
+                            </label>
+                            <button class="practice-start" type="button" data-rh-start="breaks">Start →</button>
+                        </article>
+                        <article class="rh-mode-card">
+                            <span class="rh-mode-num" aria-hidden="true">3</span>
+                            <h4>Said &amp; thought</h4>
+                            <p>Find what someone said, thought or wrote. Tap the start and the end of the part that belongs in quotation marks 「 」.</p>
+                            <p class="rh-mode-example" lang="ja">友だちは私に<b>「</b>おはよう<b>」</b>と言った。</p>
+                            <label>Questions
+                                <select id="rh-count-quotes"><option value="10" selected>10</option><option value="20">20</option><option value="30">30</option></select>
+                            </label>
+                            <button class="practice-start" type="button" data-rh-start="quotes">Start →</button>
+                        </article>
+                    </div>
+                    <p class="conjugation-status" id="rh-status"></p>
+                    <div class="rh-session" id="rh-session" hidden>
+                        <div class="rh-top">
+                            <button class="cs-home" id="rh-home" type="button" aria-label="Leave practice" title="Leave practice"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg></button>
+                            <div class="rh-stats"><span id="rh-correct">✓ 0</span><span id="rh-progress"></span></div>
+                        </div>
+                        <div class="rh-hero" id="rh-hero"></div>
+                        <p class="rh-band" id="rh-band"></p>
+                        <div class="rh-body" id="rh-body"></div>
+                    </div>
+                    <div class="conjugation-complete" id="rh-complete" hidden>
+                        <span class="practice-welcome-mark" aria-hidden="true">読</span>
+                        <h3 id="rh-complete-title">Practice complete</h3>
+                        <p id="rh-result"></p>
+                        <div class="pitch-missed" id="rh-missed"></div>
+                        <div class="rh-complete-actions">
+                            <button class="practice-start" id="rh-again" type="button">Practice again</button>
+                            <button class="worksheet-control" id="rh-menu" type="button">Choose another mode</button>
+                        </div>
                     </div>
                 </section>
         </main>

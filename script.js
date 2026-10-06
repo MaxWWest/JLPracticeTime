@@ -51,6 +51,8 @@ const practicePanel = document.querySelector("#practice-panel");
 const conjugationPanel = document.querySelector("#conjugation-panel");
 const pitchTab = document.querySelector("#pitch-tab");
 const pitchPanel = document.querySelector("#pitch-panel");
+const readingTab = document.querySelector("#reading-tab");
+const readingPanel = document.querySelector("#reading-panel");
 const nominalConjugationPanel = document.querySelector("#nominal-conjugation-panel");
 const practiceLevel = document.querySelector("#practice-level");
 const practiceDueCount = document.querySelector("#practice-due-count");
@@ -215,7 +217,8 @@ function activateTab(tabName) {
 		{ name: "practice", tab: practiceTab, panel: practicePanel },
 		{ name: "conjugation", tab: conjugationTab, panel: conjugationPanel },
 		{ name: "nominal-conjugation", tab: nominalConjugationTab, panel: nominalConjugationPanel },
-		{ name: "pitch", tab: pitchTab, panel: pitchPanel }
+		{ name: "pitch", tab: pitchTab, panel: pitchPanel },
+		{ name: "reading", tab: readingTab, panel: readingPanel }
 	];
 	tabs.forEach(({ name, tab, panel }) => {
 		const active = name === tabName;
@@ -614,6 +617,12 @@ function renderGrammarWorksheet(entries) {
 		return chosen;
 	};
 	const sameLevel = (entry) => grammarEntries.filter((candidate) => candidate.id !== entry.id && candidate.level === entry.level && candidate.meaning && candidate.pattern);
+	const lengthSetting = Number(document.querySelector("#worksheet-length")?.value) || 0;
+	const perType = lengthSetting ? Math.max(1, Math.round(lengthSetting / Math.max(1, enabled.size))) : 0;
+	const order = shuffled(entries);
+	// Cycle through the points so longer worksheets reuse them with different example sentences.
+	const slots = (extra = 1) => Array.from({ length: perType || entries.length * extra }, (_, index) => order[index % order.length]);
+	const uniqueSlots = () => (perType ? order.slice(0, perType) : entries);
 	const lines = (count) => Array.from({ length: count }, () => '<div class="worksheet-answer-lines" aria-hidden="true"></div>').join("");
 	const questionBlock = (number, body) => `<article class="worksheet-question"><div class="ws-q-row"><b>${number}.</b><div>${body}</div></div></article>`;
 
@@ -624,7 +633,7 @@ function renderGrammarWorksheet(entries) {
 
 	const builders = {
 		choice() {
-			return entries.filter((entry) => entry.meaning).map((entry) => {
+			return uniqueSlots().filter((entry) => entry.meaning).map((entry) => {
 				const options = shuffled([entry, ...shuffled(sameLevel(entry).filter((candidate) => candidate.meaning !== entry.meaning)).slice(0, 3)]);
 				number += 1;
 				addAnswer(`${letters[options.indexOf(entry)]} <span>${escapeHtml(entry.meaning)}</span>`);
@@ -632,7 +641,7 @@ function renderGrammarWorksheet(entries) {
 			}).join("");
 		},
 		identify() {
-			return entries.map((entry) => {
+			return slots().map((entry) => {
 				const example = pickExample(entry);
 				if (!example) return "";
 				const options = shuffled([entry, ...shuffled(sameLevel(entry)).slice(0, 3)]);
@@ -642,7 +651,7 @@ function renderGrammarWorksheet(entries) {
 			}).join("");
 		},
 		fill() {
-			return entries.map((entry) => {
+			return slots().map((entry) => {
 				let blank = null;
 				const example = pickExample(entry, (candidate) => (blank = blankGrammarInSentence(entry, candidate.ja)));
 				if (!example) return "";
@@ -653,7 +662,7 @@ function renderGrammarWorksheet(entries) {
 			}).join("");
 		},
 		reorder() {
-			return entries.map((entry) => {
+			return slots().map((entry) => {
 				const example = pickExample(entry, (candidate) => {
 					const count = splitSentenceChunks(candidate.ja).length;
 					return count >= 3 && count <= 8;
@@ -668,7 +677,7 @@ function renderGrammarWorksheet(entries) {
 			const foreign = shuffled(entries.flatMap(examplesOf).concat(grammarEntries.filter((entry) => entries.some((selected) => selected.level === entry.level)).flatMap(examplesOf)));
 			const truths = shuffled(entries.map((_, index) => index % 2 === 0));
 			const usedWrong = new Set();
-			return entries.map((entry, index) => {
+			return slots().map((entry, index) => {
 				const example = pickExample(entry);
 				if (!example) return "";
 				const wrong = foreign.find((candidate) => candidate.ja !== example.ja && !examplesOf(entry).includes(candidate) && !usedWrong.has(candidate.en));
@@ -680,7 +689,7 @@ function renderGrammarWorksheet(entries) {
 			}).join("");
 		},
 		match() {
-			const pool = entries.filter((entry) => entry.meaning);
+			const pool = uniqueSlots().filter((entry) => entry.meaning);
 			if (!pool.length) return "";
 			const blocks = [];
 			for (let start = 0; start < pool.length; start += 5) blocks.push(pool.slice(start, start + 5));
@@ -696,8 +705,8 @@ function renderGrammarWorksheet(entries) {
 			}).join("");
 		},
 		translate() {
-			return entries.map((entry) => {
-				const examples = [pickExample(entry), pickExample(entry)].filter(Boolean);
+			return slots(2).map((entry) => {
+				const examples = [pickExample(entry)].filter(Boolean);
 				return [...new Set(examples)].map((example) => {
 					number += 1;
 					addAnswer(`<span lang="ja">${escapeHtml(example.ja)}</span>`);
@@ -706,7 +715,7 @@ function renderGrammarWorksheet(entries) {
 			}).join("");
 		},
 		jp2en() {
-			return entries.map((entry) => {
+			return slots().map((entry) => {
 				const example = pickExample(entry);
 				if (!example) return "";
 				number += 1;
@@ -715,7 +724,7 @@ function renderGrammarWorksheet(entries) {
 			}).join("");
 		},
 		write() {
-			return entries.map((entry) => {
+			return uniqueSlots().map((entry) => {
 				number += 1;
 				addAnswer("<span>Answers will vary — check the grammar point is used correctly.</span>");
 				return questionBlock(number, `<p class="ws-q">Write your own sentence using <span class="ws-pattern" lang="ja">${escapeHtml(entry.pattern)}</span>.</p>${lines(2)}`);
@@ -2001,6 +2010,7 @@ practiceTab.addEventListener("click", () => activateTab("practice"));
 conjugationTab.addEventListener("click", () => activateTab("conjugation"));
 nominalConjugationTab.addEventListener("click", () => activateTab("nominal-conjugation"));
 pitchTab.addEventListener("click", () => { activateTab("pitch"); updatePitchSetup(); });
+readingTab.addEventListener("click", () => activateTab("reading"));
 document.querySelector(".content-tabs").addEventListener("keydown", (event) => {
 	const tabs = [
 		{ tab: vocabularyTab, name: "vocabulary" },
@@ -2008,7 +2018,8 @@ document.querySelector(".content-tabs").addEventListener("keydown", (event) => {
 		{ tab: practiceTab, name: "practice" },
 		{ tab: conjugationTab, name: "conjugation" },
 		{ tab: nominalConjugationTab, name: "nominal-conjugation" },
-		{ tab: pitchTab, name: "pitch" }
+		{ tab: pitchTab, name: "pitch" },
+		{ tab: readingTab, name: "reading" }
 	];
 	if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
 	event.preventDefault();
