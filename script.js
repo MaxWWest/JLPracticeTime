@@ -1989,3 +1989,41 @@ pitchEls.again.addEventListener("click", () => {
 	pitchEls.status.hidden = false;
 	updatePitchSetup();
 });
+
+
+function positionPitchHelp(help) {
+	const tip = help.querySelector(".pitch-help-tip");
+	if (!tip) return;
+	tip.style.display = "block";
+	const anchor = help.getBoundingClientRect();
+	const tipRect = tip.getBoundingClientRect();
+	const margin = 8;
+	const below = anchor.bottom + 7;
+	const top = below + tipRect.height <= window.innerHeight - margin ? below : Math.max(margin, anchor.top - 7 - tipRect.height);
+	const left = Math.min(Math.max(margin, anchor.left - 6), window.innerWidth - tipRect.width - margin);
+	tip.style.top = `${top}px`;
+	tip.style.left = `${left}px`;
+}
+
+function hidePitchHelp(help) {
+	const tip = help.querySelector(".pitch-help-tip");
+	if (tip) tip.style.display = "";
+}
+
+document.addEventListener("mouseover", (event) => {
+	const help = event.target.closest?.(".pitch-help");
+	if (help) positionPitchHelp(help);
+});
+document.addEventListener("mouseout", (event) => {
+	const help = event.target.closest?.(".pitch-help");
+	if (help && !help.contains(event.relatedTarget)) hidePitchHelp(help);
+});
+document.addEventListener("focusin", (event) => {
+	const help = event.target.closest?.(".pitch-help");
+	if (help) positionPitchHelp(help);
+});
+document.addEventListener("focusout", (event) => {
+	const help = event.target.closest?.(".pitch-help");
+	if (help) hidePitchHelp(help);
+});
+window.addEventListener("scroll", () => document.querySelectorAll(".pitch-help-tip").forEach((tip) => { tip.style.display = ""; }), { passive: true });
