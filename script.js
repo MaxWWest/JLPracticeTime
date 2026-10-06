@@ -49,6 +49,8 @@ const vocabularyPanel = document.querySelector("#vocabulary-panel");
 const grammarPanel = document.querySelector("#grammar-panel");
 const practicePanel = document.querySelector("#practice-panel");
 const conjugationPanel = document.querySelector("#conjugation-panel");
+const pitchTab = document.querySelector("#pitch-tab");
+const pitchPanel = document.querySelector("#pitch-panel");
 const nominalConjugationPanel = document.querySelector("#nominal-conjugation-panel");
 const practiceLevel = document.querySelector("#practice-level");
 const practiceDueCount = document.querySelector("#practice-due-count");
@@ -209,7 +211,8 @@ function activateTab(tabName) {
 		{ name: "grammar", tab: grammarTab, panel: grammarPanel },
 		{ name: "practice", tab: practiceTab, panel: practicePanel },
 		{ name: "conjugation", tab: conjugationTab, panel: conjugationPanel },
-		{ name: "nominal-conjugation", tab: nominalConjugationTab, panel: nominalConjugationPanel }
+		{ name: "nominal-conjugation", tab: nominalConjugationTab, panel: nominalConjugationPanel },
+		{ name: "pitch", tab: pitchTab, panel: pitchPanel }
 	];
 	tabs.forEach(({ name, tab, panel }) => {
 		const active = name === tabName;
@@ -255,13 +258,14 @@ async function loadVocabulary() {
 		const posLabelsPromise = fetch("https://cdn.jsdelivr.net/gh/evanclan/OpenJLPT@main/data/json/pos.json")
 			.then((response) => response.ok ? response.json() : {})
 			.catch(() => ({}));
-		const [datasets, posLabels] = await Promise.all([Promise.all(levels.map(async (level) => {
+		const pitchPromise = fetch("pitch-data.json").then((response) => response.ok ? response.json() : {}).catch(() => ({}));
+		const [datasets, posLabels, pitchData] = await Promise.all([Promise.all(levels.map(async (level) => {
 			const response = await fetch(`https://cdn.jsdelivr.net/gh/evanclan/OpenJLPT@main/data/json/vocab/${level.toLowerCase()}.json`);
 			if (!response.ok) throw new Error(`${level} vocabulary request failed (${response.status})`);
 			const dataset = await response.json();
 			if (!Array.isArray(dataset) || dataset.length === 0) throw new Error(`The ${level} vocabulary dataset was empty.`);
 			return dataset;
-		})), posLabelsPromise]);
+		})), posLabelsPromise, pitchPromise]);
 		words = datasets.flatMap((dataset, index) => dataset.map((entry) => {
 			const category = categoryFromPartsOfSpeech(entry.pos);
 			return {
@@ -276,7 +280,7 @@ async function loadVocabulary() {
 				posCodes: entry.pos || [],
 				otherForms: entry.other_forms || [],
 				otherReadings: entry.other_readings || [],
-				pitchAccent: entry.pitch_accent ?? entry.pitchAccent ?? entry.accent_number ?? entry.accentNumber ?? entry.pitch?.accent ?? null,
+				pitchAccent: entry.pitch_accent ?? entry.pitchAccent ?? entry.accent_number ?? entry.accentNumber ?? entry.pitch?.accent ?? pitchData[String(entry.id)] ?? null,
 				category,
 				level: entry.level || levels[index],
 				examples: entry.examples || []
@@ -292,6 +296,7 @@ async function loadVocabulary() {
 		updatePracticeDashboard();
 		updateConjugationSetup();
 		updateNominalConjugationSetup();
+		updatePitchSetup();
 	} catch (error) {
 		status.textContent = `Could not load the full N1–N5 lists; showing the ${words.length} built-in sample words. Open this page through a local web server and check your internet connection to load all entries.`;
 		console.warn("Could not load the JLPT vocabulary datasets:", error);
@@ -340,7 +345,7 @@ function renderDetail(word) {
 	const alternateReadings = (word.otherReadings || []).map((reading) => `<span lang="ja">${escapeHtml(reading)}</span>`);
 	const pitchAccents = normalizePitchAccents(word.pitchAccent);
 	const pitchAccentMarkup = pitchAccents.length
-		? `<div class="pitch-accent-list"><p class="pitch-accent-label">PITCH ACCENT</p>${pitchAccents.map((accent) => renderPitchAccent(word.reading, accent)).join("")}</div>`
+		? `<div class="pitch-accent-list"><p class="pitch-accent-label">PITCH ACCENT <span class="pitch-help" tabindex="0" role="button" aria-label="What do the pitch accent terms mean?"><span aria-hidden="true">?</span><span class="pitch-help-tip" role="tooltip"><strong>Reading the pattern</strong>The line shows each sound as high or low. The が after the word shows what a following particle does.<strong>Heiban (0)</strong>Flat: low then high, with no drop.<strong>Atamadaka (1)</strong>Head-high: first sound high, then drops.<strong>Nakadaka (2+)</strong>Middle-high: rises, then drops before the last sound.<strong>Odaka</strong>Tail-high: stays high through the last sound, drops on the particle.<strong>Number</strong>The sound after which the pitch drops; 0 means it never drops.</span></span></p>${pitchAccents.map((accent) => renderPitchAccent(word.reading, accent)).join("")}</div>`
 		: `<p class="pitch-accent-unavailable">Pitch-accent notation isn’t included for this word.</p>`;
 	const examples = word.examples?.length ? word.examples : (word.example ? [{ ja: word.example, en: word.translation }] : []);
 	const examplesMarkup = examples.map((example) => {
@@ -401,13 +406,18 @@ function splitMora(reading) {
 	return morae;
 }
 
-function renderPitchAccent(reading, downstep) {
+function renderPitchContour(reading, downstep) {
 	const morae = splitMora(reading);
-	const contour = morae.map((mora, index) => {
+	return morae.map((mora, index) => {
 		const high = downstep === 0 ? index > 0 : index < downstep;
 		return `<span class="pitch-mora ${high ? "is-high" : "is-low"}" lang="ja"><span>${escapeHtml(mora)}</span><i aria-hidden="true"></i></span>`;
 	}).join("");
-	const kind = downstep === 0 ? "Heiban · flat" : downstep === 1 ? "Atamadaka · head-high" : `Nakadaka · drop after mora ${downstep}`;
+}
+
+function renderPitchAccent(reading, downstep) {
+	const morae = splitMora(reading);
+	const contour = renderPitchContour(reading, downstep);
+	const kind = downstep === 0 ? "Heiban · flat" : downstep === 1 ? "Atamadaka · head-high" : downstep === morae.length ? "Odaka · drop after last mora" : `Nakadaka · drop after mora ${downstep}`;
 	return `<div class="pitch-accent-entry"><div class="pitch-contour" aria-label="${escapeHtml(kind)}">${contour}<span class="pitch-particle ${downstep === 0 ? "is-high" : "is-low"}" aria-hidden="true">が</span></div><span class="pitch-accent-kind">${escapeHtml(kind)} (${downstep})</span></div>`;
 }
 
@@ -1766,13 +1776,15 @@ grammarTab.addEventListener("click", () => activateTab("grammar"));
 practiceTab.addEventListener("click", () => activateTab("practice"));
 conjugationTab.addEventListener("click", () => activateTab("conjugation"));
 nominalConjugationTab.addEventListener("click", () => activateTab("nominal-conjugation"));
+pitchTab.addEventListener("click", () => { activateTab("pitch"); updatePitchSetup(); });
 document.querySelector(".content-tabs").addEventListener("keydown", (event) => {
 	const tabs = [
 		{ tab: vocabularyTab, name: "vocabulary" },
 		{ tab: grammarTab, name: "grammar" },
 		{ tab: practiceTab, name: "practice" },
 		{ tab: conjugationTab, name: "conjugation" },
-		{ tab: nominalConjugationTab, name: "nominal-conjugation" }
+		{ tab: nominalConjugationTab, name: "nominal-conjugation" },
+		{ tab: pitchTab, name: "pitch" }
 	];
 	if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
 	event.preventDefault();
@@ -1878,3 +1890,102 @@ updateConjugationSetup();
 updateNominalConjugationSetup();
 loadVocabulary();
 loadGrammar();
+
+
+const pitchState = { queue: [], index: 0, correct: 0, missed: [], answered: false };
+const pitchEls = Object.fromEntries(["level", "include-previous", "count", "start", "status", "setup", "session", "progress-label", "end", "word", "reading", "meaning", "options", "feedback", "next", "complete", "result", "missed", "again"].map((id) => [id, document.querySelector(`#pitch-${id}`)]));
+
+function getPitchWords() {
+	const levels = getConjugationLevelPool(pitchEls.level.value, pitchEls["include-previous"].checked);
+	return words.filter((word) => levels.includes(word.level) && splitMora(word.reading || "").length >= 2 && normalizePitchAccents(word.pitchAccent).length);
+}
+
+function updatePitchSetup() {
+	const count = getPitchWords().length;
+	pitchEls.status.textContent = count ? `${count.toLocaleString()} words with pitch data at this level.` : "No words with pitch data are loaded for this level yet.";
+	pitchEls.start.disabled = !count;
+}
+
+function startPitchPractice() {
+	const pool = shuffled(getPitchWords());
+	if (!pool.length) return;
+	Object.assign(pitchState, { queue: pool.slice(0, Math.min(Number(pitchEls.count.value), pool.length)), index: 0, correct: 0, missed: [], answered: false });
+	pitchEls.setup.hidden = true;
+	pitchEls.status.hidden = true;
+	pitchEls.complete.hidden = true;
+	pitchEls.session.hidden = false;
+	showPitchQuestion();
+}
+
+function showPitchQuestion() {
+	const word = pitchState.queue[pitchState.index];
+	const accents = normalizePitchAccents(word.pitchAccent);
+	const moraCount = splitMora(word.reading).length;
+	const wrong = shuffled(Array.from({ length: moraCount + 1 }, (_, index) => index).filter((index) => !accents.includes(index))).slice(0, 3);
+	const options = shuffled([accents[0], ...wrong]);
+	pitchState.answered = false;
+	pitchEls["progress-label"].textContent = `QUESTION ${pitchState.index + 1} OF ${pitchState.queue.length}`;
+	pitchEls.word.textContent = word.kanji;
+	pitchEls.reading.textContent = word.reading;
+	pitchEls.meaning.textContent = word.meaning;
+	pitchEls.options.innerHTML = options.map((downstep) => `<button type="button" class="pitch-option" data-downstep="${downstep}"><span class="pitch-contour">${renderPitchContour(word.reading, downstep)}<span class="pitch-particle ${downstep === 0 ? "is-high" : "is-low"}" aria-hidden="true">が</span></span></button>`).join("");
+	pitchEls.feedback.textContent = "Which pitch pattern is correct?";
+	pitchEls.feedback.className = "answer-feedback";
+	pitchEls.next.hidden = true;
+}
+
+function answerPitchQuestion(button) {
+	if (pitchState.answered) return;
+	pitchState.answered = true;
+	const word = pitchState.queue[pitchState.index];
+	const accents = normalizePitchAccents(word.pitchAccent);
+	const chosen = Number(button.dataset.downstep);
+	const isCorrect = accents.includes(chosen);
+	pitchEls.options.querySelectorAll(".pitch-option").forEach((option) => {
+		option.disabled = true;
+		if (accents.includes(Number(option.dataset.downstep))) option.classList.add("is-correct");
+	});
+	if (isCorrect) pitchState.correct += 1;
+	else {
+		button.classList.add("is-incorrect");
+		pitchState.missed.push(word);
+	}
+	const kinds = accents.map((accent) => accent === 0 ? "Heiban (0)" : accent === 1 ? "Atamadaka (1)" : accent === splitMora(word.reading).length ? `Odaka (${accent})` : `Nakadaka (${accent})`).join(", ");
+	pitchEls.feedback.textContent = isCorrect ? `Correct — ${kinds}.` : `Not quite. The pattern is ${kinds}.`;
+	pitchEls.feedback.className = `answer-feedback ${isCorrect ? "is-correct" : "is-incorrect"}`;
+	pitchEls.next.hidden = false;
+	pitchEls.next.focus();
+}
+
+function nextPitchQuestion() {
+	pitchState.index += 1;
+	pitchState.answered = false;
+	if (pitchState.index >= pitchState.queue.length) finishPitchPractice();
+	else showPitchQuestion();
+}
+
+function finishPitchPractice() {
+	const total = pitchState.index + (pitchState.answered ? 1 : 0);
+	pitchEls.session.hidden = true;
+	pitchEls.complete.hidden = false;
+	pitchEls.result.textContent = `${pitchState.correct} of ${total} correct${total ? ` · ${Math.round((pitchState.correct / total) * 100)}%` : ""}`;
+	pitchEls.missed.innerHTML = pitchState.missed.length
+		? `<h4>Review these</h4>${pitchState.missed.map((word) => `<div class="pitch-missed-item"><span lang="ja">${escapeHtml(word.kanji)} · ${escapeHtml(word.reading)}</span>${normalizePitchAccents(word.pitchAccent).map((accent) => `<span class="pitch-contour">${renderPitchContour(word.reading, accent)}</span>`).join("")}</div>`).join("")}`
+		: "";
+}
+
+pitchEls.level.addEventListener("change", updatePitchSetup);
+pitchEls["include-previous"].addEventListener("change", updatePitchSetup);
+pitchEls.start.addEventListener("click", startPitchPractice);
+pitchEls.options.addEventListener("click", (event) => {
+	const button = event.target.closest(".pitch-option");
+	if (button) answerPitchQuestion(button);
+});
+pitchEls.next.addEventListener("click", nextPitchQuestion);
+pitchEls.end.addEventListener("click", finishPitchPractice);
+pitchEls.again.addEventListener("click", () => {
+	pitchEls.complete.hidden = true;
+	pitchEls.setup.hidden = false;
+	pitchEls.status.hidden = false;
+	updatePitchSetup();
+});

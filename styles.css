@@ -337,7 +337,7 @@ button { color: inherit; }
 .pronunciation-button span { font-size: 12px; }
 .pronunciation-hint { color: #92958d; font-size: 8px; }
 .pitch-accent-list { margin-top: 14px; padding: 10px 11px; border: 1px solid #e2e4dc; border-radius: 8px; background: #fbfaf6; }
-.pitch-accent-label { margin: 0 0 7px; color: #899084; font-size: 8px; font-weight: 700; letter-spacing: 1px; }
+.pitch-accent-label { display: flex; align-items: center; gap: 6px; margin: 0 0 7px; color: #899084; font-size: 8px; font-weight: 700; letter-spacing: 1px; }
 .pitch-accent-entry + .pitch-accent-entry { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--line); }
 .pitch-contour { display: flex; align-items: end; gap: 0; }
 .pitch-mora { display: grid; min-width: 22px; justify-items: center; color: #586351; font-family: "Noto Sans JP", sans-serif; font-size: 11px; }
@@ -474,3 +474,21 @@ button { color: inherit; }
 .conjugation-breakdown li:has(.conjugation-breakdown-form) { display: grid; gap: 3px; }
 .conjugation-breakdown-form { display: flex; justify-content: space-between; gap: 8px; }
 .conjugation-breakdown-groups { display: flex; flex-wrap: wrap; gap: 3px 10px; color: #858d7e; font-size: 9px; }
+
+.pitch-panel { max-width: 680px; margin: 0 auto; }
+.pitch-session { margin-top: 19px; }
+.pitch-question-word { margin: 6px 0 2px; font-size: 38px; }
+.pitch-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 14px 0 8px; }
+.pitch-option { display: flex; justify-content: center; padding: 14px 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--white); cursor: pointer; }
+.pitch-option:hover:not(:disabled) { border-color: #81927a; }
+.pitch-option .pitch-mora { font-size: 15px; min-width: 26px; }
+.pitch-option.is-correct { border-color: #5f8a58; background: #eef5ea; }
+.pitch-option.is-incorrect { border-color: #c4766b; background: #fbeeeb; }
+.pitch-missed { width: min(100%, 700px); margin: 8px 0; text-align: left; }
+.pitch-missed h4 { margin: 0 0 6px; color: #858d7e; font-size: 8px; letter-spacing: .06em; text-transform: uppercase; }
+.pitch-missed-item { display: flex; flex-wrap: wrap; align-items: end; gap: 6px 16px; padding: 8px 0; border-top: 1px solid var(--line); font-size: 11px; }
+.pitch-help { position: relative; display: inline-grid; place-items: center; width: 13px; height: 13px; border: 1px solid #a9b2a3; border-radius: 50%; color: #6f7a69; font-size: 8px; font-weight: 700; letter-spacing: 0; cursor: help; }
+.pitch-help-tip { position: absolute; z-index: 5; top: calc(100% + 7px); left: -6px; display: none; width: 230px; padding: 9px 11px; border: 1px solid var(--line); border-radius: 8px; background: var(--white); box-shadow: 0 6px 18px rgba(40, 50, 35, .14); color: #4c5547; font-size: 9px; font-weight: 400; line-height: 1.5; letter-spacing: 0; text-align: left; }
+.pitch-help-tip strong { display: block; margin-top: 6px; color: var(--ink); font-size: 9px; }
+.pitch-help-tip strong:first-child { margin-top: 0; }
+.pitch-help:hover .pitch-help-tip, .pitch-help:focus .pitch-help-tip { display: block; }

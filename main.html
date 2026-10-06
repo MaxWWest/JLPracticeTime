@@ -49,6 +49,7 @@
                 <button class="content-tab" id="practice-tab" type="button" role="tab" aria-selected="false" aria-controls="practice-panel" tabindex="-1">Daily practice</button>
                 <button class="content-tab" id="conjugation-tab" type="button" role="tab" aria-selected="false" aria-controls="conjugation-panel" tabindex="-1">Verb conjugation</button>
                 <button class="content-tab" id="nominal-conjugation-tab" type="button" role="tab" aria-selected="false" aria-controls="nominal-conjugation-panel" tabindex="-1">Adjective &amp; noun forms</button>
+                <button class="content-tab" id="pitch-tab" type="button" role="tab" aria-selected="false" aria-controls="pitch-panel" tabindex="-1">Pitch practice</button>
             </div>
 
             <section class="dictionary-layout tab-panel" id="vocabulary-panel" role="tabpanel" aria-labelledby="vocabulary-tab" tabindex="0" aria-label="Dictionary entries">
@@ -80,7 +81,7 @@
                         <button class="clear-filters" id="clear-filters" type="button">Clear filters</button>
                     </div>
                     <p class="dictionary-note"><span aria-hidden="true">✳</span><span id="data-status">Loading vocabulary…</span></p>
-                    <p class="attribution">Vocabulary adapted from <a href="https://github.com/evanclan/OpenJLPT" target="_blank" rel="noreferrer">OpenJLPT</a> under <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noreferrer">CC BY-SA 4.0</a>. Sources include Jonathan Waller’s JLPT lists, JMdict, and Tatoeba; <a href="https://github.com/evanclan/OpenJLPT/blob/main/NOTICE.md" target="_blank" rel="noreferrer">full attribution</a>. JLPT level lists are community approximations, not official exam lists.</p>
+                    <p class="attribution">Vocabulary adapted from <a href="https://github.com/evanclan/OpenJLPT" target="_blank" rel="noreferrer">OpenJLPT</a> under <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noreferrer">CC BY-SA 4.0</a>. Sources include Jonathan Waller’s JLPT lists, JMdict, and Tatoeba; <a href="https://github.com/evanclan/OpenJLPT/blob/main/NOTICE.md" target="_blank" rel="noreferrer">full attribution</a>. Pitch accent data from <a href="https://github.com/mifunetoshiro/kanjium" target="_blank" rel="noreferrer">Kanjium</a> (CC BY-SA 4.0), provided by Uros O. JLPT level lists are community approximations, not official exam lists.</p>
                 </div>
 
                 <aside class="detail-panel" id="detail-panel" aria-labelledby="detail-word">
@@ -380,6 +381,56 @@
                         <div class="conjugation-breakdown" id="conjugation-breakdown"></div>
                         <button class="practice-start" id="conjugation-again" type="button">Practice this form again</button>
                     </div>
+
+                <section class="pitch-panel tab-panel" id="pitch-panel" role="tabpanel" aria-labelledby="pitch-tab" tabindex="0" aria-hidden="true" hidden>
+                    <div class="nominal-conjugation-heading">
+                        <p class="eyebrow section-eyebrow">PITCH ACCENT</p>
+                        <h3>Pitch practice</h3>
+                        <p>Read the word, then choose the pitch pattern that matches. Accent data is for standard Tokyo Japanese and can vary by speaker.</p>
+                    </div>
+                    <div class="conjugation-setup" id="pitch-setup">
+                        <label>JLPT level
+                            <select id="pitch-level">
+                                <option value="N5" selected>N5 · Beginner</option>
+                                <option value="N4">N4 · Elementary</option>
+                                <option value="N3">N3 · Intermediate</option>
+                                <option value="N2">N2 · Upper intermediate</option>
+                                <option value="N1">N1 · Advanced</option>
+                            </select>
+                        </label>
+                        <label class="conjugation-toggle-label">
+                            <span>Include previous levels</span>
+                            <input type="checkbox" id="pitch-include-previous">
+                        </label>
+                        <label>Questions
+                            <select id="pitch-count">
+                                <option value="10" selected>10 questions</option>
+                                <option value="20">20 questions</option>
+                                <option value="30">30 questions</option>
+                            </select>
+                        </label>
+                        <button class="practice-start" id="pitch-start" type="button">Start →</button>
+                    </div>
+                    <p class="conjugation-status" id="pitch-status"></p>
+                    <div class="pitch-session" id="pitch-session" hidden>
+                        <div class="practice-session-top"><span id="pitch-progress-label"></span><button class="practice-exit" id="pitch-end" type="button">End practice</button></div>
+                        <article class="conjugation-card">
+                            <h3 class="pitch-question-word" id="pitch-word" lang="ja"></h3>
+                            <p id="pitch-reading" lang="ja"></p>
+                            <p id="pitch-meaning"></p>
+                            <div class="pitch-options" id="pitch-options"></div>
+                            <p class="answer-feedback" id="pitch-feedback" aria-live="polite"></p>
+                            <button class="practice-start" id="pitch-next" type="button" hidden>Next →</button>
+                        </article>
+                    </div>
+                    <div class="conjugation-complete" id="pitch-complete" hidden>
+                        <span class="practice-welcome-mark" aria-hidden="true">音</span>
+                        <h3>Pitch practice complete</h3>
+                        <p id="pitch-result"></p>
+                        <div id="pitch-missed" class="pitch-missed"></div>
+                        <button class="practice-start" id="pitch-again" type="button">Practice again</button>
+                    </div>
+                </section>
         </main>
 
         <footer class="page-footer"><span>kotoba<span class="brand-period">.</span></span><span>Made for curious minds <span aria-hidden="true">✿</span></span></footer>
