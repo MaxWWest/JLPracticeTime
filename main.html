@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#f8f7f2">
+    <title>Kotoba — Japanese Dictionary</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <script src="script.js" defer></script>
+</head>
+<body>
+    <div class="page-shell">
+        <header class="topbar">
+            <a class="brand" href="#top" aria-label="Kotoba home">
+                <span class="brand-mark" aria-hidden="true">言</span>
+                <span class="brand-name">kotoba<span class="brand-period">.</span></span>
+            </a>
+            <div class="topbar-note"><span class="live-dot"></span> Your little corner for Japanese</div>
+            <button class="favorites-toggle" id="favorites-toggle" type="button" aria-pressed="false">
+                <span aria-hidden="true">♡</span> Saved words <span class="saved-count" id="saved-count">0</span>
+            </button>
+        </header>
+
+        <main id="top">
+            <section class="hero" aria-labelledby="hero-title">
+                <div class="hero-copy">
+                    <p class="eyebrow"><span class="eyebrow-line"></span> JAPANESE, ONE WORD AT A TIME</p>
+                    <h1 id="hero-title">Find the words<br>you’re <span>looking for.</span></h1>
+                    <p class="hero-description">A friendly little dictionary for your Japanese learning journey. Search by Japanese, romaji, or English.</p>
+                </div>
+                <div class="hero-stamp" aria-hidden="true"><span>日本語</span><small>NIHONGO</small></div>
+
+                <form class="search-form" id="search-form" role="search">
+                    <span class="search-icon" aria-hidden="true">⌕</span>
+                    <label class="visually-hidden" for="search-input">Search Japanese words</label>
+                    <input id="search-input" type="search" placeholder="Try “water”, “mizu”, or “水”…" autocomplete="off">
+                    <kbd>⌘ K</kbd>
+                    <button type="submit" aria-label="Search dictionary">Search <span aria-hidden="true">↗</span></button>
+                </form>
+                <p class="search-hint">A few ideas: <button class="suggestion" type="button" data-query="hello">hello</button><span>·</span><button class="suggestion" type="button" data-query="ありがとう">ありがとう</button><span>·</span><button class="suggestion" type="button" data-query="食べる">食べる</button></p>
+            </section>
+
+            <div class="content-tabs" role="tablist" aria-label="Japanese study sections">
+                <button class="content-tab is-active" id="vocabulary-tab" type="button" role="tab" aria-selected="true" aria-controls="vocabulary-panel" tabindex="0">Vocabulary</button>
+                <button class="content-tab" id="grammar-tab" type="button" role="tab" aria-selected="false" aria-controls="grammar-panel" tabindex="-1">Grammar</button>
+                <button class="content-tab" id="practice-tab" type="button" role="tab" aria-selected="false" aria-controls="practice-panel" tabindex="-1">Daily practice</button>
+                <button class="content-tab" id="conjugation-tab" type="button" role="tab" aria-selected="false" aria-controls="conjugation-panel" tabindex="-1">Verb conjugation</button>
+                <button class="content-tab" id="nominal-conjugation-tab" type="button" role="tab" aria-selected="false" aria-controls="nominal-conjugation-panel" tabindex="-1">Adjective &amp; noun forms</button>
+            </div>
+
+            <section class="dictionary-layout tab-panel" id="vocabulary-panel" role="tabpanel" aria-labelledby="vocabulary-tab" tabindex="0" aria-label="Dictionary entries">
+                <div class="results-column">
+                    <div class="section-heading">
+                        <div>
+                            <p class="eyebrow section-eyebrow">JLPT N1–N5 VOCABULARY</p>
+                            <h2>Words to know <span id="result-count">12 words</span></h2>
+                        </div>
+                        <label class="sort-control">Level
+                            <select id="level-filter" aria-label="Filter by JLPT level">
+                                <option value="all">All levels</option>
+                                <option value="N1">JLPT N1</option>
+                                <option value="N2">JLPT N2</option>
+                                <option value="N3">JLPT N3</option>
+                                <option value="N4">JLPT N4</option>
+                                <option value="N5">JLPT N5</option>
+                            </select>
+                        </label>
+                    </div>
+                    <div class="category-list" id="category-list" aria-label="Filter by category"></div>
+                    <div class="word-grid" id="word-grid" aria-live="polite"></div>
+                    <p class="page-status" id="page-status" aria-live="polite"></p>
+                    <button class="load-more" id="load-more" type="button" hidden>Load more words</button>
+                    <div class="empty-state" id="empty-state" hidden>
+                        <span class="empty-icon" aria-hidden="true">？</span>
+                        <h3>No words found</h3>
+                        <p>Try another spelling or clear your filters.</p>
+                        <button class="clear-filters" id="clear-filters" type="button">Clear filters</button>
+                    </div>
+                    <p class="dictionary-note"><span aria-hidden="true">✳</span><span id="data-status">Loading vocabulary…</span></p>
+                    <p class="attribution">Vocabulary adapted from <a href="https://github.com/evanclan/OpenJLPT" target="_blank" rel="noreferrer">OpenJLPT</a> under <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noreferrer">CC BY-SA 4.0</a>. Sources include Jonathan Waller’s JLPT lists, JMdict, and Tatoeba; <a href="https://github.com/evanclan/OpenJLPT/blob/main/NOTICE.md" target="_blank" rel="noreferrer">full attribution</a>. JLPT level lists are community approximations, not official exam lists.</p>
+                </div>
+
+                <aside class="detail-panel" id="detail-panel" aria-labelledby="detail-word">
+                    <div class="detail-topline"><span class="detail-label">WORD SPOTLIGHT</span><span class="detail-sparkle" aria-hidden="true">✳</span></div>
+                    <div id="word-detail"></div>
+                    <div class="detail-footer"><span class="detail-footer-icon" aria-hidden="true">あ</span><p>Little by little,<br>you’re getting there.</p></div>
+                </aside>
+            </section>
+
+            <section class="grammar-section tab-panel" id="grammar-panel" role="tabpanel" aria-labelledby="grammar-tab" tabindex="0" aria-hidden="true" hidden>
+                <div class="grammar-heading">
+                    <div>
+                        <p class="eyebrow section-eyebrow">GRAMMAR, MADE CLEAR</p>
+                        <h2 id="grammar-title">Grammar patterns <span id="grammar-count">Loading…</span></h2>
+                        <p class="grammar-intro">Browse patterns by JLPT level, select any grammar points, and generate a printable translation worksheet with an answer key.</p>
+                    </div>
+                    <div class="grammar-toolbar">
+                        <label class="visually-hidden" for="grammar-search">Search grammar patterns</label>
+                        <input id="grammar-search" type="search" placeholder="Search a pattern or meaning…" autocomplete="off">
+                        <label class="visually-hidden" for="grammar-level-filter">Filter grammar by JLPT level</label>
+                        <select id="grammar-level-filter">
+                            <option value="all">All levels</option>
+                            <option value="N5">JLPT N5</option>
+                            <option value="N4">JLPT N4</option>
+                            <option value="N3">JLPT N3</option>
+                            <option value="N2">JLPT N2</option>
+                            <option value="N1">JLPT N1</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="grammar-layout">
+                    <div class="grammar-results">
+                        <div class="worksheet-toolbar" aria-label="Worksheet selection controls">
+                            <p class="worksheet-selection-status" id="worksheet-selection-status" aria-live="polite">0 grammar points selected</p>
+                            <div>
+                                <button class="worksheet-control" id="worksheet-select-visible" type="button">Select all matching</button>
+                                <button class="worksheet-control" id="worksheet-clear-selection" type="button">Clear selection</button>
+                                <button class="practice-start worksheet-generate" id="worksheet-generate" type="button" disabled>Generate worksheet</button>
+                            </div>
+                        </div>
+                        <div class="grammar-grid" id="grammar-grid" aria-live="polite"></div>
+                        <p class="grammar-page-status" id="grammar-page-status" aria-live="polite"></p>
+                        <button class="load-more grammar-load-more" id="grammar-load-more" type="button" hidden>Load more patterns</button>
+                        <div class="grammar-empty" id="grammar-empty" hidden>
+                            <h3>No grammar patterns found</h3>
+                            <p>Try a different search or level.</p>
+                        </div>
+                    </div>
+                    <aside class="grammar-detail-panel" aria-labelledby="grammar-detail-pattern">
+                        <div class="detail-topline"><span class="detail-label">PATTERN SPOTLIGHT</span><span class="detail-sparkle" aria-hidden="true">✳</span></div>
+                        <div id="grammar-detail"></div>
+                    </aside>
+                </div>
+                <section class="worksheet-output" id="worksheet-output" hidden aria-live="polite"></section>
+                <p class="grammar-attribution" id="grammar-status">Grammar data from <a href="https://github.com/evanclan/OpenJLPT" target="_blank" rel="noreferrer">OpenJLPT</a>, licensed under <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noreferrer">CC BY-SA 4.0</a>. JLPT level assignments are community approximations, not official exam lists.</p>
+            </section>
+
+            <section class="practice-section tab-panel" id="practice-panel" role="tabpanel" aria-labelledby="practice-tab" tabindex="0" aria-hidden="true" hidden>
+                <div class="practice-heading">
+                    <div>
+                        <p class="eyebrow section-eyebrow">A LITTLE PRACTICE, EVERY DAY</p>
+                        <h2>Your daily review</h2>
+                        <p class="practice-intro">Review words at the right time, learn a few new ones, and build a steady streak.</p>
+                    </div>
+                    <label class="practice-level-control">Study level
+                        <select id="practice-level">
+                            <option value="all">All levels</option>
+                            <option value="N5" selected>JLPT N5</option>
+                            <option value="N4">JLPT N4</option>
+                            <option value="N3">JLPT N3</option>
+                            <option value="N2">JLPT N2</option>
+                            <option value="N1">JLPT N1</option>
+                        </select>
+                    </label>
+                </div>
+                <div class="practice-stats" aria-label="Daily practice summary">
+                    <div class="practice-stat"><span class="practice-stat-icon" aria-hidden="true">↻</span><div><strong id="practice-due-count">0</strong><span>Due for review</span></div></div>
+                    <div class="practice-stat"><span class="practice-stat-icon" aria-hidden="true">✳</span><div><strong id="practice-new-count">0</strong><span>New words today</span></div></div>
+                    <div class="practice-stat"><span class="practice-stat-icon" aria-hidden="true">♨</span><div><strong><span id="practice-streak">0</span> <small>days</small></strong><span>Current streak</span></div></div>
+                </div>
+                <div class="practice-workspace" id="practice-workspace">
+                    <div class="practice-welcome" id="practice-welcome">
+                        <span class="practice-welcome-mark" aria-hidden="true">今日</span>
+                        <p class="practice-kicker">YOUR NEXT SMALL STEP</p>
+                        <h3>Ready when you are.</h3>
+                        <p id="practice-queue-summary">Load the word list to see what’s ready for practice.</p>
+                        <p class="calibration-last-result" id="calibration-last-result"></p>
+                        <p class="practice-required-check" id="practice-required-check" hidden>You have new words waiting for their quick check. Pass it before starting another lesson or review.</p>
+                        <div class="practice-start-actions">
+                            <button class="practice-start" id="start-learning" type="button" disabled>Learn new words <span aria-hidden="true">→</span></button>
+                            <button class="practice-start practice-review-start" id="start-reviewing" type="button" disabled>Review due words <span aria-hidden="true">↻</span></button>
+                            <button class="practice-start practice-review-start" id="start-calibration" type="button" disabled>Find my starting level <span aria-hidden="true">◎</span></button>
+                            <button class="practice-start" id="start-quick-check" type="button" hidden>Continue required quick check <span aria-hidden="true">→</span></button>
+                        </div>
+                    </div>
+                    <div class="practice-session" id="practice-session" hidden>
+                        <div class="practice-session-top"><span id="practice-session-label">CARD 1 OF 1</span><button class="practice-exit" id="practice-exit" type="button">Pause session</button></div>
+                        <div class="practice-progress"><span id="practice-progress-bar"></span></div>
+                        <div class="practice-mode-label" id="practice-mode-label">LEARNING NEW WORDS</div>
+                        <article class="review-card learning-card" id="learning-card" hidden>
+                            <p class="review-prompt">Take a moment to learn this word.</p>
+                            <h3 class="review-word" id="learning-word" lang="ja"></h3>
+                            <p class="review-reading" id="learning-reading" lang="ja"></p>
+                            <p class="review-romaji" id="learning-romaji"></p>
+                            <p class="review-meaning" id="learning-meaning"></p>
+                            <div class="review-example" id="learning-example"></div>
+                            <button class="practice-start" id="learning-next" type="button">Got it — next word <span aria-hidden="true">→</span></button>
+                        </article>
+                        <article class="review-card typed-review-card" id="typed-review-card" hidden>
+                            <p class="review-prompt" id="typed-review-prompt">Type the English meaning.</p>
+                            <h3 class="review-word" id="typed-review-word" lang="ja"></h3>
+                            <p class="review-reading" id="typed-review-reading" lang="ja"></p>
+                            <form class="answer-form" id="practice-answer-form">
+                                <label class="visually-hidden" for="practice-answer">Type the English meaning</label>
+                                <input id="practice-answer" type="text" autocomplete="off" placeholder="Type the English meaning…" required>
+                                <button type="submit" id="check-answer-button">Check answer</button>
+                            </form>
+                            <p class="answer-feedback" id="answer-feedback" aria-live="polite"></p>
+                            <div class="wrong-answer-info" id="wrong-answer-info" role="region" aria-label="Word information after incorrect answer" hidden></div>
+                            <button class="practice-override" id="practice-override" type="button" hidden>Override — I was correct</button>
+                            <button class="practice-start answer-continue" id="answer-continue" type="button" hidden>Continue <span aria-hidden="true">→</span></button>
+                            <div class="review-example" id="typed-review-example" hidden></div>
+                        </article>
+                    </div>
+                    <div class="practice-complete" id="practice-complete" hidden>
+                        <span class="practice-welcome-mark" aria-hidden="true">完了</span>
+                        <p class="practice-kicker">DAILY PRACTICE COMPLETE</p>
+                        <h3>Nice work showing up.</h3>
+                        <p id="practice-complete-summary">Your progress has been saved on this device.</p>
+                        <div class="calibration-results" id="calibration-results" hidden>
+                            <p class="calibration-recommendation" id="calibration-recommendation"></p>
+                            <div class="calibration-score-list" id="calibration-score-list"></div>
+                            <p class="calibration-disclaimer">This is a rough vocabulary-based estimate, not an official JLPT placement test.</p>
+                            <button class="practice-start" id="use-calibration-level" type="button">Use this as my study level</button>
+                        </div>
+                        <button class="practice-start" id="practice-again" type="button">Back to today’s plan</button>
+                    </div>
+                </div>
+                <p class="practice-note">New words start in your review pool after their lesson, then become scheduled reviews when you pass the quick check. Your progress is saved in this browser only.</p>
+
+            </section>
+
+            <section class="conjugation-panel tab-panel" id="conjugation-panel" role="tabpanel" aria-labelledby="conjugation-tab" tabindex="0" aria-hidden="true" hidden>
+                <section class="conjugation-section" aria-labelledby="conjugation-title">
+                    <div class="conjugation-heading">
+                        <div>
+                            <p class="eyebrow section-eyebrow">VERB FORMATION DRILLS</p>
+                            <h2 id="conjugation-title">Verb conjugation practice</h2>
+                            <p class="conjugation-intro">Choose a JLPT level and a verb form. Read the verb and meaning, then type your answer. Level groupings are study guidance, not an official JLPT conjugation checklist.</p>
+                        </div>
+                    </div>
+                    <div class="conjugation-setup" id="conjugation-setup">
+                        <label>JLPT level
+                            <select id="conjugation-level">
+                                <option value="N5" selected>N5 · Beginner</option>
+                                <option value="N4">N4 · Elementary</option>
+                                <option value="N3">N3 · Intermediate</option>
+                                <option value="N2">N2 · Upper intermediate</option>
+                                <option value="N1">N1 · Advanced</option>
+                            </select>
+                        </label>
+                        <label class="conjugation-toggle-label">
+                            <span>Include previous levels</span>
+                            <span class="conjugation-toggle-control"><input id="conjugation-include-previous" type="checkbox"><span>Include easier-level verbs and forms</span></span>
+                        </label>
+                        <div class="conjugation-pattern-picker">
+                            <span class="conjugation-pattern-picker-label">Verb forms</span>
+                            <details id="conjugation-pattern-picker">
+                                <summary id="conjugation-pattern-summary">All forms selected</summary>
+                                <div class="conjugation-pattern-panel">
+                                    <div class="conjugation-pattern-actions">
+                                        <button type="button" data-pattern-action="select-all">Select all</button>
+                                        <button type="button" data-pattern-action="clear">Clear</button>
+                                    </div>
+                                    <div class="conjugation-pattern-options" id="conjugation-pattern-options"></div>
+                                </div>
+                            </details>
+                        </div>
+                        <label>Practice mode
+                            <select id="conjugation-mode">
+                                <option value="fixed" selected>Set number of questions</option>
+                                <option value="endless">Endless practice</option>
+                            </select>
+                        </label>
+                        <label id="conjugation-count-control">Question count
+                            <select id="conjugation-question-count">
+                                <option value="10" selected>10 questions</option>
+                                <option value="20">20 questions</option>
+                                <option value="30">30 questions</option>
+                            </select>
+                        </label>
+                        <button class="practice-start" id="conjugation-start" type="button" disabled>Start practice <span aria-hidden="true">→</span></button>
+                    </div>
+                    <p class="conjugation-status" id="conjugation-status" aria-live="polite">Loading verb list…</p>
+                </section>
+            </section>
+
+                <section class="nominal-conjugation-panel tab-panel" id="nominal-conjugation-panel" role="tabpanel" aria-labelledby="nominal-conjugation-tab" tabindex="0" aria-hidden="true" hidden>
+                    <div class="nominal-conjugation-setup">
+                        <div class="nominal-conjugation-heading">
+                            <p class="eyebrow section-eyebrow">ADJECTIVE &amp; NOUN FORMS</p>
+                            <h3 id="nominal-conjugation-title">Practice a different word type</h3>
+                            <p>Separate drills for い-adjectives, な-adjectives, and nouns.</p>
+                        </div>
+                        <div class="conjugation-setup nominal-setup" id="nominal-conjugation-setup">
+                            <label>JLPT level
+                                <select id="nominal-conjugation-level">
+                                    <option value="N5" selected>N5 · Beginner</option>
+                                    <option value="N4">N4 · Elementary</option>
+                                    <option value="N3">N3 · Intermediate</option>
+                                    <option value="N2">N2 · Upper intermediate</option>
+                                    <option value="N1">N1 · Advanced</option>
+                                </select>
+                            </label>
+                            <label>Word type
+                                <select id="nominal-conjugation-type">
+                                    <option value="i-adjective" selected>い-adjectives</option>
+                                    <option value="na-adjective">な-adjectives</option>
+                                    <option value="noun">Nouns</option>
+                                </select>
+                            </label>
+                            <label class="conjugation-toggle-label">
+                                <span>Include previous levels</span>
+                                <span class="conjugation-toggle-control"><input id="nominal-include-previous" type="checkbox"><span>Include easier-level words and forms</span></span>
+                            </label>
+                            <div class="conjugation-pattern-picker">
+                                <span class="conjugation-pattern-picker-label">Forms</span>
+                                <details id="nominal-conjugation-pattern-picker">
+                                    <summary id="nominal-conjugation-pattern-summary">All forms selected</summary>
+                                    <div class="conjugation-pattern-panel">
+                                        <div class="conjugation-pattern-actions">
+                                            <button type="button" data-pattern-action="select-all">Select all</button>
+                                            <button type="button" data-pattern-action="clear">Clear</button>
+                                        </div>
+                                        <div class="conjugation-pattern-options" id="nominal-conjugation-pattern-options"></div>
+                                    </div>
+                                </details>
+                            </div>
+                            <label>Practice mode
+                                <select id="nominal-conjugation-mode">
+                                    <option value="fixed" selected>Set number of questions</option>
+                                    <option value="endless">Endless practice</option>
+                                </select>
+                            </label>
+                            <label id="nominal-question-count-control">Question count
+                                <select id="nominal-question-count">
+                                    <option value="10" selected>10 questions</option>
+                                    <option value="20">20 questions</option>
+                                    <option value="30">30 questions</option>
+                                </select>
+                            </label>
+                            <button class="practice-start" id="nominal-conjugation-start" type="button" disabled>Start practice <span aria-hidden="true">→</span></button>
+                        </div>
+                        <p class="conjugation-status" id="nominal-conjugation-status" aria-live="polite">Loading word list…</p>
+                    </div>
+                </section>
+                    <div class="conjugation-session" id="conjugation-session" hidden>
+                        <div class="practice-session-top"><span id="conjugation-progress-label">QUESTION 1 OF 10</span><button class="practice-exit" id="conjugation-exit" type="button">End practice</button></div>
+                        <div class="practice-progress"><span id="conjugation-progress-bar"></span></div>
+                        <div class="conjugation-live-stats" id="conjugation-live-stats" hidden aria-label="Live conjugation stats">
+                            <div><span>Accuracy</span><strong id="conjugation-live-accuracy">0%</strong></div>
+                            <div><span>Total attempts</span><strong id="conjugation-live-attempts">0</strong></div>
+                            <div><span>Current streak</span><strong id="conjugation-live-streak">0</strong></div>
+                            <div><span>Best form</span><strong id="conjugation-live-best">—</strong></div>
+                            <div><span>Worst form</span><strong id="conjugation-live-worst">—</strong></div>
+                        </div>
+                        <article class="conjugation-card">
+                            <p class="conjugation-pattern-name" id="conjugation-pattern-name"></p>
+                            <h3 class="conjugation-word" id="conjugation-word" lang="ja"></h3>
+                            <p class="conjugation-reading" id="conjugation-reading" lang="ja"></p>
+                            <p class="conjugation-meaning" id="conjugation-meaning"></p>
+                            <form class="answer-form conjugation-answer-form" id="conjugation-answer-form">
+                                <label class="visually-hidden" for="conjugation-answer">Conjugated form in hiragana</label>
+                                <input id="conjugation-answer" type="text" lang="ja" inputmode="text" autocomplete="off" placeholder="Type your answer…" required>
+                                <button type="submit" id="conjugation-check">Check answer</button>
+                            </form>
+                            <p class="answer-feedback" id="conjugation-feedback" aria-live="polite"></p>
+                            <div class="conjugation-correction" id="conjugation-correction" hidden></div>
+                            <div class="conjugation-actions">
+                                <button class="practice-start practice-review-start" id="conjugation-try-again" type="button" hidden>Try again</button>
+                                <button class="practice-start" id="conjugation-next" type="button" hidden>Next question <span aria-hidden="true">→</span></button>
+                            </div>
+                        </article>
+                    </div>
+                    <div class="conjugation-complete" id="conjugation-complete" hidden>
+                        <span class="practice-welcome-mark" aria-hidden="true">動詞</span>
+                        <h3 id="conjugation-complete-title">Practice complete</h3>
+                        <p id="conjugation-result"></p>
+                        <div class="conjugation-final-stats" id="conjugation-final-stats">
+                            <div><span>Accuracy</span><strong id="conjugation-final-accuracy">0%</strong></div>
+                            <div><span>Total attempts</span><strong id="conjugation-final-attempts">0</strong></div>
+                            <div><span>Best form</span><strong id="conjugation-final-best">—</strong></div>
+                            <div><span>Worst form</span><strong id="conjugation-final-worst">—</strong></div>
+                            <div><span>Current streak</span><strong id="conjugation-final-current-streak">0</strong></div>
+                            <div><span>Best streak</span><strong id="conjugation-final-streak">0</strong></div>
+                        </div>
+                        <button class="practice-start" id="conjugation-again" type="button">Practice this form again</button>
+                    </div>
+        </main>
+
+        <footer class="page-footer"><span>kotoba<span class="brand-period">.</span></span><span>Made for curious minds <span aria-hidden="true">✿</span></span></footer>
+    </div>
+</body>
+</html>
