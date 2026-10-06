@@ -106,6 +106,7 @@ const conjugationStartButton = document.querySelector("#conjugation-start");
 const conjugationStatus = document.querySelector("#conjugation-status");
 const conjugationSession = document.querySelector("#conjugation-session");
 const conjugationComplete = document.querySelector("#conjugation-complete");
+const conjugationBreakdown = document.querySelector("#conjugation-breakdown");
 const conjugationCompleteTitle = document.querySelector("#conjugation-complete-title");
 const conjugationLiveStats = document.querySelector("#conjugation-live-stats");
 const conjugationLiveAccuracy = document.querySelector("#conjugation-live-accuracy");
@@ -1103,6 +1104,42 @@ function startNominalConjugationPractice() {
 	});
 }
 
+function ensureIrregularVerbs(selectedWords, pool, questionCount) {
+	const required = questionCount >= 30 ? ["suru", "kuru"] : questionCount >= 20 ? ["irregular"] : [];
+	const matches = (word, kind) => kind === "irregular" ? ["suru", "kuru"].includes(getVerbType(word)) : getVerbType(word) === kind;
+	const protectedWords = new Set();
+	required.forEach((kind) => {
+		let word = selectedWords.find((item) => matches(item, kind));
+		if (!word) {
+			word = pool.find((item) => matches(item, kind));
+			if (!word) return;
+			const slot = selectedWords.findIndex((item) => !protectedWords.has(item) && !["suru", "kuru"].includes(getVerbType(item)));
+			if (slot === -1) return;
+			selectedWords[slot] = word;
+		}
+		protectedWords.add(word);
+	});
+}
+
+let conjugationSinceSuru = 0;
+let conjugationSinceKuru = 0;
+
+function trackIrregularVerb(word) {
+	const verbType = getVerbType(word);
+	conjugationSinceSuru = verbType === "suru" ? 0 : conjugationSinceSuru + 1;
+	conjugationSinceKuru = verbType === "kuru" ? 0 : conjugationSinceKuru + 1;
+}
+
+function pickEndlessWord(type, pool, previousId) {
+	if (type === "verb") {
+		const forced = conjugationSinceKuru >= 48 ? "kuru" : conjugationSinceSuru >= 48 ? "suru" : null;
+		const match = forced && pool.find((word) => getVerbType(word) === forced && word.id !== previousId);
+		if (match) return match;
+	}
+	const candidates = pool.filter((word) => word.id !== previousId);
+	return candidates[Math.floor(Math.random() * candidates.length)] || pool[0];
+}
+
 function startConjugationSession(config) {
 	activeConjugationConfig = config;
 	const { type, level, includePrevious, patternIds, mode, questionCount, panel } = config;
@@ -1112,13 +1149,17 @@ function startConjugationSession(config) {
 	if (!pool.length) return;
 	const roundSize = mode === "endless" ? 1 : Math.min(questionCount, pool.length);
 	const selectedWords = pool.slice(0, roundSize);
+	if (type === "verb" && mode !== "endless") ensureIrregularVerbs(selectedWords, pool, questionCount);
 	const patternSequence = [];
 	while (patternSequence.length < selectedWords.length) patternSequence.push(...shuffled(patterns));
 	conjugationQueue = shuffled(selectedWords.map((word, index) => makeConjugationQuestion(word, patternSequence[index], type)));
 	if (!conjugationQueue.length) return;
 	conjugationIndex = 0;
 	conjugationQuestionNumber = 1;
-	conjugationStats = { attempts: 0, correct: 0, streak: 0, bestStreak: 0, questionsAnswered: 0, patterns: {} };
+	conjugationSinceSuru = 0;
+	conjugationSinceKuru = 0;
+	if (mode === "endless") trackIrregularVerb(conjugationQueue[0].word);
+	conjugationStats = { attempts: 0, correct: 0, streak: 0, bestStreak: 0, questionsAnswered: 0, patterns: {}, groups: {} };
 	config.setup.hidden = true;
 	conjugationComplete.hidden = true;
 	conjugationCompleteTitle.textContent = "Practice complete";
@@ -1177,7 +1218,7 @@ function checkConjugationAnswer(event) {
 	conjugationCheckButton.disabled = true;
 	const typed = hiraganaAnswer(conjugationAnswer.value);
 	const isCorrect = typed === question.answer || (question.kanjiAnswer && typed === hiraganaAnswer(question.kanjiAnswer));
-	recordConjugationAttempt(question.pattern, isCorrect);
+	recordConjugationAttempt(question.pattern, isCorrect, question);
 	if (isCorrect) {
 		conjugationFeedback.textContent = "Correct — nice conjugation!";
 		conjugationFeedback.className = "answer-feedback is-correct";
@@ -1232,7 +1273,25 @@ function updateConjugationStats() {
 	conjugationLiveWorst.textContent = formatFormStat(worst);
 }
 
-function recordConjugationAttempt(pattern, isCorrect) {
+const verbGroups = [
+	{ id: "group1", label: "Group 1 (godan)" },
+	{ id: "group2", label: "Group 2 (ichidan)" },
+	{ id: "group3", label: "Group 3 (irregular)" }
+];
+
+function getVerbGroupId(word) {
+	const type = getVerbType(word);
+	return type === "godan" ? "group1" : type === "ichidan" ? "group2" : type ? "group3" : null;
+}
+
+function recordConjugationAttempt(pattern, isCorrect, question) {
+	const groupId = question?.type === "verb" ? getVerbGroupId(question.word) : null;
+	if (groupId) {
+		const group = conjugationStats.groups[groupId] || { attempts: 0, correct: 0 };
+		group.attempts += 1;
+		if (isCorrect) group.correct += 1;
+		conjugationStats.groups[groupId] = group;
+	}
 	conjugationStats.attempts += 1;
 	if (isCorrect) {
 		conjugationStats.correct += 1;
@@ -1244,6 +1303,13 @@ function recordConjugationAttempt(pattern, isCorrect) {
 	const patternStats = conjugationStats.patterns[pattern.id] || { id: pattern.id, label: pattern.label, attempts: 0, correct: 0 };
 	patternStats.attempts += 1;
 	if (isCorrect) patternStats.correct += 1;
+	if (groupId) {
+		patternStats.groups = patternStats.groups || {};
+		const patternGroup = patternStats.groups[groupId] || { attempts: 0, correct: 0 };
+		patternGroup.attempts += 1;
+		if (isCorrect) patternGroup.correct += 1;
+		patternStats.groups[groupId] = patternGroup;
+	}
 	conjugationStats.patterns[pattern.id] = patternStats;
 	if (activeConjugationConfig.mode === "endless") updateConjugationStats();
 }
@@ -1269,8 +1335,8 @@ function nextConjugationQuestion() {
 		const patterns = getConjugationPatterns(type, level, includePrevious).filter((item) => patternIds.includes(item.id));
 		const pattern = patterns[Math.floor(Math.random() * patterns.length)];
 		const previousId = conjugationQueue[0]?.word.id;
-		const candidates = pool.filter((word) => word.id !== previousId);
-		const word = candidates[Math.floor(Math.random() * candidates.length)] || pool[0];
+		const word = pickEndlessWord(type, pool, previousId);
+		trackIrregularVerb(word);
 		conjugationQueue = [makeConjugationQuestion(word, pattern, type)];
 		conjugationIndex = 0;
 	} else {
@@ -1300,6 +1366,22 @@ function finishConjugationPractice() {
 	conjugationFinalWorst.textContent = formatFormStat(worst);
 	conjugationFinalCurrentStreak.textContent = String(conjugationStats.streak);
 	conjugationFinalStreak.textContent = String(conjugationStats.bestStreak);
+	renderConjugationBreakdown();
+}
+
+function renderConjugationBreakdown() {
+	const percent = (item) => `${Math.round((item.correct / item.attempts) * 100)}%`;
+	const worst = Object.values(conjugationStats.patterns)
+		.filter((form) => form.attempts > 0 && form.correct < form.attempts)
+		.sort((a, b) => (a.correct / a.attempts) - (b.correct / b.attempts) || b.attempts - a.attempts)
+		.slice(0, 3);
+	conjugationBreakdown.innerHTML = `
+		<section><h4>Top 3 to work on</h4>${worst.length
+			? `<ol>${worst.map((form) => {
+				const groupDetail = verbGroups.filter((group) => form.groups?.[group.id]).map((group) => `<span>${group.label.split(" ")[0]} ${group.label.split(" ")[1]} · ${percent(form.groups[group.id])} <small>(${form.groups[group.id].correct}/${form.groups[group.id].attempts})</small></span>`).join("");
+				return `<li><div class="conjugation-breakdown-form"><span>${escapeHtml(form.label)}</span><strong>${percent(form)} <small>(${form.correct}/${form.attempts})</small></strong></div>${groupDetail ? `<div class="conjugation-breakdown-groups">${groupDetail}</div>` : ""}</li>`;
+			}).join("")}</ol>`
+			: "<p>No mistakes this session — nothing to work on!</p>"}</section>`;
 }
 
 function exitConjugationPractice() {

@@ -462,3 +462,15 @@ button { color: inherit; }
 	.worksheet-page { max-width: none; margin: 0; padding: 0; border: 0; }
 	.worksheet-answer-key { margin-top: 0; break-before: page; page-break-before: always; }
 }
+
+.conjugation-breakdown { display: grid; width: min(100%, 700px); grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 4px 0 11px; text-align: left; }
+.conjugation-breakdown section { padding: 10px; border: 1px solid var(--line); border-radius: 7px; background: var(--white); }
+.conjugation-breakdown h4 { margin: 0 0 7px; color: #858d7e; font-size: 8px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
+.conjugation-breakdown ul, .conjugation-breakdown ol { display: grid; gap: 5px; margin: 0; padding: 0; list-style: none; }
+.conjugation-breakdown li { display: flex; justify-content: space-between; gap: 8px; font-size: 10px; color: var(--ink); }
+.conjugation-breakdown small { color: #858d7e; font-weight: 400; }
+.conjugation-breakdown p { margin: 0; font-size: 10px; color: var(--ink); }
+@media (max-width: 640px) { .conjugation-breakdown { grid-template-columns: 1fr; } }
+.conjugation-breakdown li:has(.conjugation-breakdown-form) { display: grid; gap: 3px; }
+.conjugation-breakdown-form { display: flex; justify-content: space-between; gap: 8px; }
+.conjugation-breakdown-groups { display: flex; flex-wrap: wrap; gap: 3px 10px; color: #858d7e; font-size: 9px; }
