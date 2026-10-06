@@ -976,6 +976,23 @@ const conjugationStructures = {
 	noun: { "conditional": "noun + なら(ば)", "conditional-tara": "noun + だったら" }
 };
 
+const conjugationEndings = {
+	verb: {
+		"polite": "~ます", "polite-negative": "~ません", "polite-past": "~ました", "polite-past-negative": "~ませんでした",
+		"plain-negative": "~ない", "plain-past": "~た / ~だ", "te": "~て / ~で", "tai": "~たい", "polite-volitional": "~ましょう",
+		"potential": "~える / ~られる", "passive": "~れる / ~られる", "causative": "~せる / ~させる", "volitional": "~う / ~よう",
+		"conditional-ba": "~ば", "conditional-tara": "~たら", "imperative": "~え / ~ろ", "negative-request": "~ないでください",
+		"causative-passive": "~せられる / ~させられる", "zuni": "~ずに", "te-oku": "~ておく", "te-shimau": "~てしまう",
+		"sou": "~そう", "you-to-suru": "~ようとする", "zaru": "~ざるを得ない", "zuniha": "~ずにはいられない",
+		"te-tamaranai": "~てたまらない", "nai-koto-niha": "~ないことには", "te-wa-irarenai": "~てはいられない",
+		"te-kara-de-nai-to": "~てからでないと", "zuniha-okanai": "~ずにはおかない", "te-yamanai": "~てやまない",
+		"n-ga-tameni": "~んがために", "nai-mademo": "~ないまでも", "te-koso": "~てこそ", "you-ga": "~ようが"
+	},
+	"i-adjective": { "negative": "~くない", "past": "~かった", "te": "~くて", "past-negative": "~くなかった", "conditional": "~ければ", "adverb": "~く", "polite-positive": "~です" },
+	"na-adjective": { "positive": "~だ", "negative": "~じゃない", "past": "~だった", "past-negative": "~じゃなかった", "polite-positive": "~です", "polite-negative": "~じゃありません", "te": "~で", "conditional": "~なら", "adverb": "~に" },
+	noun: { "positive": "~だ", "negative": "~じゃない", "past": "~だった", "past-negative": "~じゃなかった", "polite-positive": "~です", "polite-negative": "~じゃありません", "conditional": "~なら", "conditional-tara": "~だったら" }
+};
+
 function getConjugationPatterns(type = "verb", level = conjugationLevel.value, includePrevious = conjugationIncludePrevious.checked) {
 	const levels = getConjugationLevelPool(level, includePrevious);
 	const patternsByLevel = type === "verb" ? conjugationPatterns : nominalConjugationPatterns[type] || {};
@@ -983,6 +1000,7 @@ function getConjugationPatterns(type = "verb", level = conjugationLevel.value, i
 		...pattern,
 		id: `${sourceLevel}:${pattern.id}`,
 		sourceLevel,
+		ending: (conjugationEndings[type] || {})[pattern.id] || "",
 		structure: (conjugationStructures[type] || {})[pattern.id] || "",
 		label: includePrevious ? `${pattern.label.split(" · ")[0]} (${sourceLevel})` : pattern.label
 	})));
@@ -1160,7 +1178,7 @@ function showConjugationQuestion() {
 		: `QUESTION ${conjugationIndex + 1} OF ${conjugationQueue.length}`;
 	conjugationProgressBar.parentElement.hidden = activeConjugationConfig.mode === "endless";
 	if (activeConjugationConfig.mode !== "endless") conjugationProgressBar.style.width = `${(conjugationIndex / conjugationQueue.length) * 100}%`;
-	conjugationPatternName.textContent = pattern.label.split(" · ")[0] + (pattern.structure ? ` [${pattern.structure}]` : "");
+	conjugationPatternName.textContent = pattern.label.split(" · ")[0] + (pattern.ending ? ` ${pattern.ending}` : "");
 	conjugationPatternName.className = `conjugation-pattern-name ${conjugationFormTone(pattern.id.split(":").pop())}`;
 	const suruVerb = question.type === "verb" && getVerbType(question.word) === "suru";
 	conjugationWord.textContent = suruVerb && !question.word.kanji.endsWith("する") ? `${question.word.kanji}する` : question.word.kanji;
