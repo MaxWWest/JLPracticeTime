@@ -959,6 +959,23 @@ function getConjugationLevelPool(level = conjugationLevel.value, includePrevious
 	return includePrevious ? levels.slice(0, index + 1) : [level];
 }
 
+const conjugationStructures = {
+	verb: {
+		"polite": "ます-stem + ます", "polite-negative": "ます-stem + ません", "polite-past": "ます-stem + ました",
+		"polite-past-negative": "ます-stem + ませんでした", "plain-negative": "ない-stem + ない", "plain-past": "た-form",
+		"te": "て-form", "tai": "ます-stem + たい", "polite-volitional": "ます-stem + ましょう",
+		"potential": "can do: える / られる", "passive": "be done to: あ-stem + れる / られる",
+		"causative": "あ-stem + せる / させる", "volitional": "お-stem + う / よう",
+		"conditional-ba": "え-stem + ば", "conditional-tara": "plain past + ら",
+		"imperative": "え-stem / ろ", "negative-request": "plain negative + でください",
+		"causative-passive": "あ-stem + せられる / させられる", "zuni": "ない-stem + ずに", "te-oku": "て-form + おく",
+		"te-shimau": "て-form + しまう", "sou": "ます-stem + そう", "you-to-suru": "volitional + とする"
+	},
+	"i-adjective": { "conditional": "い → ければ" },
+	"na-adjective": { "conditional": "な-adj + なら(ば)" },
+	noun: { "conditional": "noun + なら(ば)", "conditional-tara": "noun + だったら" }
+};
+
 function getConjugationPatterns(type = "verb", level = conjugationLevel.value, includePrevious = conjugationIncludePrevious.checked) {
 	const levels = getConjugationLevelPool(level, includePrevious);
 	const patternsByLevel = type === "verb" ? conjugationPatterns : nominalConjugationPatterns[type] || {};
@@ -966,6 +983,7 @@ function getConjugationPatterns(type = "verb", level = conjugationLevel.value, i
 		...pattern,
 		id: `${sourceLevel}:${pattern.id}`,
 		sourceLevel,
+		structure: (conjugationStructures[type] || {})[pattern.id] || "",
 		label: includePrevious ? `${pattern.label.split(" · ")[0]} (${sourceLevel})` : pattern.label
 	})));
 }
@@ -990,7 +1008,7 @@ function renderConjugationPatternPicker(patterns, options, summary, selectedIds,
 		<label>
 			<input type="checkbox" value="${escapeHtml(pattern.id)}" ${selected.includes(pattern.id) ? "checked" : ""}>
 			<span class="conjugation-pattern-option-copy">
-				<span>${escapeHtml(pattern.label)}</span>
+				<span>${escapeHtml(pattern.label)}${pattern.structure ? ` <span class="conjugation-pattern-structure">[${escapeHtml(pattern.structure)}]</span>` : ""}</span>
 				<span class="conjugation-pattern-preview" lang="ja">${escapeHtml(getConjugationPatternPreview(pattern, type, candidateWords))}</span>
 			</span>
 		</label>
@@ -1056,7 +1074,25 @@ function updateNominalConjugationSetup(renderPicker = true) {
 }
 
 function makeConjugationQuestion(word, pattern, type = "verb") {
-	return { word, pattern, type, answer: pattern.build(buildConjugationForms(word, type)), missed: false };
+	const answer = pattern.build(buildConjugationForms(word, type));
+	return { word, pattern, type, answer, kanjiAnswer: toKanjiConjugation(word, type, answer), missed: false };
+}
+
+function toKanjiConjugation(word, type, answer) {
+	let kanji = String(word.kanji || "").replace(/[\s　]/g, "");
+	let reading = String(word.reading || "").replace(/[\s　]/g, "");
+	if (!kanji || !reading || kanji === reading || !/[\u4e00-\u9fff]/.test(kanji)) return "";
+	if (type === "verb") {
+		const verbType = getVerbType(word);
+		if (verbType === "suru" && !reading.endsWith("する")) { reading += "する"; if (!kanji.endsWith("する")) kanji += "する"; }
+		if (verbType === "kuru" && kanji.startsWith("来") && /^[くきこ]/.test(answer)) return "来" + answer.slice(1);
+	}
+	let tail = 0;
+	while (tail < reading.length && tail < kanji.length - 1 && reading[reading.length - 1 - tail] === kanji[kanji.length - 1 - tail] && /[\u3040-\u309f]/.test(kanji[kanji.length - 1 - tail])) tail += 1;
+	const readingPrefix = reading.slice(0, reading.length - tail);
+	const kanjiPrefix = kanji.slice(0, kanji.length - tail);
+	if (!answer.startsWith(readingPrefix)) return "";
+	return kanjiPrefix + answer.slice(readingPrefix.length);
 }
 
 function startConjugationPractice() {
@@ -1124,7 +1160,7 @@ function showConjugationQuestion() {
 		: `QUESTION ${conjugationIndex + 1} OF ${conjugationQueue.length}`;
 	conjugationProgressBar.parentElement.hidden = activeConjugationConfig.mode === "endless";
 	if (activeConjugationConfig.mode !== "endless") conjugationProgressBar.style.width = `${(conjugationIndex / conjugationQueue.length) * 100}%`;
-	conjugationPatternName.textContent = pattern.label.split(" · ")[0];
+	conjugationPatternName.textContent = pattern.label.split(" · ")[0] + (pattern.structure ? ` [${pattern.structure}]` : "");
 	conjugationPatternName.className = `conjugation-pattern-name ${conjugationFormTone(pattern.id.split(":").pop())}`;
 	const suruVerb = question.type === "verb" && getVerbType(question.word) === "suru";
 	conjugationWord.textContent = suruVerb && !question.word.kanji.endsWith("する") ? `${question.word.kanji}する` : question.word.kanji;
@@ -1157,7 +1193,8 @@ function checkConjugationAnswer(event) {
 	}
 	conjugationAnswer.disabled = true;
 	conjugationCheckButton.disabled = true;
-	const isCorrect = hiraganaAnswer(conjugationAnswer.value) === question.answer;
+	const typed = hiraganaAnswer(conjugationAnswer.value);
+	const isCorrect = typed === question.answer || (question.kanjiAnswer && typed === hiraganaAnswer(question.kanjiAnswer));
 	recordConjugationAttempt(question.pattern, isCorrect);
 	if (isCorrect) {
 		conjugationFeedback.textContent = "Correct — nice conjugation!";
@@ -1168,7 +1205,7 @@ function checkConjugationAnswer(event) {
 		question.missed = true;
 		conjugationFeedback.textContent = "Not quite. Study the form, then try typing it once more or move on.";
 		conjugationFeedback.className = "answer-feedback is-incorrect";
-		conjugationCorrection.innerHTML = `<span>Correct form</span><strong lang="ja">${escapeHtml(question.answer)}</strong>`;
+		conjugationCorrection.innerHTML = `<span>Correct form</span><strong lang="ja">${escapeHtml(question.answer)}${question.kanjiAnswer ? ` (${escapeHtml(question.kanjiAnswer)})` : ""}</strong>`;
 		conjugationCorrection.hidden = false;
 		conjugationTryAgainButton.hidden = false;
 		conjugationNextButton.hidden = false;
@@ -1237,7 +1274,7 @@ function retryConjugationQuestion() {
 	conjugationCorrection.hidden = true;
 	conjugationTryAgainButton.hidden = true;
 	conjugationNextButton.hidden = true;
-	conjugationFeedback.textContent = "Try the hiragana form again.";
+	conjugationFeedback.textContent = "Try the form again (hiragana or kanji).";
 	conjugationAnswer.focus();
 }
 
@@ -1360,7 +1397,7 @@ function checkPracticeAnswer(event) {
 	answerFeedback.className = "answer-feedback is-incorrect";
 	answerInput.value = "";
 		if (practiceMode === "reviewing" || practiceMode === "calibration") card.missed = true;
-		if (practiceMode === "reviewing" || practiceMode === "calibration") renderWrongAnswerInfo(card.word);
+		renderWrongAnswerInfo(card.word);
 		practiceOverrideButton.hidden = !["quickcheck", "calibration"].includes(practiceMode);
 		if (overrideOnly) {
 			answerInput.disabled = true;
