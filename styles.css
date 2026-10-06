@@ -286,7 +286,6 @@ button { color: inherit; }
 .conjugation-pattern-options label:hover { background: #f5f6f1; }
 .conjugation-pattern-options input { flex: 0 0 auto; margin: 1px 0 0; accent-color: var(--green); }
 .conjugation-pattern-option-copy { display: flex; min-width: 0; flex-wrap: wrap; align-items: baseline; gap: 2px 7px; }
-.conjugation-pattern-structure { color: #92958d; font-size: 10px; font-weight: 500; }
 .conjugation-pattern-preview { color: var(--green); font-family: "Noto Sans JP", sans-serif; font-size: 10px; font-weight: 600; }
 .conjugation-setup button { margin: 0 0 0 auto; }
 .conjugation-setup [hidden] { display: none; }
