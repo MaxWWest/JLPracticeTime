@@ -122,6 +122,18 @@
                                 <button class="practice-start worksheet-generate" id="worksheet-generate" type="button" disabled>Generate worksheet</button>
                             </div>
                         </div>
+                        <fieldset class="worksheet-types" id="worksheet-types">
+                            <legend>Exercise types</legend>
+                                <label class="ws-type"><input type="checkbox" data-ws-type="choice" checked><span>Choose the meaning</span></label>
+                                <label class="ws-type"><input type="checkbox" data-ws-type="identify" checked><span>Which pattern?</span></label>
+                                <label class="ws-type"><input type="checkbox" data-ws-type="fill" checked><span>Fill in the blank</span></label>
+                                <label class="ws-type"><input type="checkbox" data-ws-type="reorder" checked><span>Sentence ordering</span></label>
+                                <label class="ws-type"><input type="checkbox" data-ws-type="truefalse" checked><span>True / False</span></label>
+                                <label class="ws-type"><input type="checkbox" data-ws-type="match" checked><span>Matching</span></label>
+                                <label class="ws-type"><input type="checkbox" data-ws-type="translate" checked><span>English → Japanese</span></label>
+                                <label class="ws-type"><input type="checkbox" data-ws-type="jp2en" checked><span>Japanese → English</span></label>
+                                <label class="ws-type"><input type="checkbox" data-ws-type="write" checked><span>Write your own</span></label>
+                        </fieldset>
                         <div class="grammar-grid" id="grammar-grid" aria-live="polite"></div>
                         <p class="grammar-page-status" id="grammar-page-status" aria-live="polite"></p>
                         <button class="load-more grammar-load-more" id="grammar-load-more" type="button" hidden>Load more patterns</button>
@@ -178,7 +190,7 @@
                         </div>
                     </div>
                     <div class="practice-session" id="practice-session" hidden>
-                        <div class="practice-session-top"><span id="practice-session-label">CARD 1 OF 1</span><button class="practice-exit" id="practice-exit" type="button">Pause session</button></div>
+                        <div class="practice-session-top"><span id="practice-session-label">CARD 1 OF 1</span><button class="practice-exit" id="practice-exit" type="button" aria-label="Pause session" title="Pause session"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg></button></div>
                         <div class="practice-progress"><span id="practice-progress-bar"></span></div>
                         <div class="practice-mode-label" id="practice-mode-label">LEARNING NEW WORDS</div>
                         <article class="review-card learning-card" id="learning-card" hidden>
@@ -422,11 +434,12 @@
                     </div>
                     <p class="conjugation-status" id="pitch-status"></p>
                     <div class="pitch-session" id="pitch-session" hidden>
-                        <div class="practice-session-top"><span id="pitch-progress-label"></span><button class="practice-exit" id="pitch-end" type="button">End practice</button></div>
+                        <div class="practice-session-top"><span id="pitch-progress-label"></span><button class="practice-exit" id="pitch-end" type="button" aria-label="End practice" title="End practice"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg></button></div>
                         <article class="conjugation-card">
                             <h3 class="pitch-question-word" id="pitch-word" lang="ja"></h3>
                             <p id="pitch-reading" lang="ja"></p>
                             <p id="pitch-meaning"></p>
+                            <p class="cs-band">Choose the pitch pattern</p>
                             <div class="pitch-options" id="pitch-options"></div>
                             <p class="answer-feedback" id="pitch-feedback" aria-live="polite"></p>
                             <button class="practice-start" id="pitch-next" type="button" hidden>Next →</button>

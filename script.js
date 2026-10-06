@@ -444,12 +444,27 @@ function speakJapanese(text) {
 
 function getVisibleGrammar() {
 	const query = grammarSearch.value.trim().toLocaleLowerCase();
-	return grammarEntries.filter((entry) => {
-		const searchable = [entry.pattern, entry.reading, entry.romaji, entry.meaning, entry.formation, entry.notes, ...(entry.tags || [])];
-		const matchesQuery = !query || searchable.some((value) => String(value || "").toLocaleLowerCase().includes(query));
-		const matchesLevel = grammarLevelFilter.value === "all" || entry.level === grammarLevelFilter.value;
-		return matchesQuery && matchesLevel;
-	});
+	const tokens = query.split(/[\s、。，,.…・〜~～]+/).filter(Boolean);
+	// Negative polite endings are stored as ない in the dataset.
+	const scored = [];
+	for (const entry of grammarEntries) {
+		if (grammarLevelFilter.value !== "all" && entry.level !== grammarLevelFilter.value) continue;
+		if (!tokens.length) {
+			scored.push({ entry, score: 0 });
+			continue;
+		}
+		const searchable = [entry.pattern, entry.reading, entry.romaji, entry.meaning, entry.formation, entry.notes, ...(entry.tags || [])]
+			.map((value) => String(value || "").toLocaleLowerCase())
+			.join(" ");
+		if (searchable.includes(query)) {
+			scored.push({ entry, score: tokens.length + 1 });
+			continue;
+		}
+		const score = tokens.filter((token) => (token === "ません" ? ["ません", "ない"] : [token]).some((term) => searchable.includes(term))).length;
+		if (score) scored.push({ entry, score });
+	}
+	if (tokens.length > 1) scored.sort((x, y) => y.score - x.score);
+	return scored.map((item) => item.entry);
 }
 
 function renderGrammarDetail(entry) {
@@ -479,7 +494,7 @@ function renderGrammarDetail(entry) {
 function updateWorksheetSelection() {
 	const count = selectedGrammarIds.size;
 	worksheetSelectionStatus.textContent = `${count} grammar point${count === 1 ? "" : "s"} selected`;
-	worksheetGenerateButton.disabled = count === 0;
+	worksheetGenerateButton.disabled = count === 0 || getSelectedWorksheetTypes().size === 0;
 	worksheetClearSelectionButton.disabled = count === 0;
 }
 
@@ -515,52 +530,240 @@ function resetAndRenderGrammar() {
 	renderGrammar();
 }
 
+function shuffled(list) {
+	const copy = [...list];
+	for (let index = copy.length - 1; index > 0; index -= 1) {
+		const swap = Math.floor(Math.random() * (index + 1));
+		[copy[index], copy[swap]] = [copy[swap], copy[index]];
+	}
+	return copy;
+}
+
+function blankGrammarInSentence(entry, sentence) {
+	const chunks = String(entry.pattern || "")
+		.split(/[〜~～/／・\s]+/)
+		.map((chunk) => chunk.trim())
+		.filter(Boolean)
+		.sort((left, right) => right.length - left.length);
+	for (const chunk of chunks) {
+		const candidates = chunk.length > 2 ? [chunk, chunk.slice(0, -1)] : [chunk];
+		for (const candidate of candidates) {
+			if (candidate && sentence.includes(candidate)) {
+				const start = sentence.indexOf(candidate);
+				let end = start + candidate.length;
+				// Include any trailing kana so conjugated endings are blanked too.
+				while (candidate !== chunk && end < sentence.length && /[ぁ-ん]/.test(sentence[end]) && end - start < chunk.length) end += 1;
+				return { blanked: `${sentence.slice(0, start)}＿＿＿＿${sentence.slice(end)}`, answer: sentence.slice(start, end) };
+			}
+		}
+	}
+	return null;
+}
+
+function splitSentenceChunks(sentence) {
+	const text = sentence.replace(/[。！？]$/, "");
+	const chunks = [];
+	let current = "";
+	for (let index = 0; index < text.length; index += 1) {
+		const char = text[index];
+		const previous = text[index - 1] || "";
+		const next = text[index + 1];
+		current += char;
+		if (!next) continue;
+		const afterWord = previous && !/[ぁ-ん]/.test(previous) && /[はがをにでともへの]/.test(char);
+		const afterClause = /[てで]/.test(char) && /[ぁ-ん]/.test(previous) && !/[はがをにでともへ]/.test(next);
+		if (/[、，]/.test(char)) {
+			chunks.push(current.replace(/[、，]$/, ""));
+			current = "";
+		} else if (afterWord || afterClause) {
+			chunks.push(current);
+			current = "";
+		}
+	}
+	if (current) chunks.push(current);
+	return chunks.filter(Boolean);
+}
+
+const worksheetTypeOrder = [
+	["choice", "Choose the meaning", "Circle the letter of the correct meaning."],
+	["identify", "Which grammar pattern?", "Circle the letter of the grammar point used in the sentence."],
+	["fill", "Fill in the blank", "Write the missing grammar in the blank."],
+	["reorder", "Put the sentence in order", "Arrange the pieces into a natural Japanese sentence."],
+	["truefalse", "True or false", "Does the English translation match the Japanese sentence? Circle T or F."],
+	["match", "Matching", "Write the letter of the meaning that matches each pattern."],
+	["translate", "Translate into Japanese", "Use the grammar point shown beside each sentence."],
+	["jp2en", "Translate into English", "Write the meaning of each sentence in English."],
+	["write", "Make your own sentence", "Write an original sentence for each grammar point."],
+];
+
+function getSelectedWorksheetTypes() {
+	return new Set([...document.querySelectorAll("[data-ws-type]:checked")].map((input) => input.dataset.wsType));
+}
+
 function renderGrammarWorksheet(entries) {
-	const worksheetItems = entries.map((entry) => {
-		const examples = (entry.examples || []).filter((example) => example?.ja && example?.en).slice(0, 2);
-		return { entry, examples };
-	});
-	const questions = worksheetItems.flatMap(({ entry, examples }) => examples.length
-		? examples.map((example) => ({ entry, prompt: example.en, answer: example.ja }))
-		: [{ entry, prompt: `Write an original Japanese sentence using ${entry.pattern}.`, answer: "" }]);
 	const today = new Date().toLocaleDateString();
-	const questionMarkup = questions.map(({ entry, prompt }, index) => `
-		<article class="worksheet-question">
-			<p class="worksheet-question-number">${index + 1}. <span lang="ja">${escapeHtml(entry.pattern)}</span> · JLPT ${escapeHtml(entry.level)}</p>
-			<p class="worksheet-prompt">${escapeHtml(prompt)}</p>
-			<div class="worksheet-answer-lines" aria-hidden="true"></div>
-			<div class="worksheet-answer-lines" aria-hidden="true"></div>
-		</article>
-	`).join("");
-	const answerMarkup = questions.map(({ entry, prompt, answer }, index) => `
-		<article class="worksheet-answer">
-			<p><strong>${index + 1}. <span lang="ja">${escapeHtml(entry.pattern)}</span></strong> — ${escapeHtml(prompt)}</p>
-			<p class="worksheet-answer-text" lang="ja">${answer ? escapeHtml(answer) : "Original answer; check that it uses the grammar point correctly."}</p>
-		</article>
-	`).join("");
+	const letters = ["A", "B", "C", "D", "E", "F"];
+	const enabled = getSelectedWorksheetTypes();
+	const usage = new Map();
+	const examplesOf = (entry) => (entry.examples || []).filter((example) => example?.ja && example?.en);
+	// Prefer the example that has been used the least so far so each type draws on different sentences.
+	const pickExample = (entry, predicate = () => true) => {
+		const candidates = shuffled(examplesOf(entry).filter(predicate)).sort((left, right) => (usage.get(left.ja) || 0) - (usage.get(right.ja) || 0));
+		const chosen = candidates[0];
+		if (chosen) usage.set(chosen.ja, (usage.get(chosen.ja) || 0) + 1);
+		return chosen;
+	};
+	const sameLevel = (entry) => grammarEntries.filter((candidate) => candidate.id !== entry.id && candidate.level === entry.level && candidate.meaning && candidate.pattern);
+	const lines = (count) => Array.from({ length: count }, () => '<div class="worksheet-answer-lines" aria-hidden="true"></div>').join("");
+	const questionBlock = (number, body) => `<article class="worksheet-question"><div class="ws-q-row"><b>${number}.</b><div>${body}</div></div></article>`;
+
+	let number = 0;
+	const sections = [];
+	const answerRows = [];
+	const addAnswer = (html) => answerRows.push(`<li><b>${number}.</b> ${html}</li>`);
+
+	const builders = {
+		choice() {
+			return entries.filter((entry) => entry.meaning).map((entry) => {
+				const options = shuffled([entry, ...shuffled(sameLevel(entry).filter((candidate) => candidate.meaning !== entry.meaning)).slice(0, 3)]);
+				number += 1;
+				addAnswer(`${letters[options.indexOf(entry)]} <span>${escapeHtml(entry.meaning)}</span>`);
+				return questionBlock(number, `<p class="ws-q">What does <span class="ws-pattern" lang="ja">${escapeHtml(entry.pattern)}</span> mean?</p><ul class="ws-options">${options.map((option, index) => `<li><span class="ws-bubble">${letters[index]}</span>${escapeHtml(option.meaning)}</li>`).join("")}</ul>`);
+			}).join("");
+		},
+		identify() {
+			return entries.map((entry) => {
+				const example = pickExample(entry);
+				if (!example) return "";
+				const options = shuffled([entry, ...shuffled(sameLevel(entry)).slice(0, 3)]);
+				number += 1;
+				addAnswer(`${letters[options.indexOf(entry)]} <span lang="ja">${escapeHtml(entry.pattern)}</span>`);
+				return questionBlock(number, `<p class="ws-q"><span class="ws-jp" lang="ja">${escapeHtml(example.ja)}</span></p><ul class="ws-options">${options.map((option, index) => `<li><span class="ws-bubble">${letters[index]}</span><span lang="ja">${escapeHtml(option.pattern)}</span></li>`).join("")}</ul>`);
+			}).join("");
+		},
+		fill() {
+			return entries.map((entry) => {
+				let blank = null;
+				const example = pickExample(entry, (candidate) => (blank = blankGrammarInSentence(entry, candidate.ja)));
+				if (!example) return "";
+				blank = blankGrammarInSentence(entry, example.ja);
+				number += 1;
+				addAnswer(`<span lang="ja">${escapeHtml(blank.answer)}</span> <small lang="ja">${escapeHtml(example.ja)}</small>`);
+				return questionBlock(number, `<p class="ws-q"><span class="ws-jp" lang="ja">${escapeHtml(blank.blanked)}</span></p><p class="ws-hint">${escapeHtml(example.en)} <em>(${escapeHtml(entry.pattern)})</em></p>`);
+			}).join("");
+		},
+		reorder() {
+			return entries.map((entry) => {
+				const example = pickExample(entry, (candidate) => {
+					const count = splitSentenceChunks(candidate.ja).length;
+					return count >= 3 && count <= 8;
+				});
+				if (!example) return "";
+				number += 1;
+				addAnswer(`<span lang="ja">${escapeHtml(example.ja)}</span>`);
+				return questionBlock(number, `<p class="ws-q">${shuffled(splitSentenceChunks(example.ja)).map((chunk) => `<span class="ws-chip" lang="ja">${escapeHtml(chunk)}</span>`).join("")}</p><p class="ws-hint">${escapeHtml(example.en)}</p>${lines(1)}`);
+			}).join("");
+		},
+		truefalse() {
+			const foreign = shuffled(entries.flatMap(examplesOf).concat(grammarEntries.filter((entry) => entries.some((selected) => selected.level === entry.level)).flatMap(examplesOf)));
+			const truths = shuffled(entries.map((_, index) => index % 2 === 0));
+			const usedWrong = new Set();
+			return entries.map((entry, index) => {
+				const example = pickExample(entry);
+				if (!example) return "";
+				const wrong = foreign.find((candidate) => candidate.ja !== example.ja && !examplesOf(entry).includes(candidate) && !usedWrong.has(candidate.en));
+				if (wrong) usedWrong.add(wrong.en);
+				const isTrue = !wrong || truths[index];
+				number += 1;
+				addAnswer(isTrue ? "T" : `F <small>${escapeHtml(example.en)}</small>`);
+				return questionBlock(number, `<p class="ws-q"><span class="ws-jp" lang="ja">${escapeHtml(example.ja)}</span></p><p class="ws-hint">${escapeHtml(isTrue ? example.en : wrong.en)}</p><p class="ws-tf"><span class="ws-bubble">T</span><span class="ws-bubble">F</span></p>`);
+			}).join("");
+		},
+		match() {
+			const pool = entries.filter((entry) => entry.meaning);
+			if (!pool.length) return "";
+			const blocks = [];
+			for (let start = 0; start < pool.length; start += 5) blocks.push(pool.slice(start, start + 5));
+			return blocks.map((block) => {
+				const items = block.length >= 3 ? block : [...block, ...shuffled(sameLevel(block[0]).filter((candidate) => !block.includes(candidate))).slice(0, 3 - block.length)];
+				const meanings = shuffled(items);
+				const rows = items.map((entry) => {
+					number += 1;
+					addAnswer(`${letters[meanings.indexOf(entry)]} <span lang="ja">${escapeHtml(entry.pattern)}</span>`);
+					return `<li><b>${number}.</b><span lang="ja">${escapeHtml(entry.pattern)}</span><i></i></li>`;
+				}).join("");
+				return `<article class="worksheet-question ws-match"><ul class="ws-match-left">${rows}</ul><ul class="ws-match-right">${meanings.map((entry, index) => `<li><span class="ws-bubble">${letters[index]}</span>${escapeHtml(entry.meaning)}</li>`).join("")}</ul></article>`;
+			}).join("");
+		},
+		translate() {
+			return entries.map((entry) => {
+				const examples = [pickExample(entry), pickExample(entry)].filter(Boolean);
+				return [...new Set(examples)].map((example) => {
+					number += 1;
+					addAnswer(`<span lang="ja">${escapeHtml(example.ja)}</span>`);
+					return questionBlock(number, `<p class="ws-q">${escapeHtml(example.en)} <em class="ws-tag" lang="ja">${escapeHtml(entry.pattern)}</em></p>${lines(2)}`);
+				}).join("");
+			}).join("");
+		},
+		jp2en() {
+			return entries.map((entry) => {
+				const example = pickExample(entry);
+				if (!example) return "";
+				number += 1;
+				addAnswer(escapeHtml(example.en));
+				return questionBlock(number, `<p class="ws-q"><span class="ws-jp" lang="ja">${escapeHtml(example.ja)}</span></p>${lines(1)}`);
+			}).join("");
+		},
+		write() {
+			return entries.map((entry) => {
+				number += 1;
+				addAnswer("<span>Answers will vary — check the grammar point is used correctly.</span>");
+				return questionBlock(number, `<p class="ws-q">Write your own sentence using <span class="ws-pattern" lang="ja">${escapeHtml(entry.pattern)}</span>.</p>${lines(2)}`);
+			}).join("");
+		},
+	};
+
+	for (const [key, title, instruction] of worksheetTypeOrder) {
+		if (!enabled.has(key)) continue;
+		const body = builders[key]();
+		if (!body) continue;
+		sections.push(`<section class="ws-section"><h3><span>Exercise ${sections.length + 1} · ${title}</span></h3><p class="ws-instruction">${instruction}</p>${body}</section>`);
+	}
+
+	const referenceMarkup = entries.map((entry) => {
+		const example = examplesOf(entry)[0];
+		return `
+		<article class="ws-ref">
+			<div class="ws-ref-head"><h4 lang="ja">${escapeHtml(entry.pattern)}</h4><span class="ws-level">${escapeHtml(entry.level)}</span></div>
+			<p class="ws-ref-meaning">${escapeHtml(entry.meaning || "")}</p>
+			${entry.formation ? `<p class="ws-ref-formation"><b>Formation</b> <span lang="ja">${escapeHtml(entry.formation)}</span></p>` : ""}
+			${example ? `<p class="ws-ref-example" lang="ja">${renderJapaneseWithFurigana(example)}</p><p class="ws-ref-translation">${escapeHtml(example.en)}</p>` : ""}
+			${entry.notes ? `<p class="ws-ref-note">${escapeHtml(entry.notes)}</p>` : ""}
+		</article>`;
+	}).join("");
+	const patternTags = entries.map((entry) => `<span class="ws-tag-pill" lang="ja">${escapeHtml(entry.pattern)}</span>`).join("");
 	worksheetOutput.innerHTML = `
 		<div class="worksheet-actions">
-			<p>Worksheet generated with ${entries.length} selected grammar point${entries.length === 1 ? "" : "s"}.</p>
+			<p>Worksheet generated with ${entries.length} selected grammar point${entries.length === 1 ? "" : "s"}. <button class="worksheet-control" id="worksheet-regenerate" type="button">Shuffle new worksheet</button></p>
 			<div><button class="worksheet-control" id="worksheet-close" type="button">Close worksheet</button><button class="practice-start" id="worksheet-print" type="button">Print worksheet</button></div>
 		</div>
 		<div class="worksheet-page">
-			<header class="worksheet-header">
-				<p class="eyebrow section-eyebrow">KOTOBA · GRAMMAR PRACTICE</p>
-				<h2>Grammar worksheet</h2>
-				<p>Translate each prompt into Japanese using the indicated grammar point.</p>
-				<div class="worksheet-student-line"><span>Name:</span><span>Date: ${escapeHtml(today)}</span></div>
+			<header class="worksheet-header ws-banner">
+				<div><p class="eyebrow section-eyebrow">KOTOBA · GRAMMAR PRACTICE</p><h2>文法ワークシート</h2><p class="ws-subtitle">Grammar worksheet</p></div>
+				<div class="ws-fields"><span>Name</span><span>Date <b>${escapeHtml(today)}</b></span><span>Score <b>&nbsp;&nbsp;&nbsp;/ ${number}</b></span></div>
 			</header>
-			${questionMarkup}
+			<div class="ws-tags">${patternTags}</div>
+			<section class="ws-section"><h3><span>Grammar review</span></h3><div class="ws-ref-grid">${referenceMarkup}</div></section>
+			${sections.join("")}
 		</div>
 		<div class="worksheet-page worksheet-answer-key">
-			<header class="worksheet-header">
-				<p class="eyebrow section-eyebrow">KOTOBA · ANSWER KEY</p>
-				<h2>Suggested answers</h2>
-				<p>These are the source example sentences. Other correct translations may also be possible.</p>
+			<header class="worksheet-header ws-banner">
+				<div><p class="eyebrow section-eyebrow">KOTOBA · ANSWER KEY</p><h2>解答</h2><p class="ws-subtitle">Other correct translations may also be possible.</p></div>
 			</header>
-			${answerMarkup}
+			<ol class="ws-answers">${answerRows.join("")}</ol>
 		</div>
 	`;
+	worksheetOutput.dataset.entryIds = entries.map((entry) => entry.id).join("|");
 	worksheetOutput.hidden = false;
 	worksheetOutput.scrollIntoView({ behavior: "smooth", block: "start" });
 }
@@ -1753,6 +1956,7 @@ grammarGrid.addEventListener("change", (event) => {
 	else selectedGrammarIds.delete(checkbox.dataset.worksheetGrammar);
 	updateWorksheetSelection();
 });
+document.querySelector("#worksheet-types").addEventListener("change", updateWorksheetSelection);
 worksheetSelectVisibleButton.addEventListener("click", () => {
 	getVisibleGrammar().forEach((entry) => selectedGrammarIds.add(entry.id));
 	renderGrammar();
@@ -1768,6 +1972,11 @@ worksheetGenerateButton.addEventListener("click", () => {
 worksheetOutput.addEventListener("click", (event) => {
 	if (event.target.closest("#worksheet-close")) {
 		worksheetOutput.hidden = true;
+		return;
+	}
+	if (event.target.closest("#worksheet-regenerate")) {
+		const ids = new Set((worksheetOutput.dataset.entryIds || "").split("|"));
+		renderGrammarWorksheet(grammarEntries.filter((entry) => ids.has(entry.id)));
 		return;
 	}
 	if (event.target.closest("#worksheet-print")) {
@@ -2042,3 +2251,9 @@ document.addEventListener("focusout", (event) => {
 	if (help) hidePitchHelp(help);
 });
 window.addEventListener("scroll", () => document.querySelectorAll(".pitch-help-tip").forEach((tip) => { tip.style.display = ""; }), { passive: true });
+
+for (const session of [practiceSession, pitchEls.session]) {
+	new MutationObserver(() => {
+		document.body.classList.toggle("practice-fullscreen", !practiceSession.hidden || !pitchEls.session.hidden);
+	}).observe(session, { attributes: true, attributeFilter: ["hidden"] });
+}
