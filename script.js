@@ -110,6 +110,8 @@ const conjugationSession = document.querySelector("#conjugation-session");
 const conjugationComplete = document.querySelector("#conjugation-complete");
 const conjugationBreakdown = document.querySelector("#conjugation-breakdown");
 const conjugationCompleteTitle = document.querySelector("#conjugation-complete-title");
+const conjugationLiveCorrect = document.querySelector("#conjugation-live-correct");
+const conjugationLiveRemaining = document.querySelector("#conjugation-live-remaining");
 const conjugationLiveStats = document.querySelector("#conjugation-live-stats");
 const conjugationLiveAccuracy = document.querySelector("#conjugation-live-accuracy");
 const conjugationLiveAttempts = document.querySelector("#conjugation-live-attempts");
@@ -1175,7 +1177,8 @@ function startConjugationSession(config) {
 	conjugationCompleteTitle.textContent = "Practice complete";
 	panel.append(conjugationSession, conjugationComplete);
 	conjugationSession.hidden = false;
-	conjugationLiveStats.hidden = mode !== "endless";
+	conjugationLiveStats.hidden = false;
+	document.body.classList.add("conjugation-fullscreen");
 	updateConjugationStats();
 	showConjugationQuestion();
 }
@@ -1192,6 +1195,8 @@ function showConjugationQuestion() {
 		? `QUESTION ${conjugationQuestionNumber} · ENDLESS`
 		: `QUESTION ${conjugationIndex + 1} OF ${conjugationQueue.length}`;
 	conjugationProgressBar.parentElement.hidden = activeConjugationConfig.mode === "endless";
+	applyConjugationTone(pattern.id.split(":").pop());
+	updateConjugationStats();
 	if (activeConjugationConfig.mode !== "endless") conjugationProgressBar.style.width = `${(conjugationIndex / conjugationQueue.length) * 100}%`;
 	conjugationPatternName.textContent = pattern.label.split(" · ")[0];
 	conjugationPatternName.className = `conjugation-pattern-name ${conjugationFormTone(pattern.id.split(":").pop())}`;
@@ -1202,7 +1207,7 @@ function showConjugationQuestion() {
 	conjugationAnswer.value = "";
 	conjugationAnswer.disabled = false;
 	conjugationCheckButton.disabled = false;
-	conjugationCheckButton.textContent = "Check answer";
+	conjugationCheckButton.textContent = "›";
 	conjugationFeedback.textContent = "";
 	conjugationFeedback.className = "answer-feedback";
 	conjugationCorrection.hidden = true;
@@ -1277,6 +1282,8 @@ function updateConjugationStats() {
 	const accuracy = conjugationStats.attempts ? Math.round((conjugationStats.correct / conjugationStats.attempts) * 100) : 0;
 	const { best, worst } = getConjugationFormStats();
 	conjugationLiveAccuracy.textContent = `${accuracy}%`;
+	conjugationLiveCorrect.textContent = String(conjugationStats.correct);
+	conjugationLiveRemaining.textContent = activeConjugationConfig.mode === "endless" ? "∞" : String(Math.max(0, conjugationQueue.length - conjugationIndex));
 	conjugationLiveAttempts.textContent = String(conjugationStats.attempts);
 	conjugationLiveStreak.textContent = String(conjugationStats.streak);
 	conjugationLiveBest.textContent = formatFormStat(best);
@@ -1321,7 +1328,7 @@ function recordConjugationAttempt(pattern, isCorrect, question) {
 		patternStats.groups[groupId] = patternGroup;
 	}
 	conjugationStats.patterns[pattern.id] = patternStats;
-	if (activeConjugationConfig.mode === "endless") updateConjugationStats();
+	updateConjugationStats();
 }
 
 function retryConjugationQuestion() {
@@ -1358,6 +1365,7 @@ function nextConjugationQuestion() {
 
 function finishConjugationPractice() {
 	conjugationSession.hidden = true;
+	document.body.classList.remove("conjugation-fullscreen");
 	conjugationComplete.hidden = false;
 	conjugationLiveStats.hidden = true;
 	conjugationProgressBar.parentElement.hidden = false;
@@ -1395,7 +1403,24 @@ function renderConjugationBreakdown() {
 }
 
 function exitConjugationPractice() {
-	finishConjugationPractice();
+	if (conjugationStats.attempts > 0) {
+		finishConjugationPractice();
+		return;
+	}
+	conjugationSession.hidden = true;
+	document.body.classList.remove("conjugation-fullscreen");
+	activeConjugationConfig.setup.hidden = false;
+}
+
+const conjugationToneOrder = ["polite", "polite-negative", "polite-past", "polite-past-negative", "plain-negative", "plain-past", "te", "tai", "polite-volitional", "potential", "passive", "causative", "volitional", "conditional-ba", "conditional-tara", "imperative", "negative-request", "causative-passive", "zuni", "te-oku", "te-shimau", "sou", "you-to-suru", "positive", "negative", "past", "past-negative", "polite-positive", "conditional", "adverb"];
+
+function applyConjugationTone(patternId) {
+	const known = conjugationToneOrder.indexOf(patternId);
+	let index = known;
+	if (index === -1) index = [...patternId].reduce((sum, character) => sum + character.charCodeAt(0), 0) + conjugationToneOrder.length;
+	const hue = Math.round((index * 137.5) % 360);
+	conjugationSession.style.setProperty("--tone-top", `hsl(${hue} 78% 46%)`);
+	conjugationSession.style.setProperty("--tone-bottom", `hsl(${hue} 82% 36%)`);
 }
 
 function renderWrongAnswerInfo(word) {

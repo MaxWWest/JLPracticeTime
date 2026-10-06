@@ -339,32 +339,40 @@
                     </div>
                 </section>
                     <div class="conjugation-session" id="conjugation-session" hidden>
-                        <div class="practice-session-top"><span id="conjugation-progress-label">QUESTION 1 OF 10</span><button class="practice-exit" id="conjugation-exit" type="button">End practice</button></div>
-                        <div class="practice-progress"><span id="conjugation-progress-bar"></span></div>
-                        <div class="conjugation-live-stats" id="conjugation-live-stats" hidden aria-label="Live conjugation stats">
-                            <div><span>Accuracy</span><strong id="conjugation-live-accuracy">0%</strong></div>
-                            <div><span>Total attempts</span><strong id="conjugation-live-attempts">0</strong></div>
-                            <div><span>Current streak</span><strong id="conjugation-live-streak">0</strong></div>
-                            <div><span>Best form</span><strong id="conjugation-live-best">—</strong></div>
-                            <div><span>Worst form</span><strong id="conjugation-live-worst">—</strong></div>
+                        <div class="cs-progress" aria-hidden="true"><span id="conjugation-progress-bar"></span></div>
+                        <div class="cs-top">
+                            <button class="cs-home" id="conjugation-exit" type="button" aria-label="Exit practice" title="Exit practice"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg></button>
+                            <span class="cs-progress-label" id="conjugation-progress-label">QUESTION 1 OF 10</span>
+                            <div class="cs-stats" id="conjugation-live-stats" aria-label="Live practice stats">
+                                <span title="Accuracy"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z"/></svg><b id="conjugation-live-accuracy">0%</b></span>
+                                <span title="Correct answers"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg><b id="conjugation-live-correct">0</b></span>
+                                <span title="Questions remaining"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 3H4.99C3.89 3 3 3.9 3 5v14c0 1.1.89 2 1.99 2H19c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 12h-4c0 1.66-1.35 3-3 3s-3-1.34-3-3H4.99V5H19v10z"/></svg><b id="conjugation-live-remaining">0</b></span>
+                                <span hidden><b id="conjugation-live-attempts">0</b><b id="conjugation-live-streak">0</b></span>
+                            </div>
                         </div>
-                        <article class="conjugation-card">
-                            <p class="conjugation-pattern-name" id="conjugation-pattern-name"></p>
+                        <div class="cs-hero">
                             <h3 class="conjugation-word" id="conjugation-word" lang="ja"></h3>
                             <p class="conjugation-reading" id="conjugation-reading" lang="ja"></p>
                             <p class="conjugation-meaning" id="conjugation-meaning"></p>
-                            <form class="answer-form conjugation-answer-form" id="conjugation-answer-form">
+                        </div>
+                        <p class="conjugation-pattern-name" id="conjugation-pattern-name"></p>
+                        <div class="cs-body">
+                            <form class="conjugation-answer-form" id="conjugation-answer-form">
                                 <label class="visually-hidden" for="conjugation-answer">Conjugated form in hiragana or kanji</label>
-                                <input id="conjugation-answer" type="text" lang="ja" inputmode="text" autocomplete="off" placeholder="Type in hiragana or kanji…" required>
-                                <button type="submit" id="conjugation-check">Check answer</button>
+                                <input id="conjugation-answer" type="text" lang="ja" inputmode="text" autocomplete="off" placeholder="答え" required>
+                                <button type="submit" id="conjugation-check" aria-label="Check answer" title="Check answer">›</button>
                             </form>
                             <p class="answer-feedback" id="conjugation-feedback" aria-live="polite"></p>
                             <div class="conjugation-correction" id="conjugation-correction" hidden></div>
+                            <div class="cs-form-stats">
+                                <p><span>Best form</span><strong id="conjugation-live-best">—</strong></p>
+                                <p><span>Needs work</span><strong id="conjugation-live-worst">—</strong></p>
+                            </div>
                             <div class="conjugation-actions">
                                 <button class="practice-start practice-review-start" id="conjugation-try-again" type="button" hidden>Try again</button>
                                 <button class="practice-start" id="conjugation-next" type="button" hidden>Next question <span aria-hidden="true">→</span></button>
                             </div>
-                        </article>
+                        </div>
                     </div>
                     <div class="conjugation-complete" id="conjugation-complete" hidden>
                         <span class="practice-welcome-mark" aria-hidden="true">動詞</span>

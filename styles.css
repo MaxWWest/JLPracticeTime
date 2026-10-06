@@ -290,7 +290,6 @@ button { color: inherit; }
 .conjugation-setup button { margin: 0 0 0 auto; }
 .conjugation-setup [hidden] { display: none; }
 .conjugation-status { margin: 9px 0 0; color: #92958d; font-size: 9px; }
-.conjugation-session { max-width: 680px; margin: 19px auto 0; }
 .conjugation-live-stats { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 7px; margin-top: 13px; }
 .conjugation-live-stats[hidden] { display: none; }
 .conjugation-live-stats > div, .conjugation-final-stats > div { display: grid; gap: 5px; min-width: 0; padding: 10px; border: 1px solid var(--line); border-radius: 7px; background: var(--white); }
@@ -492,3 +491,45 @@ button { color: inherit; }
 .pitch-help-tip strong { display: block; margin-top: 6px; color: var(--ink); font-size: 9px; }
 .pitch-help-tip strong:first-child { margin-top: 0; }
 .pitch-help:hover .pitch-help-tip, .pitch-help:focus .pitch-help-tip { display: block; }
+
+body.conjugation-fullscreen { overflow: hidden; }
+.conjugation-session { position: fixed; z-index: 200; inset: 0; display: flex; flex-direction: column; overflow-y: auto; background: #f4f4f4; --tone-top: #ff00aa; --tone-bottom: #d4008c; }
+.conjugation-session[hidden] { display: none; }
+.cs-progress { position: absolute; z-index: 3; top: 0; right: 0; left: 0; height: 4px; background: rgba(0, 0, 0, .55); }
+.cs-progress[hidden] { display: none; }
+.cs-progress span { display: block; width: 0; height: 100%; background: rgba(255, 255, 255, .85); transition: width .3s; }
+.cs-top { position: absolute; z-index: 2; top: 4px; right: 0; left: 0; display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; color: #fff; }
+.cs-home { display: grid; width: 34px; height: 34px; place-items: center; border: 0; border-radius: 6px; background: transparent; color: #fff; cursor: pointer; }
+.cs-home:hover { background: rgba(255, 255, 255, .18); }
+.cs-top svg { width: 22px; height: 22px; fill: currentColor; }
+.cs-progress-label { position: absolute; left: 50%; transform: translateX(-50%); font-size: 10px; letter-spacing: .08em; opacity: .85; }
+.cs-stats { display: flex; gap: 16px; font-size: 16px; }
+.cs-stats span { display: inline-flex; align-items: center; gap: 5px; }
+.cs-stats svg { width: 18px; height: 18px; }
+.cs-hero { display: flex; min-height: 300px; flex-direction: column; align-items: center; justify-content: center; padding: 60px 16px 22px; background: linear-gradient(var(--tone-top), var(--tone-bottom)); color: #fff; text-align: center; }
+.cs-hero .conjugation-word { margin: 0; color: #fff; font-size: clamp(56px, 11vw, 112px); font-weight: 400; line-height: 1.15; text-shadow: 0 2px 0 rgba(0, 0, 0, .12); }
+.cs-hero .conjugation-reading { margin: 4px 0 0; color: rgba(255, 255, 255, .8); font-size: 14px; }
+.cs-hero .conjugation-meaning { margin: 8px 0 0; color: #fff; font-size: 17px; font-weight: 500; }
+.conjugation-session .conjugation-pattern-name { max-width: none; margin: 0; padding: 20px 16px; border: 0; border-radius: 0; background: linear-gradient(#3a3a3a, #1c1c1c); color: #fff; font-size: 24px; font-weight: 400; text-align: center; }
+.cs-body { width: min(100%, 1100px); margin: 0 auto; padding: 14px 14px 40px; }
+.conjugation-session .conjugation-answer-form { display: flex; margin: 0; border: 2px solid #bfd9ee; background: #fff; box-shadow: 0 1px 4px rgba(0, 0, 0, .08); }
+.conjugation-session .conjugation-answer-form:focus-within { border-color: #8fc0e8; }
+.conjugation-session .conjugation-answer-form input { flex: 1; min-width: 0; padding: 22px 16px; border: 0; outline: 0; background: transparent; color: #444; font-family: "Noto Sans JP", sans-serif; font-size: 26px; text-align: center; }
+.conjugation-session .conjugation-answer-form button { width: 64px; border: 0; background: transparent; color: #333; font-size: 34px; cursor: pointer; }
+.conjugation-session .conjugation-answer-form button:disabled { opacity: .35; cursor: default; }
+.conjugation-session:has(.answer-feedback.is-correct) .conjugation-answer-form { border-color: #6cc24a; background: #88cc00; }
+.conjugation-session:has(.answer-feedback.is-incorrect) .conjugation-answer-form { border-color: #e0455b; background: #ff0033; }
+.conjugation-session:has(.answer-feedback.is-correct) .conjugation-answer-form input, .conjugation-session:has(.answer-feedback.is-incorrect) .conjugation-answer-form input, .conjugation-session:has(.answer-feedback.is-correct) .conjugation-answer-form button, .conjugation-session:has(.answer-feedback.is-incorrect) .conjugation-answer-form button { color: #fff; }
+.conjugation-session .answer-feedback { margin: 14px 0 0; font-size: 13px; text-align: center; }
+.conjugation-session .conjugation-correction { justify-content: center; }
+.conjugation-session .conjugation-actions { display: flex; justify-content: center; gap: 10px; margin-top: 14px; }
+@media (max-width: 640px) { .cs-hero { min-height: 240px; } .conjugation-session .conjugation-pattern-name { font-size: 19px; } .conjugation-session .conjugation-answer-form input { font-size: 20px; padding: 18px 10px; } .cs-progress-label { display: none; } }
+.cs-stats span[hidden] { display: none; }
+.cs-progress-label { display: none; }
+.cs-hero { min-height: 34vh; padding-top: 56px; }
+.cs-hero .conjugation-word { font-size: clamp(48px, 9vw, 96px); }
+.cs-form-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 18px; }
+.cs-form-stats p { display: flex; flex-direction: column; gap: 4px; margin: 0; padding: 14px 16px; border-radius: 8px; background: #fff; text-align: center; box-shadow: 0 1px 3px rgba(0, 0, 0, .08); }
+.cs-form-stats span { color: #777; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; }
+.cs-form-stats strong { color: #333; font-size: 15px; font-weight: 500; }
+@media (max-width: 640px) { .cs-form-stats { grid-template-columns: 1fr; } }
