@@ -108,6 +108,7 @@ const conjugationStartButton = document.querySelector("#conjugation-start");
 const conjugationStatus = document.querySelector("#conjugation-status");
 const conjugationSession = document.querySelector("#conjugation-session");
 const conjugationComplete = document.querySelector("#conjugation-complete");
+const conjugationLiveBreakdown = document.querySelector("#conjugation-live-breakdown");
 const conjugationBreakdown = document.querySelector("#conjugation-breakdown");
 const conjugationCompleteTitle = document.querySelector("#conjugation-complete-title");
 const conjugationLiveCorrect = document.querySelector("#conjugation-live-correct");
@@ -1195,7 +1196,6 @@ function showConjugationQuestion() {
 		? `QUESTION ${conjugationQuestionNumber} · ENDLESS`
 		: `QUESTION ${conjugationIndex + 1} OF ${conjugationQueue.length}`;
 	conjugationProgressBar.parentElement.hidden = activeConjugationConfig.mode === "endless";
-	applyConjugationTone(pattern.id.split(":").pop());
 	updateConjugationStats();
 	if (activeConjugationConfig.mode !== "endless") conjugationProgressBar.style.width = `${(conjugationIndex / conjugationQueue.length) * 100}%`;
 	conjugationPatternName.textContent = pattern.label.split(" · ")[0];
@@ -1288,6 +1288,7 @@ function updateConjugationStats() {
 	conjugationLiveStreak.textContent = String(conjugationStats.streak);
 	conjugationLiveBest.textContent = formatFormStat(best);
 	conjugationLiveWorst.textContent = formatFormStat(worst);
+	renderConjugationBreakdown(conjugationLiveBreakdown, "No mistakes yet — keep going!");
 }
 
 const verbGroups = [
@@ -1387,19 +1388,19 @@ function finishConjugationPractice() {
 	renderConjugationBreakdown();
 }
 
-function renderConjugationBreakdown() {
+function renderConjugationBreakdown(target = conjugationBreakdown, emptyMessage = "No mistakes this session — nothing to work on!") {
 	const percent = (item) => `${Math.round((item.correct / item.attempts) * 100)}%`;
 	const worst = Object.values(conjugationStats.patterns)
 		.filter((form) => form.attempts > 0 && form.correct < form.attempts)
 		.sort((a, b) => (a.correct / a.attempts) - (b.correct / b.attempts) || b.attempts - a.attempts)
 		.slice(0, 3);
-	conjugationBreakdown.innerHTML = `
+	target.innerHTML = `
 		<section><h4>Top 3 to work on</h4>${worst.length
 			? `<ol>${worst.map((form) => {
 				const groupDetail = verbGroups.filter((group) => form.groups?.[group.id]).map((group) => `<span>${group.label.split(" ")[0]} ${group.label.split(" ")[1]} · ${percent(form.groups[group.id])} <small>(${form.groups[group.id].correct}/${form.groups[group.id].attempts})</small></span>`).join("");
 				return `<li><div class="conjugation-breakdown-form"><span>${escapeHtml(form.label)}</span><strong>${percent(form)} <small>(${form.correct}/${form.attempts})</small></strong></div>${groupDetail ? `<div class="conjugation-breakdown-groups">${groupDetail}</div>` : ""}</li>`;
 			}).join("")}</ol>`
-			: "<p>No mistakes this session — nothing to work on!</p>"}</section>`;
+			: `<p>${emptyMessage}</p>`}</section>`;
 }
 
 function exitConjugationPractice() {
@@ -1410,17 +1411,6 @@ function exitConjugationPractice() {
 	conjugationSession.hidden = true;
 	document.body.classList.remove("conjugation-fullscreen");
 	activeConjugationConfig.setup.hidden = false;
-}
-
-const conjugationToneOrder = ["polite", "polite-negative", "polite-past", "polite-past-negative", "plain-negative", "plain-past", "te", "tai", "polite-volitional", "potential", "passive", "causative", "volitional", "conditional-ba", "conditional-tara", "imperative", "negative-request", "causative-passive", "zuni", "te-oku", "te-shimau", "sou", "you-to-suru", "positive", "negative", "past", "past-negative", "polite-positive", "conditional", "adverb"];
-
-function applyConjugationTone(patternId) {
-	const known = conjugationToneOrder.indexOf(patternId);
-	let index = known;
-	if (index === -1) index = [...patternId].reduce((sum, character) => sum + character.charCodeAt(0), 0) + conjugationToneOrder.length;
-	const hue = Math.round((index * 137.5) % 360);
-	conjugationSession.style.setProperty("--tone-top", `hsl(${hue} 78% 46%)`);
-	conjugationSession.style.setProperty("--tone-bottom", `hsl(${hue} 82% 36%)`);
 }
 
 function renderWrongAnswerInfo(word) {

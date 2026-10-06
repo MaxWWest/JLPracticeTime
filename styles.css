@@ -493,7 +493,7 @@ button { color: inherit; }
 .pitch-help:hover .pitch-help-tip, .pitch-help:focus .pitch-help-tip { display: block; }
 
 body.conjugation-fullscreen { overflow: hidden; }
-.conjugation-session { position: fixed; z-index: 200; inset: 0; display: flex; flex-direction: column; overflow-y: auto; background: #f4f4f4; --tone-top: #ff00aa; --tone-bottom: #d4008c; }
+.conjugation-session { position: fixed; z-index: 200; inset: 0; display: flex; flex-direction: column; overflow-y: auto; background: #f4f4f4; --tone-top: #e5eee6; --tone-bottom: #d3e4d6; }
 .conjugation-session[hidden] { display: none; }
 .cs-progress { position: absolute; z-index: 3; top: 0; right: 0; left: 0; height: 4px; background: rgba(0, 0, 0, .55); }
 .cs-progress[hidden] { display: none; }
@@ -533,3 +533,23 @@ body.conjugation-fullscreen { overflow: hidden; }
 .cs-form-stats span { color: #777; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; }
 .cs-form-stats strong { color: #333; font-size: 15px; font-weight: 500; }
 @media (max-width: 640px) { .cs-form-stats { grid-template-columns: 1fr; } }
+.cs-breakdown { margin-top: 14px; }
+.cs-hero, .cs-top { color: #2f3a40; }
+.cs-hero .conjugation-word { color: #2f3a40; text-shadow: none; }
+.cs-hero .conjugation-reading { color: rgba(47, 58, 64, .75); }
+.cs-hero .conjugation-meaning { color: #2f3a40; }
+.cs-home { color: #2f3a40; }
+.cs-home:hover { background: rgba(255, 255, 255, .4); }
+.cs-progress { background: rgba(47, 58, 64, .18); }
+.cs-progress span { background: rgba(47, 58, 64, .65); }
+.conjugation-session .conjugation-pattern-name { background: linear-gradient(#4a4f55, #34383d); }
+.cs-hero, .conjugation-session .conjugation-pattern-name { flex-shrink: 0; }
+.cs-breakdown { max-width: none; width: 100%; }
+.cs-breakdown { grid-template-columns: 1fr; margin: 14px 0 0; }
+.cs-hero, .cs-top, .cs-home { color: #315e4b; }
+.cs-hero .conjugation-word, .cs-hero .conjugation-meaning { color: #315e4b; }
+.cs-hero .conjugation-reading { color: rgba(49, 94, 75, .75); }
+.cs-home:hover { background: rgba(49, 94, 75, .12); }
+.cs-progress { background: rgba(49, 94, 75, .15); }
+.cs-progress span { background: #315e4b; }
+.conjugation-session .conjugation-pattern-name { background: linear-gradient(#3b6b57, #315e4b); }
