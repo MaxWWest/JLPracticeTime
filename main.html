@@ -9,9 +9,9 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=20261009-furigana">
-    <script src="script.js?v=20261009-furigana" defer></script>
-    <script src="reading.js?v=20261009-furigana" defer></script>
+    <link rel="stylesheet" href="styles.css?v=20261009-reading-focus">
+    <script src="script.js?v=20261009-reading-focus" defer></script>
+    <script src="reading.js?v=20261009-reading-focus" defer></script>
 </head>
 <body>
     <div class="page-shell">
@@ -21,9 +21,14 @@
                 <span class="brand-name">kotoba<span class="brand-period">.</span></span>
             </a>
             <div class="topbar-note"><span class="live-dot"></span> Your little corner for Japanese</div>
-            <button class="favorites-toggle" id="favorites-toggle" type="button" aria-pressed="false">
-                <span aria-hidden="true">♡</span> Saved words <span class="saved-count" id="saved-count">0</span>
-            </button>
+            <div class="topbar-actions">
+                <button class="furigana-toggle" id="furigana-toggle" type="button" aria-pressed="true">
+                    <span aria-hidden="true">ふ</span> Furigana <strong id="furigana-state">On</strong>
+                </button>
+                <button class="favorites-toggle" id="favorites-toggle" type="button" aria-pressed="false">
+                    <span aria-hidden="true">♡</span> Saved words <span class="saved-count" id="saved-count">0</span>
+                </button>
+            </div>
         </header>
 
         <main id="top">
@@ -811,6 +816,18 @@
                             <h4>Who did it?</h4>
                             <p>Level 1 agent tracking. Read benefactive, passive, and causative sentences, then choose the doer, receiver, grammar clue, or role summary.</p>
                             <p class="rh-mode-example" lang="ja">妹は私に荷物を持ってもらいました。<br><span>Who carried it?</span></p>
+                            <label>Focus
+                                <select id="rh-agent-focus">
+                                    <option value="mixed" selected>Mixed goals</option>
+                                    <option value="agent">Actual doer</option>
+                                    <option value="receiver">Receiver of favor</option>
+                                    <option value="affected">Affected person</option>
+                                    <option value="causer">Causer</option>
+                                    <option value="object">Object / target</option>
+                                    <option value="clue">Grammar clue</option>
+                                    <option value="meaning">Role summary</option>
+                                </select>
+                            </label>
                             <label>Questions
                                 <select id="rh-count-agents"><option value="10" selected>10</option><option value="20">20</option><option value="30">30</option><option value="50">50</option></select>
                             </label>
@@ -821,6 +838,15 @@
                             <h4>Narrator mood</h4>
                             <p>Level 1 mood tracking. Decide whether the writer's evaluation is positive or negative, then identify the feeling, clue, and clue type.</p>
                             <p class="rh-mode-example" lang="ja">友だちが手伝ってくれました。<br><span>Positive or negative?</span></p>
+                            <label>Focus
+                                <select id="rh-mood-focus">
+                                    <option value="mixed" selected>Mixed goals</option>
+                                    <option value="mood">Positive / negative</option>
+                                    <option value="tone">Feeling type</option>
+                                    <option value="clue">Clue expression</option>
+                                    <option value="signal">Clue kind</option>
+                                </select>
+                            </label>
                             <label>Questions
                                 <select id="rh-count-mood"><option value="10" selected>10</option><option value="20">20</option><option value="30">30</option><option value="50">50</option></select>
                             </label>
@@ -831,6 +857,15 @@
                             <h4>Short passages</h4>
                             <p>Read compact N4-style notices, messages, and diary entries. Answer detail, reason, sequence, and inference questions without translating every word.</p>
                             <p class="rh-mode-example" lang="ja">図書館は工事のため、来週の月曜日まで休みです。<br><span>Why is it closed?</span></p>
+                            <label>Focus
+                                <select id="rh-passage-focus">
+                                    <option value="mixed" selected>Mixed goals</option>
+                                    <option value="detail">Detail lookup</option>
+                                    <option value="reason">Reasons</option>
+                                    <option value="sequence">Time / sequence</option>
+                                    <option value="inference">Inference / rules</option>
+                                </select>
+                            </label>
                             <label>Questions
                                 <select id="rh-count-passages"><option value="10" selected>10</option><option value="20">20</option><option value="30">30</option><option value="50">50</option></select>
                             </label>

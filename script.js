@@ -25,6 +25,8 @@ const emptyState = document.querySelector("#empty-state");
 const pageStatus = document.querySelector("#page-status");
 const loadMoreButton = document.querySelector("#load-more");
 const levelFilter = document.querySelector("#level-filter");
+const furiganaToggle = document.querySelector("#furigana-toggle");
+const furiganaState = document.querySelector("#furigana-state");
 const favoritesToggle = document.querySelector("#favorites-toggle");
 const savedCount = document.querySelector("#saved-count");
 const grammarSearch = document.querySelector("#grammar-search");
@@ -187,6 +189,8 @@ let conjugationStats = null;
 let activeConjugationConfig = null;
 const gpEls = Object.fromEntries(["setup", "count", "start", "status", "session", "session-notes", "session-note-panel", "home", "correct", "progress", "hero", "type", "prompt", "subprompt", "band", "body", "complete", "result", "final-accuracy", "final-correct", "final-bank", "missed", "again"].map((id) => [id, document.querySelector(`#gp-${id}`)]));
 const gpState = { bank: [], queue: [], index: 0, correct: 0, missed: [], answered: false };
+const furiganaStorageKey = "kotoba-show-furigana";
+let showFurigana = localStorage.getItem(furiganaStorageKey) !== "false";
 
 try {
 	savedWords = new Set(JSON.parse(localStorage.getItem("kotoba-saved-words") || "[]").map(String));
@@ -210,6 +214,16 @@ function escapeHtml(value) {
 		"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
 	})[character]);
 }
+
+function updateFuriganaToggle() {
+	document.body.dataset.furigana = showFurigana ? "on" : "off";
+	if (!furiganaToggle || !furiganaState) return;
+	furiganaToggle.setAttribute("aria-pressed", String(showFurigana));
+	furiganaToggle.setAttribute("aria-label", `${showFurigana ? "Hide" : "Show"} furigana readings`);
+	furiganaState.textContent = showFurigana ? "On" : "Off";
+}
+
+updateFuriganaToggle();
 
 const sectionTabs = [
 	{ name: "vocabulary", tab: vocabularyTab, panels: [vocabularyPanel, practicePanel], defaultPanel: "vocabulary-panel" },
@@ -4205,6 +4219,11 @@ document.querySelector("#conjugation-again").addEventListener("click", () => {
 });
 document.querySelector("#practice-again").addEventListener("click", exitPractice);
 document.querySelector("#practice-exit").addEventListener("click", exitPractice);
+furiganaToggle?.addEventListener("click", () => {
+	showFurigana = !showFurigana;
+	localStorage.setItem(furiganaStorageKey, String(showFurigana));
+	updateFuriganaToggle();
+});
 hydrateGrammarPracticeNotes();
 gpEls.setup.addEventListener("click", (event) => {
 	const noteButton = event.target.closest("[data-gp-notes]");

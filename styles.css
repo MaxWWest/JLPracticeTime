@@ -37,6 +37,7 @@ body[data-active-section="vocabulary"] { --section-color: var(--vocab-blue); --s
 body[data-active-section="grammar"] { --section-color: var(--grammar-green); --section-color-dark: var(--grammar-green-dark); --section-color-pale: var(--grammar-green-pale); }
 body[data-active-section="reading"] { --section-color: var(--reading-yellow); --section-color-dark: var(--reading-yellow-dark); --section-color-pale: var(--reading-yellow-pale); }
 body[data-active-section="speaking"] { --section-color: var(--speaking-red); --section-color-dark: var(--speaking-red-dark); --section-color-pale: var(--speaking-red-pale); }
+body[data-furigana="off"] rt { display: none; }
 button, input, select { font: inherit; }
 button { color: inherit; }
 .page-shell { width: min(1160px, calc(100% - 64px)); margin: 0 auto; }
@@ -47,6 +48,11 @@ button { color: inherit; }
 .brand-period { color: var(--coral); }
 .topbar-note { display: flex; align-items: center; gap: 9px; color: var(--muted); font-size: 13px; }
 .live-dot { width: 7px; height: 7px; border-radius: 50%; background: #83a987; }
+.topbar-actions { display: flex; align-items: center; gap: 8px; }
+.furigana-toggle { display: flex; align-items: center; gap: 8px; border: 1px solid var(--line); border-radius: 999px; padding: 10px 14px; background: var(--white); color: #596456; font-size: 12px; font-weight: 600; cursor: pointer; transition: border-color .2s, background .2s, color .2s; }
+.furigana-toggle:hover, .furigana-toggle[aria-pressed="true"] { border-color: #b8cabb; background: var(--green-pale); color: var(--green); }
+.furigana-toggle > span:first-child { display: grid; width: 18px; height: 18px; place-items: center; border-radius: 50%; background: #e9f0e8; color: var(--green); font-family: "Noto Sans JP", sans-serif; font-size: 11px; line-height: 1; }
+.furigana-toggle strong { color: var(--muted); font-size: 10px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
 .favorites-toggle { display: flex; align-items: center; gap: 8px; border: 1px solid var(--line); border-radius: 999px; padding: 10px 14px; background: var(--white); font-size: 12px; font-weight: 600; cursor: pointer; transition: border-color .2s, background .2s; }
 .favorites-toggle:hover, .favorites-toggle[aria-pressed="true"] { border-color: #b8cabb; background: var(--green-pale); }
 .favorites-toggle > span:first-child { color: var(--coral); font-size: 17px; line-height: 12px; }
@@ -432,7 +438,9 @@ body[data-active-section="grammar"]:not([data-active-subtab="conjugation-panel"]
 @media (max-width: 520px) {
 	.page-shell { width: calc(100% - 32px); }
 	.topbar { height: 70px; }
-	.favorites-toggle { gap: 6px; padding: 9px 11px; font-size: 10px; }
+	.topbar-actions { gap: 6px; }
+	.furigana-toggle, .favorites-toggle { gap: 6px; padding: 9px 11px; font-size: 10px; }
+	.furigana-toggle strong { display: none; }
 	.hero { padding-top: 44px; }
 	.hero h1 { font-size: 46px; letter-spacing: -2.5px; }
 	.hero h1 span { letter-spacing: -2.5px; }

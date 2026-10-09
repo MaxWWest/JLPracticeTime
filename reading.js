@@ -658,8 +658,18 @@
 		}
 	];
 
+	function classifyPassageQuestion(question) {
+		const prompt = question.prompt;
+		if (/^Why\b/i.test(prompt)) return "reason";
+		if (/^(When|By when|What time)\b/i.test(prompt)) return "sequence";
+		if (/\b(before|after|first|already|still)\b/i.test(prompt)) return "sequence";
+		if (/^(Can|What happens if|What does .*may|What about|How can)\b/i.test(prompt)) return "inference";
+		return "detail";
+	}
+
 	const passageBank = passageSources.flatMap((source) => source.questions.map((question) => ({
 		...question,
+		type: question.type || classifyPassageQuestion(question),
 		title: source.title,
 		text: source.text,
 		en: source.en,
@@ -1038,14 +1048,22 @@
 			}
 		}
 		const bank = mode === "breaks" ? breakBank : mode === "quotes" ? quoteBank : mode === "passages" ? passageBank : mode === "agents" ? buildAgentQuestionBank() : mode === "mood" ? buildMoodQuestionBank() : null;
-		const items = bank ? shuffled(bank) : null;
-		session = { mode, count: bank ? Math.min(count, bank.length) : count, pool, items, index: 0, correct: 0, answered: 0, missed: [], current: null, checked: false };
+		const items = bank ? shuffled(focusReadingBank(mode, bank)) : null;
+		session = { mode, count: items ? Math.min(count, items.length) : count, pool, items, index: 0, correct: 0, answered: 0, missed: [], current: null, checked: false };
 		els.status.textContent = "";
 		els.setup.hidden = true;
 		els.complete.hidden = true;
 		els.session.hidden = false;
 		document.body.classList.add("reading-fullscreen");
 		nextQuestion();
+	}
+
+	function focusReadingBank(mode, bank) {
+		const selectorId = { agents: "rh-agent-focus", mood: "rh-mood-focus", passages: "rh-passage-focus" }[mode];
+		const focus = selectorId ? $(`#${selectorId}`)?.value || "mixed" : "mixed";
+		if (focus === "mixed") return bank;
+		const filtered = bank.filter((item) => item.role === focus || item.type === focus);
+		return filtered.length ? filtered : bank;
 	}
 
 	function updateStats() {
