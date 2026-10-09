@@ -46,14 +46,10 @@
             </section>
 
             <div class="content-tabs" role="tablist" aria-label="Japanese study sections">
-                <button class="content-tab is-active" id="vocabulary-tab" type="button" role="tab" aria-selected="true" aria-controls="vocabulary-panel" tabindex="0">Vocabulary</button>
-                <button class="content-tab" id="grammar-tab" type="button" role="tab" aria-selected="false" aria-controls="grammar-panel" tabindex="-1">Grammar</button>
-                <button class="content-tab" id="grammar-practice-tab" type="button" role="tab" aria-selected="false" aria-controls="grammar-practice-panel" tabindex="-1">Grammar practice</button>
-                <button class="content-tab" id="practice-tab" type="button" role="tab" aria-selected="false" aria-controls="practice-panel" tabindex="-1">Daily practice</button>
-                <button class="content-tab" id="conjugation-tab" type="button" role="tab" aria-selected="false" aria-controls="conjugation-panel" tabindex="-1">Verb conjugation</button>
-                <button class="content-tab" id="nominal-conjugation-tab" type="button" role="tab" aria-selected="false" aria-controls="nominal-conjugation-panel" tabindex="-1">Adjective &amp; noun forms</button>
-                <button class="content-tab" id="pitch-tab" type="button" role="tab" aria-selected="false" aria-controls="pitch-panel" tabindex="-1">Pitch practice</button>
-                <button class="content-tab" id="reading-tab" type="button" role="tab" aria-selected="false" aria-controls="reading-panel" tabindex="-1">Reading help</button>
+                <button class="content-tab is-active" id="vocabulary-tab" data-section="vocabulary" type="button" role="tab" aria-selected="true" aria-controls="vocabulary-panel" tabindex="0">Vocabulary</button>
+                <button class="content-tab" id="grammar-tab" data-section="grammar" type="button" role="tab" aria-selected="false" aria-controls="grammar-panel" tabindex="-1">Grammar</button>
+                <button class="content-tab" id="reading-tab" data-section="reading" type="button" role="tab" aria-selected="false" aria-controls="reading-panel" tabindex="-1">Reading</button>
+                <button class="content-tab" id="speaking-tab" data-section="speaking" type="button" role="tab" aria-selected="false" aria-controls="pitch-panel" tabindex="-1">Speaking</button>
             </div>
 
             <section class="dictionary-layout tab-panel" id="vocabulary-panel" role="tabpanel" aria-labelledby="vocabulary-tab" tabindex="0" aria-label="Dictionary entries">
@@ -165,7 +161,7 @@
                 <p class="grammar-attribution" id="grammar-status">Grammar data from <a href="https://github.com/evanclan/OpenJLPT" target="_blank" rel="noreferrer">OpenJLPT</a>, licensed under <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noreferrer">CC BY-SA 4.0</a>. JLPT level assignments are community approximations, not official exam lists.</p>
             </section>
 
-            <section class="grammar-practice-section tab-panel" id="grammar-practice-panel" role="tabpanel" aria-labelledby="grammar-practice-tab" tabindex="0" aria-hidden="true" hidden>
+            <section class="grammar-practice-section tab-panel" id="grammar-practice-panel" role="tabpanel" aria-labelledby="grammar-tab" tabindex="0" aria-hidden="true" hidden>
                 <div class="nominal-conjugation-heading">
                     <p class="eyebrow section-eyebrow">N4 GRAMMAR GAMES</p>
                     <h3>Grammar practice sessions</h3>
@@ -412,7 +408,7 @@
                 </div>
             </section>
 
-            <section class="practice-section tab-panel" id="practice-panel" role="tabpanel" aria-labelledby="practice-tab" tabindex="0" aria-hidden="true" hidden>
+            <section class="practice-section tab-panel" id="practice-panel" role="tabpanel" aria-labelledby="vocabulary-tab" tabindex="0" aria-hidden="true" hidden>
                 <div class="practice-heading">
                     <div>
                         <p class="eyebrow section-eyebrow">A LITTLE PRACTICE, EVERY DAY</p>
@@ -497,11 +493,11 @@
 
             </section>
 
-            <section class="conjugation-panel tab-panel" id="conjugation-panel" role="tabpanel" aria-labelledby="conjugation-tab" tabindex="0" aria-hidden="true" hidden>
+            <section class="conjugation-panel tab-panel" id="conjugation-panel" role="tabpanel" aria-labelledby="grammar-tab" tabindex="0" aria-hidden="true" hidden>
                 <section class="conjugation-section" aria-labelledby="conjugation-title">
                     <div class="conjugation-heading">
                         <div>
-                            <p class="eyebrow section-eyebrow">VERB FORMATION DRILLS</p>
+                            <p class="eyebrow section-eyebrow">GRAMMAR SESSION A</p>
                             <h2 id="conjugation-title">Verb conjugation practice</h2>
                             <p class="conjugation-intro">Choose a JLPT level and a verb form. Read the verb and meaning, then type your answer. Level groupings are study guidance, not an official JLPT conjugation checklist.</p>
                         </div>
@@ -552,10 +548,10 @@
                 </section>
             </section>
 
-                <section class="nominal-conjugation-panel tab-panel" id="nominal-conjugation-panel" role="tabpanel" aria-labelledby="nominal-conjugation-tab" tabindex="0" aria-hidden="true" hidden>
+                <section class="nominal-conjugation-panel tab-panel" id="nominal-conjugation-panel" role="tabpanel" aria-labelledby="grammar-tab" tabindex="0" aria-hidden="true" hidden>
                     <div class="nominal-conjugation-setup">
                         <div class="nominal-conjugation-heading">
-                            <p class="eyebrow section-eyebrow">ADJECTIVE &amp; NOUN FORMS</p>
+                            <p class="eyebrow section-eyebrow">GRAMMAR SESSION B</p>
                             <h3 id="nominal-conjugation-title">Practice a different word type</h3>
                             <p>Separate drills for い-adjectives, な-adjectives, and nouns.</p>
                         </div>
@@ -664,7 +660,7 @@
                         <button class="practice-start" id="conjugation-again" type="button">Practice this form again</button>
                     </div>
 
-                <section class="pitch-panel tab-panel" id="pitch-panel" role="tabpanel" aria-labelledby="pitch-tab" tabindex="0" aria-hidden="true" hidden>
+                <section class="pitch-panel tab-panel" id="pitch-panel" role="tabpanel" aria-labelledby="speaking-tab" tabindex="0" aria-hidden="true" hidden>
                     <div class="nominal-conjugation-heading">
                         <p class="eyebrow section-eyebrow">PITCH ACCENT</p>
                         <h3>Pitch practice</h3>
@@ -719,7 +715,7 @@
                     <div class="nominal-conjugation-heading">
                         <p class="eyebrow section-eyebrow">READING HELP</p>
                         <h3>Reading help</h3>
-                        <p>Five training modes that build the habits you need for long reading passages: spotting stacked grammar, finding sentence breaks, separating what was said or thought, tracking who did what, and checking short-passage meaning.</p>
+                        <p>Six training modes that build the habits you need for long reading passages: spotting stacked grammar, finding sentence breaks, separating what was said or thought, tracking who did what, reading narrator mood, and checking short-passage meaning.</p>
                     </div>
                     <div class="rh-modes" id="rh-setup">
                         <article class="rh-mode-card">
@@ -796,7 +792,7 @@
                         <article class="rh-mode-card">
                             <span class="rh-mode-num" aria-hidden="true">4</span>
                             <h4>Who did it?</h4>
-                            <p>Level 1 agent tracking. Read benefactive, passive, and causative sentences and choose who actually did the action, received it, or caused it.</p>
+                            <p>Level 1 agent tracking. Read benefactive, passive, and causative sentences, then choose the doer, receiver, grammar clue, or role summary.</p>
                             <p class="rh-mode-example" lang="ja">妹は私に荷物を持ってもらいました。<br><span>Who carried it?</span></p>
                             <label>Questions
                                 <select id="rh-count-agents"><option value="10" selected>10</option><option value="20">20</option><option value="30">30</option><option value="50">50</option></select>
@@ -805,6 +801,16 @@
                         </article>
                         <article class="rh-mode-card">
                             <span class="rh-mode-num" aria-hidden="true">5</span>
+                            <h4>Narrator mood</h4>
+                            <p>Level 1 mood tracking. Decide whether the writer's evaluation is positive or negative, then identify the feeling, clue, and clue type.</p>
+                            <p class="rh-mode-example" lang="ja">友だちが手伝ってくれました。<br><span>Positive or negative?</span></p>
+                            <label>Questions
+                                <select id="rh-count-mood"><option value="10" selected>10</option><option value="20">20</option><option value="30">30</option><option value="50">50</option></select>
+                            </label>
+                            <button class="practice-start" type="button" data-rh-start="mood">Start →</button>
+                        </article>
+                        <article class="rh-mode-card">
+                            <span class="rh-mode-num" aria-hidden="true">6</span>
                             <h4>Short passages</h4>
                             <p>Read compact N4-style notices, messages, and diary entries. Answer detail, reason, sequence, and inference questions without translating every word.</p>
                             <p class="rh-mode-example" lang="ja">図書館は工事のため、来週の月曜日まで休みです。<br><span>Why is it closed?</span></p>

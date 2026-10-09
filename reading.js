@@ -670,36 +670,93 @@
 		receiver: "receiver of help/favor",
 		affected: "person affected by the passive event",
 		causer: "person who made/let it happen",
-		object: "thing acted on"
+		object: "thing acted on",
+		clue: "grammar clue",
+		meaning: "role summary"
+	};
+
+	const agentPatternClues = {
+		"てあげる": "〜てあげました",
+		"てもらう": "〜てもらいました",
+		"てくれる": "〜てくれました",
+		passive: "〜られました",
+		causative: "〜せました",
+		"causative-passive": "〜させられました"
 	};
 
 	const agentScenarios = [
 		{ pattern: "てあげる", sentence: "私は妹に重い箱を持ってあげました。", action: "carried the heavy box", agent: "私", receiver: "妹", object: "重い箱", parties: ["私", "妹", "重い箱", "母"], note: "In てあげる, the subject does the action for someone else." },
 		{ pattern: "てあげる", sentence: "兄は弟に自転車の乗り方を教えてあげました。", action: "taught how to ride a bicycle", agent: "兄", receiver: "弟", object: "自転車の乗り方", parties: ["兄", "弟", "自転車", "先生"], note: "The person before は/が is usually the helper in てあげる." },
 		{ pattern: "てあげる", sentence: "友だちは留学生に駅までの道を説明してあげました。", action: "explained the way to the station", agent: "友だち", receiver: "留学生", object: "駅までの道", parties: ["友だち", "留学生", "駅までの道", "駅員"], note: "説明してあげました means the friend did the explaining for the exchange student." },
+		{ pattern: "てあげる", sentence: "私は祖母にスマホの使い方をゆっくり教えてあげました。", action: "explained how to use the smartphone", agent: "私", receiver: "祖母", object: "スマホの使い方", parties: ["私", "祖母", "スマホの使い方", "母"], note: "てあげる points from the helper toward the person helped." },
+		{ pattern: "てあげる", sentence: "クラスの代表は新しい学生に学校の中を案内してあげました。", action: "showed someone around the school", agent: "クラスの代表", receiver: "新しい学生", object: "学校の中", parties: ["クラスの代表", "新しい学生", "学校の中", "先生"], note: "The representative is the helper; the new student receives the favor." },
 		{ pattern: "てもらう", sentence: "私は先生に作文を直してもらいました。", action: "corrected the essay", agent: "先生", receiver: "私", object: "作文", parties: ["私", "先生", "作文", "友だち"], note: "In てもらう, the に person often does the action; the subject receives the favor." },
 		{ pattern: "てもらう", sentence: "妹は私に荷物を持ってもらいました。", action: "carried the bags", agent: "私", receiver: "妹", object: "荷物", parties: ["妹", "私", "荷物", "母"], note: "妹 receives the favor; 私 is the one who carries." },
 		{ pattern: "てもらう", sentence: "田中さんは店員に新しいサイズを探してもらいました。", action: "looked for a new size", agent: "店員", receiver: "田中さん", object: "新しいサイズ", parties: ["田中さん", "店員", "新しいサイズ", "友だち"], note: "The に person is the helper in this てもらう sentence." },
+		{ pattern: "てもらう", sentence: "道が分からなかったので、私は駅員に出口を教えてもらいました。", action: "explained the exit", agent: "駅員", receiver: "私", object: "出口", parties: ["私", "駅員", "出口", "友だち"], note: "私は receives the favor; 駅員 is the person who explains." },
+		{ pattern: "てもらう", sentence: "会議の前に、部長は山田さんに資料をコピーしてもらいました。", action: "copied the materials", agent: "山田さん", receiver: "部長", object: "資料", parties: ["部長", "山田さん", "資料", "会議"], note: "In てもらう, the person marked with に often performs the action." },
 		{ pattern: "てくれる", sentence: "兄が私のパソコンを直してくれました。", action: "fixed the computer", agent: "兄", receiver: "私", object: "パソコン", parties: ["兄", "私", "パソコン", "店員"], note: "In てくれる, the subject does something for the speaker side." },
 		{ pattern: "てくれる", sentence: "友だちが私に日本語のメールを書いてくれました。", action: "wrote the Japanese email", agent: "友だち", receiver: "私", object: "日本語のメール", parties: ["友だち", "私", "日本語のメール", "先生"], note: "友だち is the helper; 私 benefits from the action." },
 		{ pattern: "てくれる", sentence: "母が弟に晩ご飯を作ってくれました。", action: "made dinner", agent: "母", receiver: "弟", object: "晩ご飯", parties: ["母", "弟", "晩ご飯", "父"], note: "The subject 母 performs the helpful action." },
+		{ pattern: "てくれる", sentence: "朝、財布を忘れました。佐藤さんが駅まで届けてくれました。", action: "delivered the wallet", agent: "佐藤さん", receiver: "私", object: "財布", parties: ["佐藤さん", "私", "財布", "駅員"], note: "The receiver 私 is omitted, but てくれました shows the writer's side benefited." },
+		{ pattern: "てくれる", sentence: "雨が降ってきたので、姉がかさを貸してくれました。", action: "lent the umbrella", agent: "姉", receiver: "私", object: "かさ", parties: ["姉", "私", "かさ", "母"], note: "てくれる marks 姉 as the person doing a helpful action for the writer." },
 		{ pattern: "passive", sentence: "私は弟にケーキを食べられました。", action: "ate the cake", agent: "弟", affected: "私", object: "ケーキ", parties: ["私", "弟", "ケーキ", "母"], note: "In this passive sentence, 私 is affected; 弟 actually ate the cake." },
 		{ pattern: "passive", sentence: "山田さんは犬に手をかまれました。", action: "bit the hand", agent: "犬", affected: "山田さん", object: "手", parties: ["山田さん", "犬", "手", "医者"], note: "The に marked noun can be the doer in passive sentences." },
 		{ pattern: "passive", sentence: "私は知らない人に写真を撮られました。", action: "took the photo", agent: "知らない人", affected: "私", object: "写真", parties: ["私", "知らない人", "写真", "友だち"], note: "私 is the affected person; 知らない人 did the action." },
+		{ pattern: "passive", sentence: "旅行中に、私は雨に降られて服がぬれました。", action: "rained on someone", agent: "雨", affected: "私", object: "服", parties: ["私", "雨", "服", "友だち"], note: "This passive shows the writer was negatively affected by rain." },
+		{ pattern: "passive", sentence: "兄は友だちに大切な本をなくされました。", action: "lost the important book", agent: "友だち", affected: "兄", object: "大切な本", parties: ["兄", "友だち", "大切な本", "先生"], note: "The に person did the losing; 兄 is the one affected." },
+		{ pattern: "passive", sentence: "発表の前に、私は先生に名前を呼ばれました。", action: "called the name", agent: "先生", affected: "私", object: "名前", parties: ["私", "先生", "名前", "発表"], note: "In passive sentences, the subject is often the person receiving or affected by the action." },
 		{ pattern: "causative", sentence: "先生は学生に漢字を書かせました。", action: "wrote kanji", agent: "学生", causer: "先生", object: "漢字", parties: ["先生", "学生", "漢字", "友だち"], note: "In causative, the causer makes/lets someone else do the action." },
 		{ pattern: "causative", sentence: "母は子どもに部屋を掃除させました。", action: "cleaned the room", agent: "子ども", causer: "母", object: "部屋", parties: ["母", "子ども", "部屋", "父"], note: "母 caused it; 子ども actually cleaned." },
 		{ pattern: "causative", sentence: "店長はアルバイトにレジを手伝わせました。", action: "helped at the register", agent: "アルバイト", causer: "店長", object: "レジ", parties: ["店長", "アルバイト", "レジ", "お客さん"], note: "The person marked with に is made/allowed to do the action here." },
+		{ pattern: "causative", sentence: "父は弟に犬の散歩をさせました。", action: "walked the dog", agent: "弟", causer: "父", object: "犬の散歩", parties: ["父", "弟", "犬の散歩", "犬"], note: "父 caused it; 弟 is the one who walked the dog." },
+		{ pattern: "causative", sentence: "先生は学生に新しい文法を何度も練習させました。", action: "practiced the new grammar", agent: "学生", causer: "先生", object: "新しい文法", parties: ["先生", "学生", "新しい文法", "クラス"], note: "The teacher makes the students practice; the students perform the action." },
+		{ pattern: "causative", sentence: "母は妹に好きな服を選ばせました。", action: "chose the clothes", agent: "妹", causer: "母", object: "好きな服", parties: ["母", "妹", "好きな服", "店員"], note: "Causative can also mean let someone do something; 妹 does the choosing." },
 		{ pattern: "causative-passive", sentence: "私は父に庭を掃除させられました。", action: "cleaned the garden", agent: "私", causer: "父", object: "庭", parties: ["私", "父", "庭", "弟"], note: "Causative-passive often means the subject was made to do the action." },
 		{ pattern: "causative-passive", sentence: "弟は先生に長い文を読ませられました。", action: "read the long sentence", agent: "弟", causer: "先生", object: "長い文", parties: ["弟", "先生", "長い文", "兄"], note: "弟 is made to read; 先生 is the causer." },
-		{ pattern: "causative-passive", sentence: "学生たちはコーチに校庭を走らせられました。", action: "ran around the schoolyard", agent: "学生たち", causer: "コーチ", object: "校庭", parties: ["学生たち", "コーチ", "校庭", "先生"], note: "The students are the ones running; the coach makes them do it." }
+		{ pattern: "causative-passive", sentence: "学生たちはコーチに校庭を走らせられました。", action: "ran around the schoolyard", agent: "学生たち", causer: "コーチ", object: "校庭", parties: ["学生たち", "コーチ", "校庭", "先生"], note: "The students are the ones running; the coach makes them do it." },
+		{ pattern: "causative-passive", sentence: "私は先輩に会議の資料を作らせられました。", action: "made the meeting materials", agent: "私", causer: "先輩", object: "会議の資料", parties: ["私", "先輩", "会議の資料", "部長"], note: "私は is forced to make the materials; 先輩 is the causer." },
+		{ pattern: "causative-passive", sentence: "妹は母に苦手な野菜を食べさせられました。", action: "ate the disliked vegetables", agent: "妹", causer: "母", object: "苦手な野菜", parties: ["妹", "母", "苦手な野菜", "父"], note: "妹 performs the action unwillingly; 母 makes it happen." }
 	];
 
 	function agentQuestionOptions(answer, scenario) {
 		return shuffled(Array.from(new Set([answer, ...scenario.parties.filter((item) => item !== answer), "だれも"]))).slice(0, 4);
 	}
 
+	function agentClueOptions(answer) {
+		const clues = Object.values(agentPatternClues).filter((clue) => clue !== answer);
+		return shuffled([answer, ...shuffled(clues).slice(0, 3)]);
+	}
+
+	function agentRoleSummary(scenario) {
+		if (scenario.receiver) return `${scenario.agent} did it for ${scenario.receiver}.`;
+		if (scenario.affected) return `${scenario.affected} was affected; ${scenario.agent} did it.`;
+		if (scenario.causer) return `${scenario.causer} made or let ${scenario.agent} do it.`;
+		return `${scenario.agent} did it.`;
+	}
+
+	function agentRoleSummaryOptions(scenario) {
+		const answer = agentRoleSummary(scenario);
+		const options = [answer];
+		if (scenario.receiver) {
+			options.push(`${scenario.receiver} did it for ${scenario.agent}.`);
+			options.push(`${scenario.agent} was affected by ${scenario.receiver}.`);
+			options.push(`${scenario.receiver} made ${scenario.agent} do it.`);
+		} else if (scenario.affected) {
+			options.push(`${scenario.agent} was affected; ${scenario.affected} did it.`);
+			options.push(`${scenario.affected} did it for ${scenario.agent}.`);
+			options.push(`${scenario.affected} made ${scenario.agent} do it.`);
+		} else if (scenario.causer) {
+			options.push(`${scenario.agent} made or let ${scenario.causer} do it.`);
+			options.push(`${scenario.causer} did the action directly.`);
+			options.push(`${scenario.agent} received a favor from ${scenario.causer}.`);
+		}
+		return shuffled(Array.from(new Set(options))).slice(0, 4);
+	}
+
 	function buildAgentQuestionBank() {
 		return agentScenarios.flatMap((scenario) => {
+			const clue = scenario.clue || agentPatternClues[scenario.pattern];
 			const questions = [
 				{
 					role: "agent",
@@ -714,6 +771,22 @@
 					subprompt: "Find the thing that receives the action.",
 					answer: scenario.object,
 					explanation: `The object or target of the action is ${scenario.object}.`
+				},
+				{
+					role: "clue",
+					prompt: "Which grammar clue helps you track the roles?",
+					subprompt: "First spot the pattern, then decide whether は/が or に marks the doer.",
+					answer: clue,
+					options: agentClueOptions(clue),
+					explanation: `${clue} is the key pattern here. ${scenario.note}`
+				},
+				{
+					role: "meaning",
+					prompt: "Which role summary matches the sentence?",
+					subprompt: "Check who acts, who benefits or is affected, and who causes the action.",
+					answer: agentRoleSummary(scenario),
+					options: agentRoleSummaryOptions(scenario),
+					explanation: `${scenario.note} ${agentRoleSummary(scenario)}`
 				}
 			];
 			if (scenario.receiver) {
@@ -748,8 +821,184 @@
 				level: "Level 1",
 				pattern: scenario.pattern,
 				sentence: scenario.sentence,
-				options: agentQuestionOptions(question.answer, scenario)
+				options: question.options || agentQuestionOptions(question.answer, scenario)
 			}));
+		});
+	}
+
+	const moodLabels = {
+		positive: "Positive (+)",
+		negative: "Negative (-)"
+	};
+
+	const moodToneOptions = [
+		"appreciative / helped",
+		"relieved / safe",
+		"approval / praise",
+		"satisfied / pleased",
+		"hopeful / looking forward",
+		"regretful / troubled",
+		"lonely / uneasy",
+		"annoyed / affected",
+		"disappointed",
+		"physically uncomfortable",
+		"inconvenienced"
+	];
+
+	const moodSignalOptions = [
+		"received favor",
+		"positive evaluation word",
+		"relief or success phrase",
+		"hope or excitement phrase",
+		"regretful てしまう",
+		"negative evaluation word",
+		"passive annoyance",
+		"too much / excessive action",
+		"bad result phrase",
+		"disappointment phrase"
+	];
+
+	const moodScenarios = [
+		{ mood: "positive", category: "help received", sentence: "友だちが宿題を手伝ってくれました。", clue: "手伝ってくれました", explanation: "てくれました shows someone kindly did something for the writer's side, so the feeling is positive." },
+		{ mood: "positive", category: "help received", sentence: "先生に作文を直してもらいました。", clue: "直してもらいました", explanation: "てもらいました often shows the writer received a favor; here the teacher corrected the essay." },
+		{ mood: "positive", category: "help received", sentence: "兄が駅まで迎えに来てくれました。", clue: "来てくれました", explanation: "来てくれました frames the brother's action as helpful to the writer." },
+		{ mood: "positive", category: "help received", sentence: "旅行の写真を見せてもらいました。", clue: "見せてもらいました", explanation: "The writer got to see the photos, so てもらいました points to a positive received favor." },
+		{ mood: "positive", category: "help received", sentence: "店員さんが丁寧に説明してくれました。", clue: "説明してくれました", explanation: "丁寧に and てくれました both make the sentence feel appreciative." },
+		{ mood: "positive", category: "help received", sentence: "みんなが応援してくれたので頑張れました。", clue: "応援してくれた", explanation: "Support from others helped the writer, so the evaluation is positive." },
+		{ mood: "positive", category: "positive judgment", sentence: "この店の人はとても親切でした。", clue: "親切", explanation: "親切 is a positive judgment word." },
+		{ mood: "positive", category: "positive judgment", sentence: "駅の前は明るくて安心しました。", clue: "安心しました", explanation: "安心しました shows relief or safety, so the mood is positive." },
+		{ mood: "positive", category: "positive judgment", sentence: "山田さんは一生懸命練習しました。", clue: "一生懸命", explanation: "一生懸命 praises effort and gives a positive evaluation." },
+		{ mood: "positive", category: "positive judgment", sentence: "この部屋は広くて使いやすいです。", clue: "使いやすい", explanation: "使いやすい means easy to use, a positive quality." },
+		{ mood: "positive", category: "positive judgment", sentence: "新しいアプリは便利で助かります。", clue: "助かります", explanation: "助かります means it helps or is a relief, so the writer likes the situation." },
+		{ mood: "positive", category: "positive judgment", sentence: "このケーキは甘すぎなくておいしいです。", clue: "おいしい", explanation: "Even with すぎない, the final judgment おいしい is clearly positive." },
+		{ mood: "positive", category: "positive judgment", sentence: "図書館は静かで勉強しやすかったです。", clue: "勉強しやすかった", explanation: "しやすかった means it was easy to do the action, so this is a positive evaluation." },
+		{ mood: "negative", category: "regret / mistake", sentence: "財布を落としてしまいました。", clue: "落としてしまいました", explanation: "てしまいました often shows regret when something bad happened." },
+		{ mood: "negative", category: "regret / mistake", sentence: "電車を乗り間違えてしまいました。", clue: "間違えてしまいました", explanation: "間違えてしまいました means the writer made a mistake and regrets it." },
+		{ mood: "negative", category: "regret / mistake", sentence: "テストの時間を忘れてしまいました。", clue: "忘れてしまいました", explanation: "Forgetting the test time with てしまいました is an unwanted event." },
+		{ mood: "negative", category: "regret / mistake", sentence: "大事なメールを消してしまって困りました。", clue: "困りました", explanation: "困りました directly tells you the writer had a problem." },
+		{ mood: "negative", category: "negative judgment", sentence: "この部屋は狭すぎます。", clue: "狭すぎます", explanation: "狭すぎます says the room is too narrow, a negative evaluation." },
+		{ mood: "negative", category: "negative judgment", sentence: "夜の駅前はさびしい感じがしました。", clue: "さびしい", explanation: "さびしい is a negative feeling word here." },
+		{ mood: "negative", category: "negative judgment", sentence: "隣の部屋がうるさくて眠れませんでした。", clue: "眠れませんでした", explanation: "The noise caused the writer not to sleep, so the mood is negative." },
+		{ mood: "negative", category: "negative judgment", sentence: "新しい靴は小さくて足が痛くなりました。", clue: "痛くなりました", explanation: "痛くなりました shows a bad result." },
+		{ mood: "negative", category: "negative judgment", sentence: "バスが遅れて、約束の時間に間に合いませんでした。", clue: "間に合いませんでした", explanation: "Not making it on time is an unwanted result." },
+		{ mood: "negative", category: "passive annoyance", sentence: "母に日記を読まれてしまいました。", clue: "読まれてしまいました", explanation: "The passive plus てしまいました shows the writer was negatively affected." },
+		{ mood: "negative", category: "passive annoyance", sentence: "雨に降られて服がぬれました。", clue: "雨に降られて", explanation: "This passive pattern often shows trouble caused by something outside the writer's control." },
+		{ mood: "negative", category: "passive annoyance", sentence: "先生に大事なプリントをなくされました。", clue: "なくされました", explanation: "The passive shows the writer was affected by someone else's action." },
+		{ mood: "negative", category: "passive annoyance", sentence: "友だちに約束を忘れられてしまいました。", clue: "忘れられてしまいました", explanation: "The passive plus てしまいました shows disappointment or trouble." },
+		{ mood: "negative", category: "too much", sentence: "ケーキを食べすぎて気持ちが悪くなりました。", clue: "食べすぎて", explanation: "すぎて plus a bad result shows the writer thinks it was excessive." },
+		{ mood: "negative", category: "too much", sentence: "買い物をしすぎて、お金がなくなりました。", clue: "しすぎて", explanation: "しすぎて causes a bad result, so the mood is negative." },
+		{ mood: "positive", category: "help received", tone: "appreciative / helped", signal: "received favor", sentence: "駅で道に迷いましたが、知らない人が出口まで案内してくれました。", clue: "案内してくれました", explanation: "てくれました shows a helpful action for the writer, so the writer sounds appreciative." },
+		{ mood: "positive", category: "help received", tone: "appreciative / helped", signal: "received favor", sentence: "風邪で休んだ日のノートを、クラスメートに見せてもらいました。", clue: "見せてもらいました", explanation: "てもらいました means the writer received a favor from a classmate." },
+		{ mood: "positive", category: "help received", tone: "appreciative / helped", signal: "received favor", sentence: "荷物が多くて困っていたら、駅員さんが手伝ってくれました。", clue: "手伝ってくれました", explanation: "困っていたら sets up trouble, and てくれました shows someone helped." },
+		{ mood: "positive", category: "relief / success", tone: "relieved / safe", signal: "relief or success phrase", sentence: "道を間違えましたが、時間に間に合ってほっとしました。", clue: "ほっとしました", explanation: "ほっとしました directly shows relief after a possible problem." },
+		{ mood: "positive", category: "relief / success", tone: "relieved / safe", signal: "relief or success phrase", sentence: "試験は難しかったですが、合格できて安心しました。", clue: "安心しました", explanation: "安心しました shows relief and a positive outcome." },
+		{ mood: "positive", category: "relief / success", tone: "relieved / safe", signal: "relief or success phrase", sentence: "台風の日でしたが、家族はみんな無事でした。", clue: "無事でした", explanation: "無事でした means everyone was safe, so the feeling is relief." },
+		{ mood: "positive", category: "positive judgment", tone: "approval / praise", signal: "positive evaluation word", sentence: "新しい先生の説明は分かりやすくて助かります。", clue: "分かりやすくて", explanation: "分かりやすい and 助かります both signal a positive evaluation." },
+		{ mood: "positive", category: "positive judgment", tone: "satisfied / pleased", signal: "positive evaluation word", sentence: "このホテルは駅から近いだけでなく、部屋もきれいでした。", clue: "きれいでした", explanation: "だけでなく adds another good point; きれいでした is positive." },
+		{ mood: "positive", category: "positive judgment", tone: "satisfied / pleased", signal: "positive evaluation word", sentence: "思ったより安く買えたので、うれしかったです。", clue: "うれしかったです", explanation: "うれしかったです directly gives the writer's pleased feeling." },
+		{ mood: "positive", category: "hope / anticipation", tone: "hopeful / looking forward", signal: "hope or excitement phrase", sentence: "来週の文化祭をとても楽しみにしています。", clue: "楽しみにしています", explanation: "楽しみにしています shows the writer is looking forward to it." },
+		{ mood: "positive", category: "hope / anticipation", tone: "hopeful / looking forward", signal: "hope or excitement phrase", sentence: "日本で友だちに会える日が待ち遠しいです。", clue: "待ち遠しいです", explanation: "待ち遠しい means the writer can hardly wait, a positive anticipation." },
+		{ mood: "positive", category: "effort praised", tone: "approval / praise", signal: "positive evaluation word", sentence: "妹は毎朝早く起きて、一生懸命ピアノを練習しています。", clue: "一生懸命", explanation: "一生懸命 praises effort, so the evaluation is positive." },
+		{ mood: "negative", category: "regret / mistake", tone: "regretful / troubled", signal: "regretful てしまう", sentence: "急いでいたので、宿題を家に忘れてしまいました。", clue: "忘れてしまいました", explanation: "てしまいました shows the writer regrets the mistake." },
+		{ mood: "negative", category: "regret / mistake", tone: "regretful / troubled", signal: "regretful てしまう", sentence: "メールの送り先を間違えてしまって、恥ずかしかったです。", clue: "間違えてしまって", explanation: "The mistake plus 恥ずかしかったです shows embarrassment and regret." },
+		{ mood: "negative", category: "regret / mistake", tone: "regretful / troubled", signal: "regretful てしまう", sentence: "せっかく作った弁当を電車に置いてきてしまいました。", clue: "置いてきてしまいました", explanation: "せっかく plus てしまいました makes the loss feel regrettable." },
+		{ mood: "negative", category: "negative judgment", tone: "lonely / uneasy", signal: "negative evaluation word", sentence: "新しい町には知っている人が一人もいなくて、心細かったです。", clue: "心細かったです", explanation: "心細かったです shows the writer felt uneasy or alone." },
+		{ mood: "negative", category: "negative judgment", tone: "lonely / uneasy", signal: "negative evaluation word", sentence: "夜の道は暗くて、少し怖かったです。", clue: "怖かったです", explanation: "怖かったです directly shows fear or unease." },
+		{ mood: "negative", category: "negative judgment", tone: "inconvenienced", signal: "negative evaluation word", sentence: "駅からホテルまで遠すぎて、とても不便でした。", clue: "不便でした", explanation: "不便でした is a negative evaluation of the situation." },
+		{ mood: "negative", category: "passive annoyance", tone: "annoyed / affected", signal: "passive annoyance", sentence: "休みの日に、会社から電話をかけられてしまいました。", clue: "かけられてしまいました", explanation: "The passive plus てしまいました shows the writer was bothered by the call." },
+		{ mood: "negative", category: "passive annoyance", tone: "annoyed / affected", signal: "passive annoyance", sentence: "電車の中で、知らない人に足をふまれました。", clue: "ふまれました", explanation: "The passive shows the writer was affected by someone else's action." },
+		{ mood: "negative", category: "passive annoyance", tone: "annoyed / affected", signal: "passive annoyance", sentence: "楽しみにしていたケーキを弟に食べられてしまいました。", clue: "食べられてしまいました", explanation: "Passive plus てしまいました shows the writer was negatively affected." },
+		{ mood: "negative", category: "too much", tone: "physically uncomfortable", signal: "too much / excessive action", sentence: "昨日、歩きすぎて足が痛いです。", clue: "歩きすぎて", explanation: "すぎて plus pain shows an excessive action with a bad result." },
+		{ mood: "negative", category: "too much", tone: "physically uncomfortable", signal: "too much / excessive action", sentence: "辛い料理を食べすぎて、夜よく眠れませんでした。", clue: "食べすぎて", explanation: "Eating too much causes a bad physical result, so the mood is negative." },
+		{ mood: "negative", category: "bad result", tone: "inconvenienced", signal: "bad result phrase", sentence: "バスが来なくて、授業に遅れてしまいました。", clue: "遅れてしまいました", explanation: "遅れてしまいました shows an unwanted result." },
+		{ mood: "negative", category: "bad result", tone: "inconvenienced", signal: "bad result phrase", sentence: "コピー機がこわれていて、資料を準備できませんでした。", clue: "準備できませんでした", explanation: "できませんでした shows the writer could not complete the needed action." },
+		{ mood: "negative", category: "disappointment", tone: "disappointed", signal: "disappointment phrase", sentence: "楽しみにしていた映画は、思ったほどおもしろくありませんでした。", clue: "思ったほどおもしろくありませんでした", explanation: "思ったほど...ありません shows the result did not meet expectations." },
+		{ mood: "negative", category: "disappointment", tone: "disappointed", signal: "disappointment phrase", sentence: "旅行の日に雨が降って、少し残念でした。", clue: "残念でした", explanation: "残念でした directly marks disappointment." },
+		{ mood: "negative", category: "disappointment", tone: "disappointed", signal: "disappointment phrase", sentence: "新しいレストランに行きましたが、料理が冷たくてがっかりしました。", clue: "がっかりしました", explanation: "がっかりしました directly shows disappointment." },
+		{ mood: "negative", category: "restriction / lack", tone: "disappointed", signal: "bad result phrase", sentence: "財布には五百円しかなくて、ほしい本が買えませんでした。", clue: "買えませんでした", explanation: "しかない and 買えませんでした show a frustrating lack." }
+	];
+
+	function moodTone(scenario) {
+		if (scenario.tone) return scenario.tone;
+		if (scenario.category === "help received") return "appreciative / helped";
+		if (scenario.category === "positive judgment") return scenario.clue.includes("安心") || scenario.clue.includes("助か") ? "relieved / safe" : "approval / praise";
+		if (scenario.category === "regret / mistake") return "regretful / troubled";
+		if (scenario.category === "passive annoyance") return "annoyed / affected";
+		if (scenario.category === "too much") return "physically uncomfortable";
+		return scenario.mood === "positive" ? "satisfied / pleased" : "disappointed";
+	}
+
+	function moodSignal(scenario) {
+		if (scenario.signal) return scenario.signal;
+		if (scenario.category === "help received") return "received favor";
+		if (scenario.category === "positive judgment") return scenario.clue.includes("安心") || scenario.clue.includes("助か") ? "relief or success phrase" : "positive evaluation word";
+		if (scenario.category === "regret / mistake") return "regretful てしまう";
+		if (scenario.category === "negative judgment") return "negative evaluation word";
+		if (scenario.category === "passive annoyance") return "passive annoyance";
+		if (scenario.category === "too much") return "too much / excessive action";
+		return "bad result phrase";
+	}
+
+	function moodClueOptions(answer) {
+		const distractors = shuffled(moodScenarios.map((item) => item.clue).filter((clue) => clue !== answer)).slice(0, 3);
+		return shuffled([answer, ...distractors]);
+	}
+
+	function moodToneQuestionOptions(answer) {
+		return shuffled([answer, ...shuffled(moodToneOptions.filter((option) => option !== answer)).slice(0, 3)]);
+	}
+
+	function moodSignalQuestionOptions(answer) {
+		return shuffled([answer, ...shuffled(moodSignalOptions.filter((option) => option !== answer)).slice(0, 3)]);
+	}
+
+	function buildMoodQuestionBank() {
+		return moodScenarios.flatMap((scenario) => {
+			const answer = moodLabels[scenario.mood];
+			const tone = moodTone(scenario);
+			const signal = moodSignal(scenario);
+			return [
+				{
+					type: "mood",
+					level: "Level 1",
+					category: scenario.category,
+					sentence: scenario.sentence,
+					prompt: "What feeling or evaluation does the writer show?",
+					answer,
+					options: shuffled([moodLabels.positive, moodLabels.negative]),
+					explanation: scenario.explanation
+				},
+				{
+					type: "tone",
+					level: "Level 1",
+					category: scenario.category,
+					sentence: scenario.sentence,
+					prompt: "What specific feeling is closest to the writer's mood?",
+					answer: tone,
+					options: moodToneQuestionOptions(tone),
+					explanation: `${scenario.explanation} The closest feeling is ${tone}.`
+				},
+				{
+					type: "clue",
+					level: "Level 1",
+					category: scenario.category,
+					sentence: scenario.sentence,
+					prompt: `Which expression tells you the mood is ${answer}?`,
+					answer: scenario.clue,
+					options: moodClueOptions(scenario.clue),
+					explanation: scenario.explanation
+				},
+				{
+					type: "signal",
+					level: "Level 1",
+					category: scenario.category,
+					sentence: scenario.sentence,
+					prompt: "What kind of language is carrying the mood?",
+					answer: signal,
+					options: moodSignalQuestionOptions(signal),
+					explanation: `${scenario.explanation} This is a ${signal} clue.`
+				}
+			];
 		});
 	}
 
@@ -787,7 +1036,7 @@
 				return;
 			}
 		}
-		const bank = mode === "breaks" ? breakBank : mode === "quotes" ? quoteBank : mode === "passages" ? passageBank : mode === "agents" ? buildAgentQuestionBank() : null;
+		const bank = mode === "breaks" ? breakBank : mode === "quotes" ? quoteBank : mode === "passages" ? passageBank : mode === "agents" ? buildAgentQuestionBank() : mode === "mood" ? buildMoodQuestionBank() : null;
 		const items = bank ? shuffled(bank) : null;
 		session = { mode, count: bank ? Math.min(count, bank.length) : count, pool, items, index: 0, correct: 0, answered: 0, missed: [], current: null, checked: false };
 		els.status.textContent = "";
@@ -811,6 +1060,7 @@
 		if (session.mode === "stack") renderStack();
 		else if (session.mode === "passages") renderPassageQuestion();
 		else if (session.mode === "agents") renderAgentQuestion();
+		else if (session.mode === "mood") renderMoodQuestion();
 		else if (session.mode === "breaks") renderBreakQuestion();
 		else if (session.mode === "quotes") renderQuoteQuestion();
 		else renderMarking();
@@ -830,7 +1080,7 @@
 		els.session.hidden = true;
 		document.body.classList.remove("reading-fullscreen");
 		els.complete.hidden = false;
-		els.title.textContent = { stack: "Grammar stacking complete", breaks: "Sentence breaks complete", quotes: "Said & thought complete", agents: "Who did it complete", passages: "Short passages complete" }[mode];
+		els.title.textContent = { stack: "Grammar stacking complete", breaks: "Sentence breaks complete", quotes: "Said & thought complete", agents: "Who did it complete", mood: "Narrator mood complete", passages: "Short passages complete" }[mode];
 		const percent = answered ? Math.round((correct / answered) * 100) : 0;
 		els.result.textContent = `${correct} of ${answered} correct (${percent}%).`;
 		els.missed.innerHTML = missed.length
@@ -996,6 +1246,7 @@
 
 	function renderAgentQuestion() {
 		const item = session.items[(session.index - 1) % session.items.length];
+		const answerLang = item.role === "meaning" ? "" : ' lang="ja"';
 		session.current = { item, choiceAnswer: item.answer };
 		els.hero.innerHTML = `
 			<p class="rh-hero-label">Who did it? · ${escapeHtml(item.level)} · ${escapeHtml(item.pattern)}</p>
@@ -1003,7 +1254,7 @@
 		els.band.textContent = item.prompt;
 		els.body.innerHTML = `
 			<div class="rh-choice-list" role="group" aria-label="Agent role choices">
-				${item.options.map((option) => `<button type="button" class="rh-choice-option" data-choice="${escapeHtml(option)}"><span lang="ja">${escapeHtml(option)}</span></button>`).join("")}
+				${item.options.map((option) => `<button type="button" class="rh-choice-option" data-choice="${escapeHtml(option)}"><span${answerLang}>${escapeHtml(option)}</span></button>`).join("")}
 			</div>
 			<p class="answer-feedback rh-feedback" id="rh-feedback" aria-live="polite"></p>
 			<div class="rh-hint-table"><h4>Reading move</h4><p>${escapeHtml(item.subprompt)} Pattern focus: ${escapeHtml(agentRoleLabels[item.role] || item.role)}.</p></div>
@@ -1014,8 +1265,9 @@
 		const { item, choiceAnswer } = session.current;
 		const correct = choice === choiceAnswer;
 		const feedback = $("#rh-feedback");
+		const answerLang = item.role === "meaning" ? "" : ' lang="ja"';
 		feedback.className = `answer-feedback rh-feedback ${correct ? "is-correct" : "is-incorrect"}`;
-		feedback.innerHTML = `${correct ? "Correct!" : `Not quite. The answer is <strong lang="ja">${escapeHtml(choiceAnswer)}</strong>.`}
+		feedback.innerHTML = `${correct ? "Correct!" : `Not quite. The answer is <strong${answerLang}>${escapeHtml(choiceAnswer)}</strong>.`}
 			<span class="rh-answer-line" lang="ja">${escapeHtml(item.sentence)}</span>
 			<span class="rh-translation">${escapeHtml(item.explanation)}</span>`;
 		document.querySelectorAll(".rh-choice-option").forEach((button) => {
@@ -1029,6 +1281,43 @@
 		next.hidden = false;
 		next.focus();
 		recordResult(correct, `${escapeHtml(item.pattern)} · ${escapeHtml(item.role)}: ${escapeHtml(item.sentence)} → ${escapeHtml(choiceAnswer)}`);
+	}
+
+	function renderMoodQuestion() {
+		const item = session.items[(session.index - 1) % session.items.length];
+		session.current = { item, choiceAnswer: item.answer };
+		els.hero.innerHTML = `
+			<p class="rh-hero-label">Narrator mood · ${escapeHtml(item.level)} · ${escapeHtml(item.category)}</p>
+			<p class="rh-sentence" lang="ja">${escapeHtml(item.sentence)}</p>`;
+		els.band.textContent = item.prompt;
+		els.body.innerHTML = `
+			<div class="rh-choice-list" role="group" aria-label="Narrator mood choices">
+				${item.options.map((option) => `<button type="button" class="rh-choice-option" data-choice="${escapeHtml(option)}">${escapeHtml(option)}</button>`).join("")}
+			</div>
+			<p class="answer-feedback rh-feedback" id="rh-feedback" aria-live="polite"></p>
+			<div class="rh-hint-table"><h4>Reading move</h4><p>Look for evaluation words, received favors, regretful てしまう, passive annoyance, or bad-result phrases.</p></div>
+			<button class="practice-start rh-next" id="rh-next" type="button" hidden>Next →</button>`;
+	}
+
+	function checkMoodChoice(choice) {
+		const { item, choiceAnswer } = session.current;
+		const correct = choice === choiceAnswer;
+		const feedback = $("#rh-feedback");
+		feedback.className = `answer-feedback rh-feedback ${correct ? "is-correct" : "is-incorrect"}`;
+		feedback.innerHTML = `${correct ? "Correct!" : `Not quite. The answer is <strong>${escapeHtml(choiceAnswer)}</strong>.`}
+			<span class="rh-answer-line" lang="ja">${escapeHtml(item.sentence)}</span>
+			<span class="rh-translation">${escapeHtml(item.explanation)}</span>`;
+		document.querySelectorAll(".rh-choice-option").forEach((button) => {
+			button.disabled = true;
+			const value = button.dataset.choice;
+			button.classList.toggle("is-correct", value === choiceAnswer);
+			button.classList.toggle("is-incorrect", value === choice && value !== choiceAnswer);
+		});
+		els.hero.classList.add(correct ? "is-correct" : "is-incorrect");
+		const next = $("#rh-next");
+		next.hidden = false;
+		next.focus();
+		recordResult(correct, `${escapeHtml(item.category)}: ${escapeHtml(item.sentence)} → ${escapeHtml(choiceAnswer)}`);
 	}
 
 	function renderBreakQuestion() {
@@ -1237,6 +1526,7 @@
 		if (choice && !session.checked) {
 			if (session.mode === "passages") checkPassageChoice(choice.dataset.choice);
 			else if (session.mode === "agents") checkAgentChoice(choice.dataset.choice);
+			else if (session.mode === "mood") checkMoodChoice(choice.dataset.choice);
 			else if (session.mode === "stack" && session.current.task?.type !== "order") checkStackChoice(choice.dataset.choice);
 			else if (session.mode === "breaks" && session.current.task?.type !== "mark") checkBreakChoice(choice.dataset.choice);
 			else if (session.mode === "quotes" && session.current.task?.type !== "mark") checkQuoteChoice(choice.dataset.choice);

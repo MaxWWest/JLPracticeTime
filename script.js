@@ -42,18 +42,14 @@ const worksheetGenerateButton = document.querySelector("#worksheet-generate");
 const worksheetOutput = document.querySelector("#worksheet-output");
 const vocabularyTab = document.querySelector("#vocabulary-tab");
 const grammarTab = document.querySelector("#grammar-tab");
-const grammarPracticeTab = document.querySelector("#grammar-practice-tab");
-const practiceTab = document.querySelector("#practice-tab");
-const conjugationTab = document.querySelector("#conjugation-tab");
-const nominalConjugationTab = document.querySelector("#nominal-conjugation-tab");
+const readingTab = document.querySelector("#reading-tab");
+const speakingTab = document.querySelector("#speaking-tab");
 const vocabularyPanel = document.querySelector("#vocabulary-panel");
 const grammarPanel = document.querySelector("#grammar-panel");
 const grammarPracticePanel = document.querySelector("#grammar-practice-panel");
 const practicePanel = document.querySelector("#practice-panel");
 const conjugationPanel = document.querySelector("#conjugation-panel");
-const pitchTab = document.querySelector("#pitch-tab");
 const pitchPanel = document.querySelector("#pitch-panel");
-const readingTab = document.querySelector("#reading-tab");
 const readingPanel = document.querySelector("#reading-panel");
 const nominalConjugationPanel = document.querySelector("#nominal-conjugation-panel");
 const practiceLevel = document.querySelector("#practice-level");
@@ -216,23 +212,26 @@ function escapeHtml(value) {
 
 function activateTab(tabName) {
 	const tabs = [
-		{ name: "vocabulary", tab: vocabularyTab, panel: vocabularyPanel },
-		{ name: "grammar", tab: grammarTab, panel: grammarPanel },
-		{ name: "grammar-practice", tab: grammarPracticeTab, panel: grammarPracticePanel },
-		{ name: "practice", tab: practiceTab, panel: practicePanel },
-		{ name: "conjugation", tab: conjugationTab, panel: conjugationPanel },
-		{ name: "nominal-conjugation", tab: nominalConjugationTab, panel: nominalConjugationPanel },
-		{ name: "pitch", tab: pitchTab, panel: pitchPanel },
-		{ name: "reading", tab: readingTab, panel: readingPanel }
+		{ name: "vocabulary", tab: vocabularyTab, panels: [vocabularyPanel, practicePanel] },
+		{ name: "grammar", tab: grammarTab, panels: [grammarPanel, grammarPracticePanel, conjugationPanel, nominalConjugationPanel] },
+		{ name: "reading", tab: readingTab, panels: [readingPanel] },
+		{ name: "speaking", tab: speakingTab, panels: [pitchPanel], onActivate: updatePitchSetup }
 	];
-	tabs.forEach(({ name, tab, panel }) => {
-		const active = name === tabName;
+	const activeTab = tabs.find(({ name }) => name === tabName) || tabs[0];
+	const activePanels = new Set(activeTab.panels);
+	document.body.dataset.activeSection = activeTab.name;
+	tabs.forEach(({ name, tab }) => {
+		const active = name === activeTab.name;
 		tab.classList.toggle("is-active", active);
 		tab.setAttribute("aria-selected", String(active));
 		tab.tabIndex = active ? 0 : -1;
+	});
+	[vocabularyPanel, practicePanel, grammarPanel, grammarPracticePanel, conjugationPanel, nominalConjugationPanel, readingPanel, pitchPanel].forEach((panel) => {
+		const active = activePanels.has(panel);
 		panel.hidden = !active;
 		panel.setAttribute("aria-hidden", String(!active));
 	});
+	activeTab.onActivate?.();
 }
 
 function getVisibleWords() {
@@ -4022,22 +4021,14 @@ document.querySelector("#clear-filters").addEventListener("click", () => {
 
 vocabularyTab.addEventListener("click", () => activateTab("vocabulary"));
 grammarTab.addEventListener("click", () => activateTab("grammar"));
-grammarPracticeTab.addEventListener("click", () => activateTab("grammar-practice"));
-practiceTab.addEventListener("click", () => activateTab("practice"));
-conjugationTab.addEventListener("click", () => activateTab("conjugation"));
-nominalConjugationTab.addEventListener("click", () => activateTab("nominal-conjugation"));
-pitchTab.addEventListener("click", () => { activateTab("pitch"); updatePitchSetup(); });
 readingTab.addEventListener("click", () => activateTab("reading"));
+speakingTab.addEventListener("click", () => activateTab("speaking"));
 document.querySelector(".content-tabs").addEventListener("keydown", (event) => {
 	const tabs = [
 		{ tab: vocabularyTab, name: "vocabulary" },
 		{ tab: grammarTab, name: "grammar" },
-		{ tab: grammarPracticeTab, name: "grammar-practice" },
-		{ tab: practiceTab, name: "practice" },
-		{ tab: conjugationTab, name: "conjugation" },
-		{ tab: nominalConjugationTab, name: "nominal-conjugation" },
-		{ tab: pitchTab, name: "pitch" },
-		{ tab: readingTab, name: "reading" }
+		{ tab: readingTab, name: "reading" },
+		{ tab: speakingTab, name: "speaking" }
 	];
 	if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
 	event.preventDefault();
