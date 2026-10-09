@@ -9,19 +9,19 @@
 
 	/* ---------- Mode 1: grammar stacking ---------- */
 	const transforms = {
-		a: { form: "〜た", name: "Past tense" },
-		b: { form: "〜ない", name: "Negative" },
-		c: { form: "〜たい", name: "Volition (want to)" },
-		d: { form: "〜かもしれない", name: "Inference" },
-		e: { form: "〜てくれる", name: "Benefactive (granting a favor)" },
-		f: { form: "〜ておく", name: "Readiness" },
-		g: { form: "〜てください", name: "Request" },
-		h: { form: "〜れる・られる", name: "Passive" },
-		i: { form: "可能動詞", name: "Possibility" },
-		j: { form: "〜く／になる", name: "Change" },
-		k: { form: "〜ので", name: "Cause / reason" },
-		l: { form: "〜てもらう", name: "Benefactive (receiving a favor)" },
-		m: { form: "〜ないで", name: "Attendant circumstances (without doing)" },
+		a: { form: "〜た", name: "Past tense", cue: "completed or happened in the past" },
+		b: { form: "〜ない", name: "Negative", cue: "does not do / is not" },
+		c: { form: "〜たい", name: "Volition (want to)", cue: "wants to do the action" },
+		d: { form: "〜かもしれない", name: "Inference", cue: "maybe / might be true" },
+		e: { form: "〜てくれる", name: "Benefactive (granting a favor)", cue: "someone does it as a favor for the speaker side" },
+		f: { form: "〜ておく", name: "Readiness", cue: "does it in advance / leaves it ready" },
+		g: { form: "〜てください", name: "Request", cue: "asks someone to do it" },
+		h: { form: "〜れる・られる", name: "Passive", cue: "is done to / receives the action" },
+		i: { form: "可能動詞", name: "Possibility", cue: "can do / is able to do" },
+		j: { form: "〜く／になる", name: "Change", cue: "becomes that way" },
+		k: { form: "〜ので", name: "Cause / reason", cue: "because / since" },
+		l: { form: "〜てもらう", name: "Benefactive (receiving a favor)", cue: "receives the action as a favor" },
+		m: { form: "〜ないで", name: "Attendant circumstances (without doing)", cue: "without doing the action" },
 	};
 	const letters = Object.keys(transforms);
 	const exclusiveGroups = [["e", "l"], ["h", "i"]];
@@ -104,6 +104,193 @@
 		return kanji.slice(0, kanji.length - suffix) + kana.slice(readingPrefix.length);
 	}
 
+	function baseVerbLabel(word) {
+		const type = getVerbType(word);
+		let text = String(word.kanji || word.reading || word.baseText || "").replace(/[\s　]/g, "");
+		if (type === "suru" && text && !text.endsWith("する")) text += "する";
+		if (type === "kuru" && text && !text.endsWith("くる")) text = text.endsWith("く") ? `${text.slice(0, -1)}くる` : `${text}くる`;
+		return text;
+	}
+
+	function stackStepsHtml(chain, word) {
+		return chain.map((step, index) => `<li><span class="rh-step-num">${"①②③④"[index]}</span><span lang="ja">${escapeHtml(kanjiForm(step.state.text, word))}</span><b>${step.letter}</b><small>${transforms[step.letter].name}: ${transforms[step.letter].cue}</small></li>`).join("");
+	}
+
+	function stackBaseChoices(answer, pool) {
+		const distractors = shuffled(pool.map(baseVerbLabel).filter((choice) => choice && choice !== answer));
+		return shuffled(Array.from(new Set([answer, ...distractors])).slice(0, 4));
+	}
+
+	function stackMeaningChoices(answerLetter) {
+		const answer = transforms[answerLetter].cue;
+		const distractors = shuffled(letters.filter((letter) => letter !== answerLetter).map((letter) => transforms[letter].cue));
+		return shuffled(Array.from(new Set([answer, ...distractors])).slice(0, 4));
+	}
+
+	function chooseStackTask(chain) {
+		const focus = $("#rh-stack-focus").value || "mixed";
+		if (focus === "order" || focus === "base") return { type: focus };
+		if (focus === "meaning") {
+			const targetIndex = chain.length > 1 && Math.random() < .45 ? Math.floor(Math.random() * chain.length) : chain.length - 1;
+			return { type: "meaning", targetIndex };
+		}
+		const mixed = ["order", "base", "meaning"];
+		const type = mixed[Math.floor(Math.random() * mixed.length)];
+		if (type !== "meaning") return { type };
+		const targetIndex = chain.length > 1 && Math.random() < .45 ? Math.floor(Math.random() * chain.length) : chain.length - 1;
+		return { type, targetIndex };
+	}
+
+	const breakRoleChoices = [
+		"Reason / cause",
+		"Time / sequence",
+		"Condition",
+		"Contrast / concession",
+		"Purpose / goal",
+		"Simultaneous action",
+		"Without doing",
+		"Listing / adding information",
+		"Main-clause setup"
+	];
+
+	function sentenceBreakChunks(item) {
+		const positions = [...item.breaks].sort((a, b) => a - b);
+		const chunks = [];
+		let start = 0;
+		for (const end of positions) {
+			chunks.push({ text: item.text.slice(start, end), start, end });
+			start = end;
+		}
+		chunks.push({ text: item.text.slice(start), start, end: item.text.length });
+		return chunks;
+	}
+
+	function classifyBreakRole(item, position) {
+		const chunk = item.text.slice(0, position).split(/[。！？]/).at(-1) || item.text.slice(0, position);
+		const trimmed = chunk.replace(/[、\s　]+$/g, "");
+		if (/(ために|ように)$/.test(trimmed)) return { label: "Purpose / goal", explanation: "This chunk tells the purpose or intended outcome for the following action." };
+		if (/(ので|から|ため|せいで|なくて|すぎて)$/.test(trimmed)) return { label: "Reason / cause", explanation: "This chunk explains why the following event or choice happens." };
+		if (/(たら|なら|れば|と)$/.test(trimmed)) return { label: "Condition", explanation: "This chunk sets the condition for the following result or request." };
+		if (/(けれども|けれど|けど|が|のに|ても|でも)$/.test(trimmed)) return { label: "Contrast / concession", explanation: "This chunk sets up a contrast, exception, or 'even though' relationship." };
+		if (/(前に|あとで|てから|間に|間|とき|うちに|まで|までに)$/.test(trimmed)) return { label: "Time / sequence", explanation: "This chunk tells when something happens or in what order events happen." };
+		if (/ながら$/.test(trimmed)) return { label: "Simultaneous action", explanation: "This chunk gives an action happening at the same time as the main action." };
+		if (/(ないで|ずに)$/.test(trimmed)) return { label: "Without doing", explanation: "This chunk says the next action happens without doing this action." };
+		if (/し$/.test(trimmed)) return { label: "Listing / adding information", explanation: "This chunk adds one reason or fact in a list." };
+		if (/て$/.test(trimmed)) return { label: "Time / sequence", explanation: "This te-form chunk links actions in sequence or gives light cause/background." };
+		return { label: "Main-clause setup", explanation: "This chunk prepares background information before the main clause." };
+	}
+
+	function breakRoleOptions(answer) {
+		const distractors = shuffled(breakRoleChoices.filter((choice) => choice !== answer));
+		return shuffled([answer, ...distractors.slice(0, 3)]);
+	}
+
+	function renderBreakGuideSentence(item, targetPosition = null) {
+		const chunks = sentenceBreakChunks(item);
+		return chunks.map((chunk, index) => {
+			const isTarget = chunk.end === targetPosition;
+			const slash = index < chunks.length - 1 ? `<span class="rh-answer-mark${isTarget ? " is-target" : ""}">/</span>` : "";
+			return `${escapeHtml(chunk.text)}${slash}`;
+		}).join("");
+	}
+
+	function chooseBreakTask() {
+		const focus = $("#rh-break-focus").value || "mixed";
+		if (focus === "mark" || focus === "main" || focus === "role") return { type: focus };
+		const types = ["mark", "main", "role"];
+		return { type: types[Math.floor(Math.random() * types.length)] };
+	}
+
+	const quoteVerbChoices = [
+		"said / told",
+		"thought / believed",
+		"asked",
+		"wrote / was written",
+		"explained / taught / informed",
+		"felt",
+		"announced / reported"
+	];
+
+	const quoteForceChoices = [
+		"Greeting / thanks",
+		"Request / instruction",
+		"Rule / prohibition",
+		"Question / permission request",
+		"Plan / intention",
+		"Belief / guess",
+		"Feeling / evaluation",
+		"Information / announcement"
+	];
+
+	function quoteContent(item) {
+		return item.text.slice(item.start, item.end);
+	}
+
+	function quoteReporter(item) {
+		const before = item.text.slice(0, item.start);
+		const patterns = [
+			[/ニュースでは$/, "ニュース"],
+			[/駅のアナウンスで$/, "駅のアナウンス"],
+			[/メールには$/, "メール"],
+			[/看板には$/, "看板"],
+			[/店の紙には$/, "店の紙"],
+			[/(.+?)は$/, 1],
+			[/(.+?)が$/, 1],
+			[/(.+?)では$/, 1],
+			[/(.+?)で$/, 1]
+		];
+		for (const [pattern, capture] of patterns) {
+			const match = before.match(pattern);
+			if (!match) continue;
+			return capture === 1 ? match[1].replace(/[、。]$/g, "") : capture;
+		}
+		return before.replace(/[、。にではがをと\s　]+$/g, "") || "the writer";
+	}
+
+	function quoteVerbInfo(item) {
+		const after = item.text.slice(item.end);
+		if (/と聞/.test(after)) return { label: "asked", explanation: "聞きました here reports a question or asks whether something is okay." };
+		if (/と書/.test(after)) return { label: "wrote / was written", explanation: "書きました/書いてあります means the quoted content is written information." };
+		if (/と思|と考|と信じ/.test(after)) return { label: "thought / believed", explanation: "思う, 考える, and 信じる report thoughts or beliefs, not spoken words." };
+		if (/と感じ/.test(after)) return { label: "felt", explanation: "感じています reports the speaker's feeling or impression." };
+		if (/と説明|と教え/.test(after)) return { label: "explained / taught / informed", explanation: "説明する/教える present the quote as information being explained or taught." };
+		if (/アナウンス|ニュース|と言っていました/.test(item.text) && /(アナウンス|ニュース)/.test(item.text)) return { label: "announced / reported", explanation: "The source is an announcement/news report, so the quote is public information." };
+		return { label: "said / told", explanation: "言う reports spoken content or what someone told another person." };
+	}
+
+	function quoteForceInfo(item) {
+		const content = quoteContent(item);
+		if (/(ありがとう|おはよう)/.test(content)) return { label: "Greeting / thanks", explanation: "The quoted words are a greeting or expression of thanks." };
+		if (/(てはいけません|ないでください|止めないでください|とらないでください)/.test(content)) return { label: "Rule / prohibition", explanation: "The quote tells someone not to do something." };
+		if (/(ください|なさい|聞いて|来て|書いて|持って|入れて|手を上げて|出してください|注文してください|待ちください|着なさい)/.test(content)) return { label: "Request / instruction", explanation: "The quote asks or tells someone to do something." };
+		if (/(てもいい|迎えに行こうか|かどうか|ですか|ますか|か$)/.test(content)) return { label: "Question / permission request", explanation: "The quote asks a question or checks permission/uncertainty." };
+		if (/(たい|つもり|行こう|帰ります|休みます|連絡する|遅れる|旅行したい|行けない)/.test(content)) return { label: "Plan / intention", explanation: "The quoted content describes someone's plan, intention, or future action." };
+		if (/(かもしれない|だろう|にちがいない|はず|でしょう|成功する|役立ちそう|そうだ)/.test(content)) return { label: "Belief / guess", explanation: "The quote presents a guess, belief, expectation, or appearance-based judgment." };
+		if (/(難しい|おもしろかった|心配|大丈夫|むり|よかった|便利になった|ほしい)/.test(content)) return { label: "Feeling / evaluation", explanation: "The quote expresses a feeling, desire, judgment, or evaluation." };
+		return { label: "Information / announcement", explanation: "The quote gives factual information, a schedule, or a notice." };
+	}
+
+	function quoteChoiceOptions(answer, allChoices) {
+		const distractors = shuffled(allChoices.filter((choice) => choice !== answer));
+		return shuffled([answer, ...distractors.slice(0, 3)]);
+	}
+
+	function quoteReporterOptions(answer, bank) {
+		const distractors = shuffled(bank.map(quoteReporter).filter((choice) => choice && choice !== answer));
+		return shuffled(Array.from(new Set([answer, ...distractors])).slice(0, 4));
+	}
+
+	function renderQuoteGuideSentence(item, target = false) {
+		return renderAnswerSentence(item, "quotes", target ? { ...item, targetQuote: true } : item);
+	}
+
+	function chooseQuoteTask() {
+		const focus = $("#rh-quote-focus").value || "mixed";
+		if (focus === "mark" || focus === "source" || focus === "verb" || focus === "force") return { type: focus };
+		const types = ["mark", "source", "verb", "force"];
+		return { type: types[Math.floor(Math.random() * types.length)] };
+	}
+
 	/* ---------- Sentence banks ---------- */
 	// "/" marks a break; [ ] marks the quoted part.
 	const breakBank = [
@@ -141,6 +328,46 @@
 		["眠れなかったから/朝まで映画を見ていました。", "I couldn't sleep, so I watched movies until morning."],
 		["友だちにメールを送ったあとで/宿題を始めました。", "After sending my friend an email, I started my homework."],
 		["勉強もしたし/運動もしたので/今日はよくねられます。", "I studied and I exercised, so I'll sleep well today."],
+		["仕事が終わったら/スーパーで牛乳を買って/帰ります。", "After work ends, I will buy milk at the supermarket and go home."],
+		["日本語は難しいけれど/毎日少しずつ勉強すれば/必ず上手になります。", "Japanese is difficult, but if you study little by little every day, you will definitely improve."],
+		["電車が遅れたため/会議に間に合いませんでした。", "Because the train was delayed, I did not make it to the meeting on time."],
+		["友だちを待っている間/駅のカフェで本を読んでいました。", "While I was waiting for my friend, I was reading at the station cafe."],
+		["安くても/すぐ壊れるなら/買わないほうがいいです。", "Even if it is cheap, if it breaks quickly, it is better not to buy it."],
+		["部屋が暗かったので/電気をつけて/窓を閉めました。", "The room was dark, so I turned on the light and closed the window."],
+		["先生に質問したところ/丁寧に説明してくださいました。", "When I asked the teacher a question, they explained it carefully."],
+		["パスポートを忘れないように/出かける前に/かばんに入れました。", "So I would not forget my passport, I put it in my bag before leaving."],
+		["朝ご飯を食べずに/学校へ行ったので/お腹がすきました。", "I went to school without eating breakfast, so I got hungry."],
+		["母が帰ってくるまで/弟とゲームをして待ちます。", "I will play games with my little brother and wait until my mother comes home."],
+		["バスが来るまでに/コンビニで飲み物を買います。", "I will buy a drink at the convenience store by the time the bus comes."],
+		["道を間違えたせいで/約束の時間に遅れました。", "Because I took the wrong road, I was late for the appointment."],
+		["雨が降りそうなので/洗濯物を中に入れておきます。", "It looks like rain, so I will bring the laundry inside in advance."],
+		["京都へ行ったことがあるから/道を少し知っています。", "Because I have been to Kyoto, I know the roads a little."],
+		["授業中に眠くならないように/昨日は早く寝ました。", "I slept early yesterday so I would not get sleepy during class."],
+		["この薬を飲めば/頭の痛みがよくなるそうです。", "I hear that if you take this medicine, your headache will improve."],
+		["財布をなくしたと思って/かばんの中を全部調べました。", "Thinking I had lost my wallet, I checked everything inside my bag."],
+		["静かな所で勉強したいので/図書館に行くことにしました。", "I want to study somewhere quiet, so I decided to go to the library."],
+		["田中さんは忙しいのに/私の宿題を見てくれました。", "Even though Mr. Tanaka was busy, he looked over my homework for me."],
+		["宿題が多くて/全部終わらなかったので/先生に謝りました。", "There was a lot of homework and I could not finish it all, so I apologized to the teacher."],
+		["駅前の店は便利ですが/値段が少し高いです。", "The shop in front of the station is convenient, but the prices are a little high."],
+		["風邪をひいているなら/無理をしないで/早く帰ってください。", "If you have a cold, please do not push yourself and go home early."],
+		["この漢字は読めても/意味がわからないことがあります。", "Even if I can read this kanji, sometimes I do not know the meaning."],
+		["旅行に行く前に/ホテルの場所を調べておきました。", "Before going on the trip, I looked up the hotel location in advance."],
+		["コンサートが始まるまで/ロビーで友だちと話していました。", "Until the concert started, I was talking with my friend in the lobby."],
+		["自転車で行けば/十五分ぐらいで着きます。", "If you go by bicycle, you will arrive in about fifteen minutes."],
+		["暑すぎて/夜中に何度も目が覚めました。", "It was too hot, so I woke up many times during the night."],
+		["先生が来る前に/黒板をきれいにしておきましょう。", "Before the teacher comes, let's clean the blackboard."],
+		["このアプリを使うと/新しい単語を簡単に覚えられます。", "If you use this app, you can easily memorize new words."],
+		["時間がなかったため/朝ご飯を食べないで家を出ました。", "Because I did not have time, I left home without eating breakfast."],
+		["山田さんに聞いたら/駅までの道を教えてくれました。", "When I asked Mr. Yamada, he told me the way to the station."],
+		["料理を作りながら/弟の宿題を見ていました。", "While cooking, I was checking my little brother's homework."],
+		["予約していなかったので/レストランに入れませんでした。", "Because we had not made a reservation, we could not enter the restaurant."],
+		["荷物が重ければ/駅のロッカーに入れてください。", "If your bags are heavy, please put them in a station locker."],
+		["いい席を取りたいなら/早めに会場へ行ったほうがいいです。", "If you want to get good seats, you should go to the venue early."],
+		["日本語でメールを書くとき/敬語を間違えないように気をつけます。", "When writing email in Japanese, I take care not to make mistakes with polite language."],
+		["アルバイトが終わってから/友だちと映画を見に行きました。", "After my part-time job ended, I went to see a movie with a friend."],
+		["使い方がわからなかったら/この番号に電話してください。", "If you do not know how to use it, please call this number."],
+		["窓を開けたまま/出かけてしまいました。", "I accidentally went out with the window left open."],
+		["毎日練習しているうちに/少しずつ話せるようになりました。", "While practicing every day, little by little I became able to speak."],
 	].map(([marked, en]) => ({ ...parseMarked(marked, "/"), en }));
 
 	const quoteBank = [
@@ -166,7 +393,365 @@
 		["彼女は[ありがとう]と小さな声で言いました。", "She said \"thank you\" in a small voice."],
 		["私は[明日は早く起きなければならない]と思いながらねました。", "I went to bed thinking I have to get up early tomorrow."],
 		["先輩は[わからないことがあったら、いつでも聞いて]と言ってくれました。", "My senior told me to ask anytime if there's something I don't understand."],
+		["父は[駅まで迎えに行こうか]と電話で言った。", "My father said on the phone, \"Shall I pick you up at the station?\""],
+		["友だちは[このケーキを半分食べてもいい]と聞きました。", "My friend asked, \"May I eat half of this cake?\""],
+		["先生は[漢字の宿題は明日までです]と黒板に書きました。", "The teacher wrote on the board that the kanji homework is due tomorrow."],
+		["私は[この道をまっすぐ行けば駅に着くはずだ]と思いました。", "I thought that if I went straight on this road, I should arrive at the station."],
+		["メールには[会議は三時から四時に変わりました]と書いてありました。", "The email said the meeting changed from three o'clock to four o'clock."],
+		["店の人は[この券は今日だけ使えます]と言いました。", "The shop worker said this ticket can only be used today."],
+		["祖母は[寒いからコートを着なさい]と私に言いました。", "My grandmother told me to wear a coat because it was cold."],
+		["兄は[試験が終わったら旅行したい]と言っています。", "My older brother says he wants to travel after exams are over."],
+		["私は[鍵をかけたかどうか心配だ]と思いながら駅へ行きました。", "I went to the station while thinking I was worried whether I locked the door."],
+		["看板には[自転車をここに止めないでください]と書いてあります。", "The sign says not to park bicycles here."],
+		["友だちは[駅に着いたら連絡する]と言っていました。", "My friend said they would contact me when they arrived at the station."],
+		["医者は[薬を飲まなくてもいいです]と言いました。", "The doctor said I do not have to take medicine."],
+		["私は[もう少し早く出ればよかった]と思いました。", "I thought I should have left a little earlier."],
+		["母は[冷蔵庫にカレーがある]と言って出かけました。", "My mother said there was curry in the refrigerator and went out."],
+		["子どもは[あの赤い風船がほしい]と言いました。", "The child said they wanted that red balloon."],
+		["先生は[わからない人は手を上げてください]と言いました。", "The teacher said that people who do not understand should raise their hands."],
+		["山田さんは[今日は残業しなければならない]と言っていました。", "Mr. Yamada said he has to work overtime today."],
+		["私は[この本はN4の勉強に役立ちそうだ]と思いました。", "I thought this book looked useful for N4 study."],
+		["店員は[サイズが合わなければ交換できます]と説明しました。", "The clerk explained that if the size does not fit, it can be exchanged."],
+		["友だちは[道が混んでいるから少し遅れる]とメールしました。", "My friend emailed that they would be a little late because the roads were crowded."],
+		["母は[雨が降りそうだから洗濯物を入れて]と言いました。", "My mother said to bring in the laundry because it looked like rain."],
+		["駅のアナウンスで[次の電車は十番線から出ます]と言っていました。", "The station announcement said the next train leaves from platform ten."],
+		["私は[日本語で電話するのはまだ難しい]と感じています。", "I feel that speaking on the phone in Japanese is still difficult."],
+		["友だちは[この映画は思ったよりおもしろかった]と言いました。", "My friend said this movie was more interesting than expected."],
+		["父は[新しい仕事に慣れるまで時間がかかる]と言っていました。", "My father said it takes time to get used to a new job."],
+		["先生は[作文は短くてもいいです]と言いました。", "The teacher said the composition can be short."],
+		["私は[財布を家に忘れたかもしれない]と思って、かばんを調べました。", "Thinking I might have forgotten my wallet at home, I checked my bag."],
+		["受付の人は[ここに名前と電話番号を書いてください]と言いました。", "The receptionist said to write my name and phone number here."],
+		["妹は[一人で電車に乗れる]と言っています。", "My little sister says she can ride the train by herself."],
+		["ニュースでは[明日の朝は雪になるでしょう]と言っていました。", "The news said it will probably snow tomorrow morning."],
+		["先輩は[失敗してももう一度やってみればいい]と言ってくれました。", "My senior told me that even if I fail, I can try again."],
+		["私は[この町は前より便利になった]と思います。", "I think this town has become more convenient than before."],
+		["店の紙には[お弁当は午後二時までに注文してください]と書いてありました。", "The shop paper said to order boxed lunches by two p.m."],
+		["友だちは[忙しくてパーティーには行けない]と言いました。", "My friend said they are busy and cannot go to the party."],
 	].map(([marked, en]) => ({ ...parseMarked(marked, "[]"), en }));
+
+	const passageSources = [
+		{
+			title: "Library Notice",
+			text: "市立図書館からのお知らせです。二階の読書室は、エアコン工事のため、来週の月曜日から水曜日まで使えません。本を借りたり返したりする一階のカウンターは、いつもどおり開いています。静かに勉強したい人は、となりの公民館の小さい部屋を使ってください。",
+			en: "The second-floor reading room is closed for air-conditioner work, but the first-floor counter remains open.",
+			questions: [
+				{ prompt: "Why can people not use the second-floor reading room?", answer: "Because air-conditioner work is happening.", options: ["Because air-conditioner work is happening.", "Because the library is moving.", "Because all books are being counted.", "Because the first floor is closed."], explanation: "工事のため marks the reason: air-conditioner construction/repairs." },
+				{ prompt: "What can visitors still do at the library?", answer: "Borrow and return books at the first-floor counter.", options: ["Borrow and return books at the first-floor counter.", "Study in the second-floor reading room.", "Use every room in the building.", "Enter only on Thursday."], explanation: "一階のカウンターはいつもどおり開いています." }
+			]
+		},
+		{
+			title: "Message From A Friend",
+			text: "マックスさん、今日は先に映画館へ行ってください。私はアルバイトが五時までなので、少し遅れるかもしれません。チケットは私が予約しておきました。映画が始まる前に、入口の前で会いましょう。",
+			en: "The friend may be late because of work, but already reserved the tickets.",
+			questions: [
+				{ prompt: "Why might the friend be late?", answer: "Because their part-time job ends at five.", options: ["Because their part-time job ends at five.", "Because they forgot the tickets.", "Because the movie starts late.", "Because they are buying food."], explanation: "アルバイトが五時までなので gives the reason." },
+				{ prompt: "What has the friend already done?", answer: "Reserved the tickets.", options: ["Reserved the tickets.", "Watched the movie.", "Bought dinner.", "Gone home first."], explanation: "予約しておきました means it was reserved in advance." }
+			]
+		},
+		{
+			title: "Apartment Rule",
+			text: "このアパートでは、夜十時を過ぎたら大きな音を出さないでください。特に洗濯機は音が大きいので、朝七時から夜九時までの間に使ってください。困ったことがあったら、管理人に電話してください。",
+			en: "The apartment asks residents to avoid loud noise at night, especially washing machines.",
+			questions: [
+				{ prompt: "When should residents use the washing machine?", answer: "Between 7 a.m. and 9 p.m.", options: ["Between 7 a.m. and 9 p.m.", "After 10 p.m.", "Only before 7 a.m.", "Whenever there is trouble."], explanation: "朝七時から夜九時までの間に marks the allowed time." },
+				{ prompt: "Who should residents contact if there is a problem?", answer: "The manager.", options: ["The manager.", "The post office.", "The neighbor upstairs.", "The washing machine company."], explanation: "管理人に電話してください gives the contact." }
+			]
+		},
+		{
+			title: "Class Email",
+			text: "明日の日本語クラスは、先生の都合で三十分遅く始まります。十時ではなく、十時半に教室に来てください。宿題は授業の始めに集めますから、忘れないように持ってきてください。",
+			en: "Tomorrow's Japanese class starts thirty minutes late, at 10:30.",
+			questions: [
+				{ prompt: "What time does class start tomorrow?", answer: "10:30.", options: ["10:30.", "10:00.", "9:30.", "Thirty minutes earlier than usual."], explanation: "十時ではなく、十時半 means not 10:00, but 10:30." },
+				{ prompt: "When will homework be collected?", answer: "At the beginning of class.", options: ["At the beginning of class.", "After lunch.", "Next week.", "Before students enter the room."], explanation: "授業の始めに集めます gives the timing." }
+			]
+		},
+		{
+			title: "Diary",
+			text: "昨日、はじめて一人で新幹線に乗った。少し心配だったが、駅の人が親切に教えてくれたので、無事に席まで行けた。窓から富士山が見えて、とてもうれしかった。",
+			en: "The writer rode the shinkansen alone for the first time and saw Mt. Fuji.",
+			questions: [
+				{ prompt: "Why was the writer able to reach their seat safely?", answer: "Because station staff kindly helped.", options: ["Because station staff kindly helped.", "Because a friend bought the ticket.", "Because the train was empty.", "Because they had ridden many times before."], explanation: "駅の人が親切に教えてくれたので gives the reason." },
+				{ prompt: "What made the writer happy?", answer: "Seeing Mt. Fuji from the window.", options: ["Seeing Mt. Fuji from the window.", "Getting a cheaper ticket.", "Meeting a teacher.", "Arriving earlier than planned."], explanation: "窓から富士山が見えて、とてもうれしかった." }
+			]
+		},
+		{
+			title: "Shop Notice",
+			text: "本日は雨の日サービスとして、千円以上買ったお客様に小さいタオルを一枚差し上げます。ただし、数に限りがありますので、なくなったら終わりです。レジでこのお知らせを見たと言ってください。",
+			en: "The shop gives a small towel to customers who spend at least 1,000 yen on rainy days while supplies last.",
+			questions: [
+				{ prompt: "Who can receive a towel?", answer: "Customers who buy 1,000 yen or more.", options: ["Customers who buy 1,000 yen or more.", "Everyone who enters the shop.", "Only people who bring an umbrella.", "Customers who buy exactly one towel."], explanation: "千円以上買ったお客様 means customers who bought 1,000 yen or more." },
+				{ prompt: "What must customers say at the register?", answer: "That they saw this notice.", options: ["That they saw this notice.", "That they came yesterday.", "That they do not need a bag.", "That the towel is too small."], explanation: "このお知らせを見たと言ってください." }
+			]
+		},
+		{
+			title: "School Trip",
+			text: "遠足の日は、学校に八時までに集まってください。バスは八時十五分に出発します。昼ご飯は公園で食べるので、お弁当と飲み物を持ってきてください。雨の場合は、体育館で映画を見ます。",
+			en: "Students gather by 8:00, leave at 8:15, and bring lunch unless the rain plan happens.",
+			questions: [
+				{ prompt: "By when should students gather at school?", answer: "By 8:00.", options: ["By 8:00.", "At 8:15.", "After lunch.", "Only if it rains."], explanation: "八時までに means by 8:00." },
+				{ prompt: "What happens if it rains?", answer: "They watch a movie in the gym.", options: ["They watch a movie in the gym.", "They eat lunch in the park.", "They leave by bus earlier.", "They cancel lunch."], explanation: "雨の場合は、体育館で映画を見ます." }
+			]
+		},
+		{
+			title: "Lost Item",
+			text: "昨日の夕方、駅のベンチに黒いかばんを忘れました。中には日本語の教科書と青いノートが入っています。見つけた人は、駅の事務所まで持ってきてください。お礼をします。",
+			en: "Someone lost a black bag on a station bench with textbooks and a blue notebook inside.",
+			questions: [
+				{ prompt: "Where was the bag forgotten?", answer: "On a station bench.", options: ["On a station bench.", "In a classroom.", "At the library counter.", "Inside a taxi."], explanation: "駅のベンチに黒いかばんを忘れました." },
+				{ prompt: "What is inside the bag?", answer: "A Japanese textbook and a blue notebook.", options: ["A Japanese textbook and a blue notebook.", "A wallet and a phone.", "A towel and lunch.", "A ticket and an umbrella."], explanation: "中には日本語の教科書と青いノートが入っています." }
+			]
+		},
+		{
+			title: "Recipe Note",
+			text: "このスープは、野菜を小さく切ってから、弱い火で二十分ぐらい煮ます。塩は最後に入れてください。最初に入れると、味が濃くなりすぎることがあります。",
+			en: "For this soup, simmer chopped vegetables, then add salt at the end.",
+			questions: [
+				{ prompt: "When should the salt be added?", answer: "At the end.", options: ["At the end.", "Before cutting vegetables.", "At the very beginning.", "After eating."], explanation: "塩は最後に入れてください." },
+				{ prompt: "Why should salt not be added first?", answer: "The flavor may become too strong.", options: ["The flavor may become too strong.", "The vegetables will not cook.", "The soup will become cold.", "It will take only five minutes."], explanation: "味が濃くなりすぎることがあります." }
+			]
+		},
+		{
+			title: "Work Schedule",
+			text: "来週から店の開店時間が変わります。平日は今までどおり十時に開きますが、土曜日と日曜日は九時半に開きます。閉店時間は毎日八時です。",
+			en: "The shop opens at 10:00 on weekdays and 9:30 on weekends; closing time stays 8:00 every day.",
+			questions: [
+				{ prompt: "What changes next week?", answer: "The weekend opening time.", options: ["The weekend opening time.", "The weekday closing time.", "The shop name.", "The location."], explanation: "土曜日と日曜日は九時半に開きます; weekdays stay the same." },
+				{ prompt: "When does the shop close?", answer: "8:00 every day.", options: ["8:00 every day.", "9:30 on weekends.", "10:00 on weekdays.", "It is not written."], explanation: "閉店時間は毎日八時です." }
+			]
+		},
+		{
+			title: "Club Poster",
+			text: "写真クラブでは、新しいメンバーを募集しています。カメラを持っていなくても参加できます。毎週金曜日の放課後に集まって、学校の近くで写真を撮ります。興味がある人は、佐藤先生に聞いてください。",
+			en: "The photo club is recruiting and does not require owning a camera.",
+			questions: [
+				{ prompt: "Can someone join without a camera?", answer: "Yes, they can join.", options: ["Yes, they can join.", "No, a camera is required.", "Only teachers can join.", "Only on Saturdays."], explanation: "カメラを持っていなくても参加できます." },
+				{ prompt: "Who should interested people ask?", answer: "Sato-sensei.", options: ["Sato-sensei.", "The station staff.", "A shop clerk.", "Their parents."], explanation: "佐藤先生に聞いてください." }
+			]
+		},
+		{
+			title: "Neighbor Note",
+			text: "明日の午前中、引っ越しのため、トラックがアパートの前に止まります。少しうるさくなるかもしれません。できるだけ早く終わらせますので、ご迷惑をおかけしますが、よろしくお願いします。",
+			en: "A moving truck will be in front of the apartment tomorrow morning and may be noisy.",
+			questions: [
+				{ prompt: "Why will there be a truck?", answer: "Because someone is moving.", options: ["Because someone is moving.", "Because road work is starting.", "Because a festival is happening.", "Because trash is being collected."], explanation: "引っ越しのため gives the reason." },
+				{ prompt: "What does the writer say may happen?", answer: "It may become a little noisy.", options: ["It may become a little noisy.", "The apartment will close.", "The truck will stay all week.", "The rent will change."], explanation: "少しうるさくなるかもしれません." }
+			]
+		},
+		{
+			title: "Clinic Notice",
+			text: "今週の土曜日は、先生が学会に出るため、午後の診察はありません。午前は九時から十二時までです。薬だけほしい人も、十二時までに来てください。",
+			en: "The clinic has no Saturday afternoon appointments because the doctor attends a conference.",
+			questions: [
+				{ prompt: "Why is there no afternoon clinic?", answer: "The doctor is going to a conference.", options: ["The doctor is going to a conference.", "The building is closed for cleaning.", "There is no medicine.", "It is a national holiday."], explanation: "先生が学会に出るため." },
+				{ prompt: "By when should people who only need medicine come?", answer: "By 12:00.", options: ["By 12:00.", "After noon.", "By 9:00 p.m.", "Next Monday."], explanation: "十二時までに来てください." }
+			]
+		},
+		{
+			title: "Weather Plan",
+			text: "明日の花火大会は、雨でも行います。ただし、強い風が吹いた場合は中止になります。中止かどうかは、明日の午後三時に市のホームページで知らせます。",
+			en: "The fireworks will happen in rain, but strong wind may cancel them; check the city website at 3 p.m.",
+			questions: [
+				{ prompt: "When will the fireworks be canceled?", answer: "If strong wind blows.", options: ["If strong wind blows.", "If it rains at all.", "If many people come.", "If the website is busy."], explanation: "強い風が吹いた場合は中止." },
+				{ prompt: "Where can people check the decision?", answer: "On the city website.", options: ["On the city website.", "At the train station.", "In the school gym.", "At the library."], explanation: "市のホームページで知らせます." }
+			]
+		},
+		{
+			title: "Part-Time Job",
+			text: "このカフェでは、土曜日と日曜日に働ける人を探しています。経験がなくても大丈夫ですが、日本語で簡単な会話ができる人がいいです。働きたい人は、写真を持って店に来てください。",
+			en: "The cafe is looking for weekend workers; experience is not required, but simple Japanese conversation is preferred.",
+			questions: [
+				{ prompt: "What kind of person is the cafe looking for?", answer: "Someone who can work weekends.", options: ["Someone who can work weekends.", "Someone who can work only Mondays.", "Someone with many years of experience.", "Someone who cannot speak Japanese."], explanation: "土曜日と日曜日に働ける人." },
+				{ prompt: "What should applicants bring?", answer: "A photo.", options: ["A photo.", "A textbook.", "A towel.", "A train ticket."], explanation: "写真を持って店に来てください." }
+			]
+		},
+		{
+			title: "Museum Guide",
+			text: "この博物館では、フラッシュを使わなければ写真を撮ってもいいです。展示品に手を触れてはいけません。説明を聞きたい人は、入口でイヤホンガイドを借りることができます。",
+			en: "Photos are allowed without flash; visitors must not touch exhibits and can borrow an audio guide.",
+			questions: [
+				{ prompt: "What kind of photos are allowed?", answer: "Photos without flash.", options: ["Photos without flash.", "Photos touching exhibits.", "Photos only outside.", "No photos at all."], explanation: "フラッシュを使わなければ写真を撮ってもいいです." },
+				{ prompt: "What can visitors borrow at the entrance?", answer: "An audio guide.", options: ["An audio guide.", "A camera.", "A bicycle.", "A lunch box."], explanation: "入口でイヤホンガイドを借りることができます." }
+			]
+		},
+		{
+			title: "Email To Teacher",
+			text: "先生、昨日から熱があるので、今日の授業を休ませていただきます。宿題は友だちに預けました。来週の授業までに、休んだところを自分で勉強しておきます。",
+			en: "The student is absent because of a fever and has given homework to a friend.",
+			questions: [
+				{ prompt: "Why will the student miss class?", answer: "Because they have had a fever since yesterday.", options: ["Because they have had a fever since yesterday.", "Because they forgot homework.", "Because they are traveling.", "Because the class was canceled."], explanation: "昨日から熱があるので." },
+				{ prompt: "What did the student do with the homework?", answer: "Left it with a friend.", options: ["Left it with a friend.", "Mailed it next week.", "Lost it at home.", "Gave it to the doctor."], explanation: "宿題は友だちに預けました." }
+			]
+		},
+		{
+			title: "Train Announcement",
+			text: "ただいま事故のため、山川線は運転を見合わせています。駅員の案内にしたがって、バスまたは地下鉄をご利用ください。切符はそのまま使えます。",
+			en: "The Yamakawa Line is stopped because of an accident; passengers can use bus or subway with the same ticket.",
+			questions: [
+				{ prompt: "Why is the train line stopped?", answer: "Because of an accident.", options: ["Because of an accident.", "Because of snow.", "Because it is too late.", "Because tickets changed."], explanation: "事故のため marks the reason." },
+				{ prompt: "What can passengers do with their tickets?", answer: "Use them as they are.", options: ["Use them as they are.", "Throw them away.", "Exchange them tomorrow only.", "Use them only for taxis."], explanation: "切符はそのまま使えます." }
+			]
+		},
+		{
+			title: "Recycling Notice",
+			text: "来月から、ごみの出し方が少し変わります。ペットボトルはラベルとふたを取ってから、透明な袋に入れてください。朝八時までに出してください。前の日の夜には出さないでください。",
+			en: "Plastic bottles need labels and caps removed, then must be put out by 8 a.m.",
+			questions: [
+				{ prompt: "What should people do before putting out plastic bottles?", answer: "Remove the labels and caps.", options: ["Remove the labels and caps.", "Put them out the night before.", "Use a black bag.", "Take them to school."], explanation: "ラベルとふたを取ってから gives the first step." },
+				{ prompt: "When should the trash be put out?", answer: "By 8 a.m.", options: ["By 8 a.m.", "The night before.", "After lunch.", "At any time."], explanation: "朝八時までに出してください." }
+			]
+		},
+		{
+			title: "Community Event",
+			text: "日曜日に公園で小さな音楽会があります。入場料は無料ですが、いすの数が少ないので、座りたい人は早めに来てください。雨が降ったら、市民センターのホールで行います。",
+			en: "A free concert will be held in the park, or at the citizen center if it rains.",
+			questions: [
+				{ prompt: "Why should people come early if they want to sit?", answer: "There are not many chairs.", options: ["There are not many chairs.", "Tickets are expensive.", "The concert starts at night.", "The park is far away."], explanation: "いすの数が少ないので gives the reason." },
+				{ prompt: "Where is the concert if it rains?", answer: "At the citizen center hall.", options: ["At the citizen center hall.", "At the station.", "In a restaurant.", "At school."], explanation: "雨が降ったら、市民センターのホールで行います." }
+			]
+		},
+		{
+			title: "Host Family Note",
+			text: "マックスさん、今日は七時ごろ帰ります。晩ご飯は冷蔵庫に入れてありますから、電子レンジで温めて食べてください。犬にはもうえさをあげましたが、水が少なかったら足してください。",
+			en: "Dinner is in the fridge; the dog has been fed, but water may need to be added.",
+			questions: [
+				{ prompt: "What should Max do with dinner?", answer: "Heat it in the microwave and eat it.", options: ["Heat it in the microwave and eat it.", "Buy it at a convenience store.", "Feed it to the dog.", "Wait until seven to cook it."], explanation: "電子レンジで温めて食べてください." },
+				{ prompt: "What might Max need to do for the dog?", answer: "Add water.", options: ["Add water.", "Give food again.", "Take it to the station.", "Wash it."], explanation: "水が少なかったら足してください." }
+			]
+		},
+		{
+			title: "Restaurant Reservation",
+			text: "ご予約ありがとうございます。明日六時に四名様でお待ちしています。席は二時間までご利用いただけます。人数を変えたい場合は、今日の夜九時までにお電話ください。",
+			en: "The reservation is for four people at 6:00; call by 9 tonight to change the number of people.",
+			questions: [
+				{ prompt: "How many people is the reservation for?", answer: "Four people.", options: ["Four people.", "Two people.", "Six people.", "Nine people."], explanation: "四名様 means four guests." },
+				{ prompt: "By when should they call to change the number of people?", answer: "By 9 tonight.", options: ["By 9 tonight.", "At 6 tomorrow.", "After two hours.", "Next morning."], explanation: "今日の夜九時までにお電話ください." }
+			]
+		},
+		{
+			title: "Phone Plan Notice",
+			text: "今月から学生プランの料金が安くなりました。学生証を見せると、毎月五百円安くなります。すでにこのプランを使っている人も、店で手続きをすれば新しい料金になります。",
+			en: "The student phone plan is cheaper now, but existing users must complete a procedure at the shop.",
+			questions: [
+				{ prompt: "What must students show?", answer: "A student ID.", options: ["A student ID.", "A passport.", "A train ticket.", "A receipt."], explanation: "学生証を見せると." },
+				{ prompt: "What about people already using the plan?", answer: "They can get the new price if they do the procedure at the shop.", options: ["They can get the new price if they do the procedure at the shop.", "They cannot use the cheaper price.", "They must buy a new phone.", "They automatically pay more."], explanation: "すでに...使っている人も、店で手続きをすれば新しい料金になります." }
+			]
+		},
+		{
+			title: "Study Group",
+			text: "来週の読解勉強会では、N4の短い文章をたくさん読みます。辞書を使ってもいいですが、まず辞書を使わないで読んでみましょう。参加したい人は、金曜日までに名前を書いてください。",
+			en: "The reading study group will read many short N4 passages and asks people to sign up by Friday.",
+			questions: [
+				{ prompt: "What will people do at the study group?", answer: "Read many short N4 passages.", options: ["Read many short N4 passages.", "Practice only kanji writing.", "Watch a movie.", "Take a speaking test."], explanation: "N4の短い文章をたくさん読みます." },
+				{ prompt: "What should people try first?", answer: "Reading without a dictionary.", options: ["Reading without a dictionary.", "Writing their name in English.", "Calling the teacher.", "Using a dictionary first."], explanation: "まず辞書を使わないで読んでみましょう." }
+			]
+		},
+		{
+			title: "Delivery Note",
+			text: "本日お荷物をお届けに来ましたが、ご不在でした。明日の午前中にもう一度来ます。時間を変えたい場合は、紙に書いてある番号に電話するか、ウェブサイトで申し込んでください。",
+			en: "A delivery attempt failed because no one was home; another attempt is tomorrow morning unless changed.",
+			questions: [
+				{ prompt: "Why was the package not delivered today?", answer: "No one was home.", options: ["No one was home.", "The address was wrong.", "The package was too heavy.", "It was raining."], explanation: "ご不在でした means the recipient was absent/not home." },
+				{ prompt: "How can the recipient change the time?", answer: "Call the number or apply on the website.", options: ["Call the number or apply on the website.", "Go to the library.", "Wait until next month.", "Write to the school."], explanation: "電話するか、ウェブサイトで申し込んでください." }
+			]
+		}
+	];
+
+	const passageBank = passageSources.flatMap((source) => source.questions.map((question) => ({
+		...question,
+		title: source.title,
+		text: source.text,
+		en: source.en,
+		options: shuffled(question.options)
+	})));
+
+	const agentRoleLabels = {
+		agent: "actual doer",
+		receiver: "receiver of help/favor",
+		affected: "person affected by the passive event",
+		causer: "person who made/let it happen",
+		object: "thing acted on"
+	};
+
+	const agentScenarios = [
+		{ pattern: "てあげる", sentence: "私は妹に重い箱を持ってあげました。", action: "carried the heavy box", agent: "私", receiver: "妹", object: "重い箱", parties: ["私", "妹", "重い箱", "母"], note: "In てあげる, the subject does the action for someone else." },
+		{ pattern: "てあげる", sentence: "兄は弟に自転車の乗り方を教えてあげました。", action: "taught how to ride a bicycle", agent: "兄", receiver: "弟", object: "自転車の乗り方", parties: ["兄", "弟", "自転車", "先生"], note: "The person before は/が is usually the helper in てあげる." },
+		{ pattern: "てあげる", sentence: "友だちは留学生に駅までの道を説明してあげました。", action: "explained the way to the station", agent: "友だち", receiver: "留学生", object: "駅までの道", parties: ["友だち", "留学生", "駅までの道", "駅員"], note: "説明してあげました means the friend did the explaining for the exchange student." },
+		{ pattern: "てもらう", sentence: "私は先生に作文を直してもらいました。", action: "corrected the essay", agent: "先生", receiver: "私", object: "作文", parties: ["私", "先生", "作文", "友だち"], note: "In てもらう, the に person often does the action; the subject receives the favor." },
+		{ pattern: "てもらう", sentence: "妹は私に荷物を持ってもらいました。", action: "carried the bags", agent: "私", receiver: "妹", object: "荷物", parties: ["妹", "私", "荷物", "母"], note: "妹 receives the favor; 私 is the one who carries." },
+		{ pattern: "てもらう", sentence: "田中さんは店員に新しいサイズを探してもらいました。", action: "looked for a new size", agent: "店員", receiver: "田中さん", object: "新しいサイズ", parties: ["田中さん", "店員", "新しいサイズ", "友だち"], note: "The に person is the helper in this てもらう sentence." },
+		{ pattern: "てくれる", sentence: "兄が私のパソコンを直してくれました。", action: "fixed the computer", agent: "兄", receiver: "私", object: "パソコン", parties: ["兄", "私", "パソコン", "店員"], note: "In てくれる, the subject does something for the speaker side." },
+		{ pattern: "てくれる", sentence: "友だちが私に日本語のメールを書いてくれました。", action: "wrote the Japanese email", agent: "友だち", receiver: "私", object: "日本語のメール", parties: ["友だち", "私", "日本語のメール", "先生"], note: "友だち is the helper; 私 benefits from the action." },
+		{ pattern: "てくれる", sentence: "母が弟に晩ご飯を作ってくれました。", action: "made dinner", agent: "母", receiver: "弟", object: "晩ご飯", parties: ["母", "弟", "晩ご飯", "父"], note: "The subject 母 performs the helpful action." },
+		{ pattern: "passive", sentence: "私は弟にケーキを食べられました。", action: "ate the cake", agent: "弟", affected: "私", object: "ケーキ", parties: ["私", "弟", "ケーキ", "母"], note: "In this passive sentence, 私 is affected; 弟 actually ate the cake." },
+		{ pattern: "passive", sentence: "山田さんは犬に手をかまれました。", action: "bit the hand", agent: "犬", affected: "山田さん", object: "手", parties: ["山田さん", "犬", "手", "医者"], note: "The に marked noun can be the doer in passive sentences." },
+		{ pattern: "passive", sentence: "私は知らない人に写真を撮られました。", action: "took the photo", agent: "知らない人", affected: "私", object: "写真", parties: ["私", "知らない人", "写真", "友だち"], note: "私 is the affected person; 知らない人 did the action." },
+		{ pattern: "causative", sentence: "先生は学生に漢字を書かせました。", action: "wrote kanji", agent: "学生", causer: "先生", object: "漢字", parties: ["先生", "学生", "漢字", "友だち"], note: "In causative, the causer makes/lets someone else do the action." },
+		{ pattern: "causative", sentence: "母は子どもに部屋を掃除させました。", action: "cleaned the room", agent: "子ども", causer: "母", object: "部屋", parties: ["母", "子ども", "部屋", "父"], note: "母 caused it; 子ども actually cleaned." },
+		{ pattern: "causative", sentence: "店長はアルバイトにレジを手伝わせました。", action: "helped at the register", agent: "アルバイト", causer: "店長", object: "レジ", parties: ["店長", "アルバイト", "レジ", "お客さん"], note: "The person marked with に is made/allowed to do the action here." },
+		{ pattern: "causative-passive", sentence: "私は父に庭を掃除させられました。", action: "cleaned the garden", agent: "私", causer: "父", object: "庭", parties: ["私", "父", "庭", "弟"], note: "Causative-passive often means the subject was made to do the action." },
+		{ pattern: "causative-passive", sentence: "弟は先生に長い文を読ませられました。", action: "read the long sentence", agent: "弟", causer: "先生", object: "長い文", parties: ["弟", "先生", "長い文", "兄"], note: "弟 is made to read; 先生 is the causer." },
+		{ pattern: "causative-passive", sentence: "学生たちはコーチに校庭を走らせられました。", action: "ran around the schoolyard", agent: "学生たち", causer: "コーチ", object: "校庭", parties: ["学生たち", "コーチ", "校庭", "先生"], note: "The students are the ones running; the coach makes them do it." }
+	];
+
+	function agentQuestionOptions(answer, scenario) {
+		return shuffled(Array.from(new Set([answer, ...scenario.parties.filter((item) => item !== answer), "だれも"]))).slice(0, 4);
+	}
+
+	function buildAgentQuestionBank() {
+		return agentScenarios.flatMap((scenario) => {
+			const questions = [
+				{
+					role: "agent",
+					prompt: "Who actually did the action?",
+					subprompt: `Action: ${scenario.action}.`,
+					answer: scenario.agent,
+					explanation: `${scenario.note} The actual doer is ${scenario.agent}.`
+				},
+				{
+					role: "object",
+					prompt: "What was acted on?",
+					subprompt: "Find the thing that receives the action.",
+					answer: scenario.object,
+					explanation: `The object or target of the action is ${scenario.object}.`
+				}
+			];
+			if (scenario.receiver) {
+				questions.push({
+					role: "receiver",
+					prompt: "Who received the help or favor?",
+					subprompt: "Look past who did it and find who benefited.",
+					answer: scenario.receiver,
+					explanation: `${scenario.receiver} receives the favor in this ${scenario.pattern} sentence.`
+				});
+			}
+			if (scenario.affected) {
+				questions.push({
+					role: "affected",
+					prompt: "Who was affected by the passive event?",
+					subprompt: "This may be different from who actually did the action.",
+					answer: scenario.affected,
+					explanation: `${scenario.affected} is affected; ${scenario.agent} actually does the action.`
+				});
+			}
+			if (scenario.causer) {
+				questions.push({
+					role: "causer",
+					prompt: "Who made or let the action happen?",
+					subprompt: "Find the causer, not the person who actually performed the action.",
+					answer: scenario.causer,
+					explanation: `${scenario.causer} is the causer; ${scenario.agent} performs the action.`
+				});
+			}
+			return questions.map((question) => ({
+				...question,
+				level: "Level 1",
+				pattern: scenario.pattern,
+				sentence: scenario.sentence,
+				options: agentQuestionOptions(question.answer, scenario)
+			}));
+		});
+	}
 
 	function parseMarked(marked, kind) {
 		let plain = "";
@@ -202,7 +787,7 @@
 				return;
 			}
 		}
-		const bank = mode === "breaks" ? breakBank : mode === "quotes" ? quoteBank : null;
+		const bank = mode === "breaks" ? breakBank : mode === "quotes" ? quoteBank : mode === "passages" ? passageBank : mode === "agents" ? buildAgentQuestionBank() : null;
 		const items = bank ? shuffled(bank) : null;
 		session = { mode, count: bank ? Math.min(count, bank.length) : count, pool, items, index: 0, correct: 0, answered: 0, missed: [], current: null, checked: false };
 		els.status.textContent = "";
@@ -224,6 +809,10 @@
 		session.index += 1;
 		updateStats();
 		if (session.mode === "stack") renderStack();
+		else if (session.mode === "passages") renderPassageQuestion();
+		else if (session.mode === "agents") renderAgentQuestion();
+		else if (session.mode === "breaks") renderBreakQuestion();
+		else if (session.mode === "quotes") renderQuoteQuestion();
 		else renderMarking();
 		els.session.scrollTop = 0;
 	}
@@ -241,7 +830,7 @@
 		els.session.hidden = true;
 		document.body.classList.remove("reading-fullscreen");
 		els.complete.hidden = false;
-		els.title.textContent = { stack: "Grammar stacking complete", breaks: "Sentence breaks complete", quotes: "Said & thought complete" }[mode];
+		els.title.textContent = { stack: "Grammar stacking complete", breaks: "Sentence breaks complete", quotes: "Said & thought complete", agents: "Who did it complete", passages: "Short passages complete" }[mode];
 		const percent = answered ? Math.round((correct / answered) * 100) : 0;
 		els.result.textContent = `${correct} of ${answered} correct (${percent}%).`;
 		els.missed.innerHTML = missed.length
@@ -272,14 +861,42 @@
 		}
 		if (!chain) return nextQuestion();
 		const answer = chain.map((step) => step.letter);
-		session.current = { word, chain, answer, entered: [] };
 		const finalText = kanjiForm(chain.at(-1).state.text, word);
+		const task = chooseStackTask(chain);
+		session.current = { word, chain, answer, entered: [], task, finalText };
 
 		els.hero.innerHTML = `
 			<p class="rh-hero-label">Starting verb</p>
-			<p class="rh-from"><span lang="ja">${escapeHtml(word.kanji || word.reading)}</span>${word.kanji && word.reading !== word.kanji ? ` <small lang="ja">${escapeHtml(word.reading)}</small>` : ""} <small>${escapeHtml(word.meaning || "")}</small></p>
+			<p class="rh-from"><span lang="ja">${escapeHtml(baseVerbLabel(word))}</span>${word.kanji && word.reading !== word.kanji ? ` <small lang="ja">${escapeHtml(word.reading)}</small>` : ""} <small>${escapeHtml(word.meaning || "")}</small></p>
 			<p class="rh-arrow" aria-hidden="true">↓</p>
 			<p class="rh-target" lang="ja">${escapeHtml(finalText)}</p>`;
+		if (task.type === "base") {
+			const baseAnswer = baseVerbLabel(word);
+			session.current.choiceAnswer = baseAnswer;
+			els.band.textContent = "What base verb is hidden under this stack?";
+			els.body.innerHTML = `
+				<div class="rh-choice-list" role="group" aria-label="Base verb choices">
+					${stackBaseChoices(baseAnswer, session.pool).map((option) => `<button type="button" class="rh-choice-option" data-choice="${escapeHtml(option)}"><span lang="ja">${escapeHtml(option)}</span></button>`).join("")}
+				</div>
+				<p class="answer-feedback rh-feedback" id="rh-feedback" aria-live="polite"></p>
+				<div class="rh-hint-table"><h4>Goal</h4><p>Ignore the added endings and recover the dictionary-form verb that started the chain.</p></div>
+				<button class="practice-start rh-next" id="rh-next" type="button" hidden>Next →</button>`;
+			return;
+		}
+		if (task.type === "meaning") {
+			const targetIndex = task.targetIndex ?? chain.length - 1;
+			const target = chain[targetIndex];
+			session.current.choiceAnswer = transforms[target.letter].cue;
+			els.band.textContent = targetIndex === chain.length - 1 ? "What does the outermost grammar layer do?" : `What does layer ${targetIndex + 1} add to the meaning?`;
+			els.body.innerHTML = `
+				<div class="rh-choice-list" role="group" aria-label="Grammar meaning choices">
+					${stackMeaningChoices(target.letter).map((option) => `<button type="button" class="rh-choice-option" data-choice="${escapeHtml(option)}">${escapeHtml(option)}</button>`).join("")}
+				</div>
+				<p class="answer-feedback rh-feedback" id="rh-feedback" aria-live="polite"></p>
+				<div class="rh-hint-table"><h4>Focus layer</h4><p><strong>${target.letter}.</strong> <span lang="ja">${escapeHtml(transforms[target.letter].form)}</span> · ${escapeHtml(transforms[target.letter].name)}</p></div>
+				<button class="practice-start rh-next" id="rh-next" type="button" hidden>Next →</button>`;
+			return;
+		}
 		els.band.textContent = chain.length === 1 ? "Which grammar was added?" : `Which ${chain.length} patterns were added, in order?`;
 		els.body.innerHTML = `
 			<form class="rh-answer" id="rh-answer-form" autocomplete="off">
@@ -303,7 +920,7 @@
 	function checkStack() {
 		const { chain, answer, entered, word } = session.current;
 		const correct = entered.length === answer.length && entered.every((letter, index) => letter === answer[index]);
-		const steps = chain.map((step, index) => `<li><span class="rh-step-num">${"①②③④"[index]}</span><span lang="ja">${escapeHtml(kanjiForm(step.state.text, word))}</span><b>${step.letter}</b><small>${transforms[step.letter].name}</small></li>`).join("");
+		const steps = stackStepsHtml(chain, word);
 		const feedback = $("#rh-feedback");
 		feedback.className = `answer-feedback rh-feedback ${correct ? "is-correct" : "is-incorrect"}`;
 		feedback.innerHTML = `${correct ? "Correct!" : `Not quite. The answer is <strong>${answer.join(" + ")}</strong>.`}<ol class="rh-steps">${steps}</ol>`;
@@ -319,11 +936,201 @@
 		recordResult(correct, `${escapeHtml(word.kanji || word.reading)} → ${escapeHtml(finalText)} (${answer.join(" + ")})`);
 	}
 
-	/* ---------- Modes 2 & 3 rendering ---------- */
-	function renderMarking() {
+	function checkStackChoice(choice) {
+		const { chain, word, choiceAnswer, task, finalText } = session.current;
+		const correct = choice === choiceAnswer;
+		const feedback = $("#rh-feedback");
+		feedback.className = `answer-feedback rh-feedback ${correct ? "is-correct" : "is-incorrect"}`;
+		feedback.innerHTML = `${correct ? "Correct!" : `Not quite. The answer is <strong>${escapeHtml(choiceAnswer)}</strong>.`}
+			<ol class="rh-steps">${stackStepsHtml(chain, word)}</ol>`;
+		document.querySelectorAll(".rh-choice-option").forEach((button) => {
+			button.disabled = true;
+			const value = button.dataset.choice;
+			button.classList.toggle("is-correct", value === choiceAnswer);
+			button.classList.toggle("is-incorrect", value === choice && value !== choiceAnswer);
+		});
+		els.hero.classList.add(correct ? "is-correct" : "is-incorrect");
+		const next = $("#rh-next");
+		next.hidden = false;
+		next.focus();
+		const missedPrefix = task.type === "base" ? "base" : "meaning";
+		recordResult(correct, `${missedPrefix}: ${escapeHtml(finalText)} → ${escapeHtml(choiceAnswer)}`);
+	}
+
+	function renderPassageQuestion() {
 		const item = session.items[(session.index - 1) % session.items.length];
+		session.current = { item, selected: null };
+		els.hero.innerHTML = `
+			<p class="rh-hero-label">${escapeHtml(item.title)}</p>
+			<p class="rh-passage" lang="ja">${escapeHtml(item.text)}</p>`;
+		els.band.textContent = item.prompt;
+		els.body.innerHTML = `
+			<div class="rh-choice-list" role="group" aria-label="Answer choices">
+				${item.options.map((option) => `<button type="button" class="rh-choice-option" data-choice="${escapeHtml(option)}">${escapeHtml(option)}</button>`).join("")}
+			</div>
+			<p class="answer-feedback rh-feedback" id="rh-feedback" aria-live="polite"></p>
+			<div class="rh-hint-table"><h4>Passage gist</h4><p>${escapeHtml(item.en)}</p></div>
+			<button class="practice-start rh-next" id="rh-next" type="button" hidden>Next →</button>`;
+	}
+
+	function checkPassageChoice(choice) {
+		const { item } = session.current;
+		const correct = choice === item.answer;
+		session.current.selected = choice;
+		const feedback = $("#rh-feedback");
+		feedback.className = `answer-feedback rh-feedback ${correct ? "is-correct" : "is-incorrect"}`;
+		feedback.innerHTML = `${correct ? "Correct!" : `Not quite. The answer is <strong>${escapeHtml(item.answer)}</strong>.`}
+			<span class="rh-translation">${escapeHtml(item.explanation)}</span>`;
+		document.querySelectorAll(".rh-choice-option").forEach((button) => {
+			button.disabled = true;
+			const value = button.dataset.choice;
+			button.classList.toggle("is-correct", value === item.answer);
+			button.classList.toggle("is-incorrect", value === choice && value !== item.answer);
+		});
+		els.hero.classList.add(correct ? "is-correct" : "is-incorrect");
+		const next = $("#rh-next");
+		next.hidden = false;
+		next.focus();
+		recordResult(correct, `${escapeHtml(item.title)}: ${escapeHtml(item.prompt)} → ${escapeHtml(item.answer)}`);
+	}
+
+	function renderAgentQuestion() {
+		const item = session.items[(session.index - 1) % session.items.length];
+		session.current = { item, choiceAnswer: item.answer };
+		els.hero.innerHTML = `
+			<p class="rh-hero-label">Who did it? · ${escapeHtml(item.level)} · ${escapeHtml(item.pattern)}</p>
+			<p class="rh-sentence" lang="ja">${escapeHtml(item.sentence)}</p>`;
+		els.band.textContent = item.prompt;
+		els.body.innerHTML = `
+			<div class="rh-choice-list" role="group" aria-label="Agent role choices">
+				${item.options.map((option) => `<button type="button" class="rh-choice-option" data-choice="${escapeHtml(option)}"><span lang="ja">${escapeHtml(option)}</span></button>`).join("")}
+			</div>
+			<p class="answer-feedback rh-feedback" id="rh-feedback" aria-live="polite"></p>
+			<div class="rh-hint-table"><h4>Reading move</h4><p>${escapeHtml(item.subprompt)} Pattern focus: ${escapeHtml(agentRoleLabels[item.role] || item.role)}.</p></div>
+			<button class="practice-start rh-next" id="rh-next" type="button" hidden>Next →</button>`;
+	}
+
+	function checkAgentChoice(choice) {
+		const { item, choiceAnswer } = session.current;
+		const correct = choice === choiceAnswer;
+		const feedback = $("#rh-feedback");
+		feedback.className = `answer-feedback rh-feedback ${correct ? "is-correct" : "is-incorrect"}`;
+		feedback.innerHTML = `${correct ? "Correct!" : `Not quite. The answer is <strong lang="ja">${escapeHtml(choiceAnswer)}</strong>.`}
+			<span class="rh-answer-line" lang="ja">${escapeHtml(item.sentence)}</span>
+			<span class="rh-translation">${escapeHtml(item.explanation)}</span>`;
+		document.querySelectorAll(".rh-choice-option").forEach((button) => {
+			button.disabled = true;
+			const value = button.dataset.choice;
+			button.classList.toggle("is-correct", value === choiceAnswer);
+			button.classList.toggle("is-incorrect", value === choice && value !== choiceAnswer);
+		});
+		els.hero.classList.add(correct ? "is-correct" : "is-incorrect");
+		const next = $("#rh-next");
+		next.hidden = false;
+		next.focus();
+		recordResult(correct, `${escapeHtml(item.pattern)} · ${escapeHtml(item.role)}: ${escapeHtml(item.sentence)} → ${escapeHtml(choiceAnswer)}`);
+	}
+
+	function renderBreakQuestion() {
+		const item = session.items[(session.index - 1) % session.items.length];
+		const task = chooseBreakTask();
+		if (task.type === "mark") return renderMarking(item, task);
+		const chunks = sentenceBreakChunks(item);
+		const answer = task.type === "main" ? chunks.at(-1).text : null;
+		const targetBreak = task.type === "role" ? item.breaks[Math.floor(Math.random() * item.breaks.length)] : null;
+		const role = targetBreak === null ? null : classifyBreakRole(item, targetBreak);
+		session.current = { item, task, choiceAnswer: task.type === "main" ? answer : role.label, targetBreak };
+		els.hero.innerHTML = `<p class="rh-hero-label">${task.type === "main" ? "Read the chunks, then find the core sentence" : "Read the highlighted slash"}</p><p class="rh-sentence" lang="ja">${renderBreakGuideSentence(item, targetBreak)}</p>`;
+		els.band.textContent = task.type === "main" ? "Which chunk carries the main action or conclusion?" : "What job does this highlighted break do?";
+		const options = task.type === "main"
+			? shuffled(chunks.map((chunk) => chunk.text)).slice(0, 4)
+			: breakRoleOptions(role.label);
+		if (task.type === "main" && !options.includes(answer)) {
+			options.pop();
+			options.push(answer);
+		}
+		els.body.innerHTML = `
+			<div class="rh-choice-list" role="group" aria-label="Sentence break choices">
+				${shuffled(options).map((option) => `<button type="button" class="rh-choice-option" data-choice="${escapeHtml(option)}">${task.type === "main" ? `<span lang="ja">${escapeHtml(option)}</span>` : escapeHtml(option)}</button>`).join("")}
+			</div>
+			<p class="answer-feedback rh-feedback" id="rh-feedback" aria-live="polite"></p>
+			<div class="rh-hint-table"><h4>${task.type === "main" ? "Reading move" : "Connector clue"}</h4><p>${task.type === "main" ? "Supporting chunks often come first. The main clause is usually the final chunk that completes the sentence." : escapeHtml(role.explanation)}</p></div>
+			<button class="practice-start rh-next" id="rh-next" type="button" hidden>Next →</button>`;
+	}
+
+	function checkBreakChoice(choice) {
+		const { item, task, choiceAnswer, targetBreak } = session.current;
+		const correct = choice === choiceAnswer;
+		const feedback = $("#rh-feedback");
+		feedback.className = `answer-feedback rh-feedback ${correct ? "is-correct" : "is-incorrect"}`;
+		feedback.innerHTML = `${correct ? "Correct!" : `Not quite. The answer is <strong>${escapeHtml(choiceAnswer)}</strong>.`}
+			<span class="rh-answer-line" lang="ja">${renderBreakGuideSentence(item, targetBreak)}</span>
+			<span class="rh-translation">${escapeHtml(task.type === "main" ? item.en : classifyBreakRole(item, targetBreak).explanation)}</span>`;
+		document.querySelectorAll(".rh-choice-option").forEach((button) => {
+			button.disabled = true;
+			const value = button.dataset.choice;
+			button.classList.toggle("is-correct", value === choiceAnswer);
+			button.classList.toggle("is-incorrect", value === choice && value !== choiceAnswer);
+		});
+		els.hero.classList.add(correct ? "is-correct" : "is-incorrect");
+		const next = $("#rh-next");
+		next.hidden = false;
+		next.focus();
+		recordResult(correct, `${task.type}: ${renderBreakGuideSentence(item, targetBreak)} → ${escapeHtml(choiceAnswer)}`);
+	}
+
+	function renderQuoteQuestion() {
+		const item = session.items[(session.index - 1) % session.items.length];
+		const task = chooseQuoteTask();
+		if (task.type === "mark") return renderMarking(item, task);
+		const reporter = quoteReporter(item);
+		const verb = quoteVerbInfo(item);
+		const force = quoteForceInfo(item);
+		const answer = task.type === "source" ? reporter : task.type === "verb" ? verb.label : force.label;
+		const options = task.type === "source"
+			? quoteReporterOptions(answer, quoteBank)
+			: task.type === "verb"
+				? quoteChoiceOptions(answer, quoteVerbChoices)
+				: quoteChoiceOptions(answer, quoteForceChoices);
+		session.current = { item, task, choiceAnswer: answer, reporter, verb, force };
+		els.hero.innerHTML = `<p class="rh-hero-label">${task.type === "source" ? "Who owns this quote/thought?" : task.type === "verb" ? "How is the quote reported?" : "What is the quote doing?"}</p><p class="rh-sentence" lang="ja">${renderQuoteGuideSentence(item, true)}</p>`;
+		els.band.textContent = task.type === "source" ? "Who said, thought, wrote, or reported it?" : task.type === "verb" ? "What kind of reporting verb follows the quote?" : "What is the force of the quoted content?";
+		els.body.innerHTML = `
+			<div class="rh-choice-list" role="group" aria-label="Quote choices">
+				${options.map((option) => `<button type="button" class="rh-choice-option" data-choice="${escapeHtml(option)}">${escapeHtml(option)}</button>`).join("")}
+			</div>
+			<p class="answer-feedback rh-feedback" id="rh-feedback" aria-live="polite"></p>
+			<div class="rh-hint-table"><h4>Reading move</h4><p>${task.type === "source" ? "Look before the quote for は, が, では, で, or に. Signs and emails can also be the source." : task.type === "verb" ? "The verb after と tells whether this is speech, thought, writing, explanation, news, or a question." : "Read the quoted content itself: is it an instruction, rule, plan, guess, feeling, or information?"}</p></div>
+			<button class="practice-start rh-next" id="rh-next" type="button" hidden>Next →</button>`;
+	}
+
+	function checkQuoteChoice(choice) {
+		const { item, task, choiceAnswer, verb, force } = session.current;
+		const correct = choice === choiceAnswer;
+		const feedback = $("#rh-feedback");
+		const explanation = task.type === "verb" ? verb.explanation : task.type === "force" ? force.explanation : `The source before the quote points to ${choiceAnswer}.`;
+		feedback.className = `answer-feedback rh-feedback ${correct ? "is-correct" : "is-incorrect"}`;
+		feedback.innerHTML = `${correct ? "Correct!" : `Not quite. The answer is <strong>${escapeHtml(choiceAnswer)}</strong>.`}
+			<span class="rh-answer-line" lang="ja">${renderQuoteGuideSentence(item, true)}</span>
+			<span class="rh-translation">${escapeHtml(explanation)}</span>`;
+		document.querySelectorAll(".rh-choice-option").forEach((button) => {
+			button.disabled = true;
+			const value = button.dataset.choice;
+			button.classList.toggle("is-correct", value === choiceAnswer);
+			button.classList.toggle("is-incorrect", value === choice && value !== choiceAnswer);
+		});
+		els.hero.classList.add(correct ? "is-correct" : "is-incorrect");
+		const next = $("#rh-next");
+		next.hidden = false;
+		next.focus();
+		recordResult(correct, `${task.type}: ${renderQuoteGuideSentence(item, true)} → ${escapeHtml(choiceAnswer)}`);
+	}
+
+	/* ---------- Modes 2 & 3 rendering ---------- */
+	function renderMarking(presetItem = null, presetTask = null) {
+		const item = presetItem || session.items[(session.index - 1) % session.items.length];
 		const isBreaks = session.mode === "breaks";
-		session.current = { item, breaks: new Set(), start: null, end: null };
+		session.current = { item, task: presetTask, breaks: new Set(), start: null, end: null };
 		els.hero.innerHTML = `<p class="rh-hero-label">${isBreaks ? "Tap between words to add a /" : "Tap where the quote starts, then where it ends"}</p><p class="rh-sentence" id="rh-sentence" lang="ja"></p>`;
 		els.band.textContent = isBreaks ? "Where are the breaks in this sentence?" : "What was said, thought or written?";
 		els.body.innerHTML = `
@@ -374,11 +1181,12 @@
 		let out = "";
 		chars.forEach((char, index) => {
 			if (kind === "breaks" && marks.breaks.has(index) && index > 0) out += '<span class="rh-answer-mark">/</span>';
-			if (kind === "quotes" && marks.start === index) out += '<span class="rh-answer-mark">「</span>';
-			if (kind === "quotes" && marks.end === index) out += '<span class="rh-answer-mark">」</span>';
+			const quoteClass = marks.targetQuote ? " rh-quote-target" : "";
+			if (kind === "quotes" && marks.start === index) out += `<span class="rh-answer-mark${quoteClass}">「</span>`;
+			if (kind === "quotes" && marks.end === index) out += `<span class="rh-answer-mark${quoteClass}">」</span>`;
 			out += escapeHtml(char);
 		});
-		if (kind === "quotes" && marks.end === chars.length) out += '<span class="rh-answer-mark">」</span>';
+		if (kind === "quotes" && marks.end === chars.length) out += `<span class="rh-answer-mark${marks.targetQuote ? " rh-quote-target" : ""}">」</span>`;
 		return out;
 	}
 
@@ -425,6 +1233,15 @@
 	els.session.addEventListener("click", (event) => {
 		if (!session) return;
 		els.hero.classList.remove("is-correct", "is-incorrect");
+		const choice = event.target.closest(".rh-choice-option");
+		if (choice && !session.checked) {
+			if (session.mode === "passages") checkPassageChoice(choice.dataset.choice);
+			else if (session.mode === "agents") checkAgentChoice(choice.dataset.choice);
+			else if (session.mode === "stack" && session.current.task?.type !== "order") checkStackChoice(choice.dataset.choice);
+			else if (session.mode === "breaks" && session.current.task?.type !== "mark") checkBreakChoice(choice.dataset.choice);
+			else if (session.mode === "quotes" && session.current.task?.type !== "mark") checkQuoteChoice(choice.dataset.choice);
+			return;
+		}
 		const gap = event.target.closest(".rh-gap");
 		if (gap && !session.checked) {
 			const position = Number(gap.dataset.gap);

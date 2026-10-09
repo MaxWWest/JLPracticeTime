@@ -674,6 +674,90 @@ body.practice-fullscreen { overflow: hidden; }
 .worksheet-length { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 0 0 12px; padding: 9px 11px; border: 1px solid var(--line); border-radius: 8px; background: var(--white); color: #858d7e; font-size: 9px; letter-spacing: .06em; text-transform: uppercase; }
 .worksheet-length select { padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--white); color: var(--green); font: inherit; font-size: 11px; letter-spacing: 0; text-transform: none; }
 
+/* Grammar practice */
+.grammar-practice-section { padding: 31px 0 28px; }
+.gp-layout { display: grid; gap: 14px; margin-top: 21px; }
+.gp-session-card { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 16px; align-items: center; padding: 18px; border: 1px solid var(--line); border-radius: 12px; background: var(--white); }
+.gp-session-number { display: grid; width: 42px; height: 42px; place-items: center; border-radius: 50%; background: #e5eee6; color: #315e4b; font-weight: 700; }
+.gp-session-card h4 { margin: 0; color: #315e4b; font-size: 16px; }
+.gp-session-card p { margin: 5px 0 0; color: #747c70; font-size: 11px; line-height: 1.55; }
+.gp-session-card p[lang] { color: #252b27; font-family: "Noto Sans JP", sans-serif; font-size: 13px; }
+.gp-session-controls { display: flex; align-items: end; gap: 10px; }
+.gp-session-controls label { display: flex; flex-direction: column; gap: 5px; color: #858d7e; font-size: 10px; }
+.gp-session-controls select { min-height: 36px; padding: 0 10px; border: 1px solid var(--line); border-radius: 7px; background: #fff; color: var(--ink); font-size: 11px; }
+.gp-session-controls .practice-start { margin: 0; white-space: nowrap; }
+.gp-note-button { display: grid; width: 36px; height: 36px; place-items: center; border: 1px solid #cfe0d3; border-radius: 50%; background: #f6faf6; color: #315e4b; font-size: 13px; font-weight: 800; cursor: pointer; }
+.gp-note-button:hover, .gp-note-button[aria-expanded="true"] { border-color: #6f9c82; background: #e5eee6; }
+.gp-session-note-button { display: grid; width: 30px; height: 30px; place-items: center; border: 1px solid rgba(49, 94, 75, .22); border-radius: 50%; background: rgba(255, 255, 255, .55); color: #315e4b; font-size: 12px; font-weight: 800; cursor: pointer; }
+.gp-session-note-button:hover, .gp-session-note-button[aria-expanded="true"] { background: #fff; border-color: #6f9c82; }
+.gp-note-tip { grid-column: 1 / -1; padding: 16px; border: 1px solid #cfe0d3; border-radius: 10px; background: #fbfdf9; box-shadow: 0 16px 34px rgba(49, 63, 55, .1); }
+.gp-note-tip[hidden] { display: none; }
+.gp-note-head { display: grid; gap: 5px; margin-bottom: 13px; }
+.gp-note-head span { color: #858d7e; font-size: 9px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; }
+.gp-note-head h5 { margin: 0; color: #315e4b; font-size: 15px; }
+.gp-note-head p { max-width: 920px; margin: 0; color: #4d554d; font-size: 12px; line-height: 1.65; }
+.gp-note-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.gp-note-section { padding: 12px; border: 1px solid #dde8de; border-radius: 8px; background: #fff; }
+.gp-note-section h6 { margin: 0 0 7px; color: #315e4b; font-size: 12px; }
+.gp-note-pattern { margin: 0 0 8px; color: #252b27; font-family: "Noto Sans JP", sans-serif; font-size: 14px; font-weight: 600; }
+.gp-note-section ul, .gp-note-pitfalls ul { margin: 0; padding-left: 17px; }
+.gp-note-section li, .gp-note-pitfalls li { color: #596158; font-size: 11px; line-height: 1.55; }
+.gp-note-section li + li, .gp-note-pitfalls li + li { margin-top: 4px; }
+.gp-note-examples { display: grid; gap: 4px; margin-top: 10px; padding-top: 9px; border-top: 1px solid #edf0e8; }
+.gp-note-examples p { margin: 0; color: #252b27; font-family: "Noto Sans JP", sans-serif; font-size: 12px; line-height: 1.5; }
+.gp-note-pitfalls { margin-top: 10px; padding: 12px; border: 1px solid #e9d6c9; border-radius: 8px; background: #fff8f2; }
+.gp-note-pitfalls strong { display: block; margin-bottom: 7px; color: #865c38; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; }
+.gp-roadmap { display: grid; grid-template-columns: repeat(25, minmax(24px, 1fr)); gap: 5px; padding: 11px; border: 1px solid var(--line); border-radius: 10px; background: #f0efe7; }
+.gp-roadmap span { display: grid; min-height: 24px; place-items: center; border-radius: 6px; background: #fffefa; color: #9a9d95; font-size: 9px; font-weight: 700; }
+.gp-roadmap .is-active { background: #315e4b; color: #fff; }
+.gp-session[hidden], #gp-complete[hidden] { display: none; }
+.gp-session { position: fixed; z-index: 200; inset: 0; display: flex; flex-direction: column; overflow-y: auto; background: #f4f4f4; }
+.gp-session .rh-top svg { width: 22px; height: 22px; fill: currentColor; }
+.gp-session .rh-stats { align-items: center; }
+.gp-session-note-panel { position: fixed; z-index: 205; top: 58px; right: 16px; width: min(620px, calc(100vw - 32px)); max-height: calc(100vh - 88px); overflow: auto; padding: 16px; border: 1px solid #cfe0d3; border-radius: 10px; background: #fbfdf9; box-shadow: 0 18px 42px rgba(49, 63, 55, .18); }
+.gp-session-note-panel[hidden] { display: none; }
+.gp-hero { display: flex; flex-shrink: 0; min-height: 36vh; flex-direction: column; align-items: center; justify-content: center; padding: 64px 16px 28px; background: linear-gradient(#e5eee6, #d3e4d6); color: #315e4b; text-align: center; transition: background .2s; }
+.gp-hero.is-correct { background: linear-gradient(#dcefdd, #cfe6d1); }
+.gp-hero.is-incorrect { background: linear-gradient(#f7e6e2, #f1d8d3); }
+.gp-hero h3 { max-width: 1000px; margin: 0; color: #315e4b; font-family: "Noto Sans JP", "DM Sans", sans-serif; font-size: clamp(26px, 4.4vw, 48px); font-weight: 500; line-height: 1.45; overflow-wrap: anywhere; }
+.gp-hero p:last-child { max-width: 720px; margin: 12px 0 0; color: #4f7d68; font-size: 13px; line-height: 1.6; }
+.gp-body { display: flex; flex-direction: column; align-items: center; width: min(100% - 28px, 1000px); margin: 0 auto; padding: 22px 0 48px; }
+.gp-options { display: grid; width: 100%; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.gp-options button { display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 10px; align-items: start; min-height: 72px; padding: 13px; border: 1px solid #cfe0d3; border-radius: 9px; background: #fff; color: #252b27; text-align: left; cursor: pointer; }
+.gp-options button:hover:not(:disabled) { border-color: #6f9c82; background: #f6faf6; }
+.gp-options button:disabled { cursor: default; }
+.gp-options button > span:first-child { display: grid; width: 24px; height: 24px; place-items: center; border-radius: 50%; background: #e5eee6; color: #315e4b; font-size: 10px; font-weight: 700; }
+.gp-options button > span:last-child { font-family: "Noto Sans JP", sans-serif; font-size: 17px; line-height: 1.55; overflow-wrap: anywhere; }
+.gp-options button.is-correct { border-color: #a9cfae; background: #e0f0e1; }
+.gp-options button.is-incorrect { border-color: #e3b0a9; background: #f7e1dd; }
+.gp-answer { display: flex; width: 100%; max-width: 760px; align-items: stretch; overflow: hidden; border: 2px solid #cfe0d3; border-radius: 10px; background: #fff; }
+.gp-answer input { min-width: 0; flex: 1; padding: 18px 16px; border: 0; background: transparent; color: #315e4b; font-family: "Noto Sans JP", sans-serif; font-size: 24px; text-align: center; outline: none; }
+.gp-answer button { width: 72px; border: 0; background: #315e4b; color: #fff; font-size: 30px; cursor: pointer; }
+.gp-answer.is-correct { border-color: #a9cfae; background: #e0f0e1; }
+.gp-answer.is-incorrect { border-color: #e3b0a9; background: #f7e1dd; }
+.gp-explanation { width: min(100%, 760px); margin-top: 14px; padding: 15px; border: 1px solid #cfe0d3; border-radius: 10px; background: #fff; text-align: center; }
+.gp-explanation[hidden] { display: none; }
+.gp-explanation p { margin: 0; color: #596158; font-size: 12px; line-height: 1.6; }
+.gp-explanation p + p { margin-top: 7px; }
+.gp-explanation span { display: block; color: #858d7e; font-size: 9px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.gp-explanation strong { color: #315e4b; font-family: "Noto Sans JP", sans-serif; font-size: 20px; }
+.gp-final-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.pitch-missed-item small { display: block; grid-column: 1 / -1; color: #747c70; font-size: 10px; line-height: 1.5; }
+@media (max-width: 700px) {
+	.gp-session-card { grid-template-columns: 1fr; align-items: stretch; }
+	.gp-session-number { width: 34px; height: 34px; }
+	.gp-session-controls { align-items: stretch; flex-direction: column; }
+	.gp-session-controls .practice-start { width: 100%; }
+	.gp-note-button { width: 100%; border-radius: 7px; }
+	.gp-note-grid { grid-template-columns: 1fr; }
+	.gp-session-note-panel { right: 10px; left: 10px; width: auto; }
+	.gp-roadmap { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+	.gp-options { grid-template-columns: 1fr; }
+	.gp-options button > span:last-child { font-size: 15px; }
+	.gp-answer input { font-size: 18px; }
+	.gp-final-stats { grid-template-columns: 1fr; }
+}
+
 /* Reading help */
 body.reading-fullscreen { overflow: hidden; }
 .rh-modes { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 14px; margin-top: 21px; }
@@ -704,6 +788,7 @@ body.reading-fullscreen { overflow: hidden; }
 .rh-arrow { margin: 2px 0; color: #6f9c82; font-size: 22px; }
 .rh-target { margin: 0; font-size: clamp(32px, 6.5vw, 64px); font-weight: 500; line-height: 1.3; overflow-wrap: anywhere; }
 .rh-sentence { max-width: 1000px; margin: 0; font-size: clamp(24px, 4.2vw, 42px); line-height: 2.1; font-family: "Noto Sans JP", sans-serif; }
+.rh-passage { width: min(100%, 900px); margin: 0; color: #21352b; font-family: "Noto Sans JP", sans-serif; font-size: clamp(19px, 2.8vw, 30px); line-height: 1.9; text-align: left; }
 .rh-char { display: inline; }
 .rh-gap { display: inline-block; min-width: 7px; height: 1.25em; margin: 0 -1px; padding: 0 1px; border: 0; border-radius: 4px; background: transparent; color: #c0705f; font: inherit; font-weight: 700; line-height: 1.25; vertical-align: middle; cursor: pointer; }
 .rh-gap:hover:not(:disabled) { background: rgba(49, 94, 75, .18); }
@@ -737,8 +822,16 @@ body.reading-fullscreen { overflow: hidden; }
 .rh-actions { display: flex; align-items: center; justify-content: center; gap: 12px; }
 .rh-actions .practice-start, .rh-body .rh-next { margin: 0; }
 .rh-body .rh-next { margin-top: 20px; }
+.rh-choice-list { display: grid; width: 100%; gap: 10px; }
+.rh-choice-option { padding: 15px 16px; border: 1px solid #cfe0d3; border-radius: 8px; background: #fff; color: #252b27; font-size: 15px; line-height: 1.45; text-align: left; cursor: pointer; }
+.rh-choice-option:hover:not(:disabled) { border-color: #6f9c82; background: #f3f7f3; }
+.rh-choice-option:disabled { cursor: default; }
+.rh-choice-option.is-correct { border-color: #a9cfae; background: #e0f0e1; color: #2f6a47; }
+.rh-choice-option.is-incorrect { border-color: #e3b0a9; background: #f7e1dd; color: #8a4036; }
 .rh-answer-line { display: block; margin-top: 10px; color: #252b27; font-size: 22px; line-height: 1.8; font-family: "Noto Sans JP", sans-serif; }
 .rh-answer-mark { margin: 0 2px; padding: 0 4px; border-radius: 4px; background: #d3e4d6; color: #315e4b; font-weight: 700; }
+.rh-answer-mark.is-target { background: #315e4b; color: #fff; box-shadow: 0 0 0 3px rgba(49, 94, 75, .16); }
+.rh-answer-mark.rh-quote-target { background: #315e4b; color: #fff; box-shadow: 0 0 0 3px rgba(49, 94, 75, .16); }
 .rh-translation { display: block; margin-top: 4px; color: #747c70; font-size: 13px; }
 .rh-hint-table { width: 100%; margin-top: 24px; padding: 14px 16px; border: 1px solid #cfe0d3; border-radius: 10px; background: #fff; }
 .rh-hint-table h4 { margin: 0 0 8px; color: #858d7e; font-size: 10px; letter-spacing: .06em; text-transform: uppercase; }

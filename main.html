@@ -48,6 +48,7 @@
             <div class="content-tabs" role="tablist" aria-label="Japanese study sections">
                 <button class="content-tab is-active" id="vocabulary-tab" type="button" role="tab" aria-selected="true" aria-controls="vocabulary-panel" tabindex="0">Vocabulary</button>
                 <button class="content-tab" id="grammar-tab" type="button" role="tab" aria-selected="false" aria-controls="grammar-panel" tabindex="-1">Grammar</button>
+                <button class="content-tab" id="grammar-practice-tab" type="button" role="tab" aria-selected="false" aria-controls="grammar-practice-panel" tabindex="-1">Grammar practice</button>
                 <button class="content-tab" id="practice-tab" type="button" role="tab" aria-selected="false" aria-controls="practice-panel" tabindex="-1">Daily practice</button>
                 <button class="content-tab" id="conjugation-tab" type="button" role="tab" aria-selected="false" aria-controls="conjugation-panel" tabindex="-1">Verb conjugation</button>
                 <button class="content-tab" id="nominal-conjugation-tab" type="button" role="tab" aria-selected="false" aria-controls="nominal-conjugation-panel" tabindex="-1">Adjective &amp; noun forms</button>
@@ -162,6 +163,253 @@
                 </div>
                 <section class="worksheet-output" id="worksheet-output" hidden aria-live="polite"></section>
                 <p class="grammar-attribution" id="grammar-status">Grammar data from <a href="https://github.com/evanclan/OpenJLPT" target="_blank" rel="noreferrer">OpenJLPT</a>, licensed under <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noreferrer">CC BY-SA 4.0</a>. JLPT level assignments are community approximations, not official exam lists.</p>
+            </section>
+
+            <section class="grammar-practice-section tab-panel" id="grammar-practice-panel" role="tabpanel" aria-labelledby="grammar-practice-tab" tabindex="0" aria-hidden="true" hidden>
+                <div class="nominal-conjugation-heading">
+                    <p class="eyebrow section-eyebrow">N4 GRAMMAR GAMES</p>
+                    <h3>Grammar practice sessions</h3>
+                    <p>Interactive drills for the N4 patterns that need fast recognition and sentence control. Sessions 01 through 10 are ready.</p>
+                </div>
+                <div class="gp-layout" id="gp-setup">
+                    <article class="gp-session-card is-ready" data-gp-session-card="comparison">
+                        <span class="gp-session-number">01</span>
+                        <div>
+                            <h4>Comparison patterns</h4>
+                            <p lang="ja">より、ほど…ません、より…のほう、と…と…どちら</p>
+                            <p>Build and recognize comparison sentences from both directions.</p>
+                        </div>
+                        <div class="gp-session-controls">
+                            <label>Questions
+                                <select id="gp-count">
+                                    <option value="10">10</option>
+                                    <option value="25" selected>25</option>
+                                    <option value="40">40</option>
+                                </select>
+                            </label>
+                            <button class="gp-note-button" data-gp-notes="comparison" aria-expanded="false" aria-controls="gp-note-comparison" title="Show grammar notes" type="button">?</button>
+                            <button class="practice-start" id="gp-start" data-gp-start="comparison" type="button">Start session <span aria-hidden="true">→</span></button>
+                        </div>
+                        <div class="gp-note-tip" id="gp-note-comparison" data-gp-note-tip="comparison" role="tooltip" hidden></div>
+                    </article>
+                    <article class="gp-session-card is-ready" data-gp-session-card="time">
+                        <span class="gp-session-number">02</span>
+                        <div>
+                            <h4>Time and simultaneous actions</h4>
+                            <p lang="ja">ながら、ところです、まで、までに</p>
+                            <p>Practice what is happening now, what happens at a deadline, and what continues until a limit.</p>
+                        </div>
+                        <div class="gp-session-controls">
+                            <label>Questions
+                                <select id="gp-count-2">
+                                    <option value="10">10</option>
+                                    <option value="25" selected>25</option>
+                                    <option value="40">40</option>
+                                </select>
+                            </label>
+                            <button class="gp-note-button" data-gp-notes="time" aria-expanded="false" aria-controls="gp-note-time" title="Show grammar notes" type="button">?</button>
+                            <button class="practice-start" data-gp-start="time" type="button">Start session <span aria-hidden="true">→</span></button>
+                        </div>
+                        <div class="gp-note-tip" id="gp-note-time" data-gp-note-tip="time" role="tooltip" hidden></div>
+                    </article>
+                    <article class="gp-session-card is-ready" data-gp-session-card="invitation">
+                        <span class="gp-session-number">03</span>
+                        <div>
+                            <h4>Invitations and offers</h4>
+                            <p lang="ja">ませんか、ましょう、ましょうか</p>
+                            <p>Practice inviting someone, suggesting a shared action, and offering help.</p>
+                        </div>
+                        <div class="gp-session-controls">
+                            <label>Questions
+                                <select id="gp-count-3">
+                                    <option value="10">10</option>
+                                    <option value="25" selected>25</option>
+                                    <option value="40">40</option>
+                                </select>
+                            </label>
+                            <button class="gp-note-button" data-gp-notes="invitation" aria-expanded="false" aria-controls="gp-note-invitation" title="Show grammar notes" type="button">?</button>
+                            <button class="practice-start" data-gp-start="invitation" type="button">Start session <span aria-hidden="true">→</span></button>
+                        </div>
+                        <div class="gp-note-tip" id="gp-note-invitation" data-gp-note-tip="invitation" role="tooltip" hidden></div>
+                    </article>
+                    <article class="gp-session-card is-ready" data-gp-session-card="ability">
+                        <span class="gp-session-number">04</span>
+                        <div>
+                            <h4>Ability and perception</h4>
+                            <p lang="ja">〜(られ)ます、〜ができます、見えます、聞こえます</p>
+                            <p>Practice ability, permission-like possibility, and what naturally comes into view or earshot.</p>
+                        </div>
+                        <div class="gp-session-controls">
+                            <label>Questions
+                                <select id="gp-count-4">
+                                    <option value="10">10</option>
+                                    <option value="25" selected>25</option>
+                                    <option value="40">40</option>
+                                </select>
+                            </label>
+                            <button class="gp-note-button" data-gp-notes="ability" aria-expanded="false" aria-controls="gp-note-ability" title="Show grammar notes" type="button">?</button>
+                            <button class="practice-start" data-gp-start="ability" type="button">Start session <span aria-hidden="true">→</span></button>
+                        </div>
+                        <div class="gp-note-tip" id="gp-note-ability" data-gp-note-tip="ability" role="tooltip" hidden></div>
+                    </article>
+                    <article class="gp-session-card is-ready" data-gp-session-card="experience">
+                        <span class="gp-session-number">05</span>
+                        <div>
+                            <h4>Experience and occasional events</h4>
+                            <p lang="ja">〜たことがあります、〜ことがあります</p>
+                            <p>Practice past experience and things that sometimes happen without mixing the two forms.</p>
+                        </div>
+                        <div class="gp-session-controls">
+                            <label>Questions
+                                <select id="gp-count-5">
+                                    <option value="10">10</option>
+                                    <option value="25" selected>25</option>
+                                    <option value="40">40</option>
+                                </select>
+                            </label>
+                            <button class="gp-note-button" data-gp-notes="experience" aria-expanded="false" aria-controls="gp-note-experience" title="Show grammar notes" type="button">?</button>
+                            <button class="practice-start" data-gp-start="experience" type="button">Start session <span aria-hidden="true">→</span></button>
+                        </div>
+                        <div class="gp-note-tip" id="gp-note-experience" data-gp-note-tip="experience" role="tooltip" hidden></div>
+                    </article>
+                    <article class="gp-session-card is-ready" data-gp-session-card="permission">
+                        <span class="gp-session-number">06</span>
+                        <div>
+                            <h4>Permission and obligation</h4>
+                            <p lang="ja">〜てもいいです、〜てはいけません、〜なくてもいいです、〜なければなりません</p>
+                            <p>Practice what is allowed, forbidden, unnecessary, and required without mixing the meanings.</p>
+                        </div>
+                        <div class="gp-session-controls">
+                            <label>Questions
+                                <select id="gp-count-6">
+                                    <option value="10">10</option>
+                                    <option value="25" selected>25</option>
+                                    <option value="40">40</option>
+                                </select>
+                            </label>
+                            <button class="gp-note-button" data-gp-notes="permission" aria-expanded="false" aria-controls="gp-note-permission" title="Show grammar notes" type="button">?</button>
+                            <button class="practice-start" data-gp-start="permission" type="button">Start session <span aria-hidden="true">→</span></button>
+                        </div>
+                        <div class="gp-note-tip" id="gp-note-permission" data-gp-note-tip="permission" role="tooltip" hidden></div>
+                    </article>
+                    <article class="gp-session-card is-ready" data-gp-session-card="desire">
+                        <span class="gp-session-number">07</span>
+                        <div>
+                            <h4>Desires and hopes</h4>
+                            <p lang="ja">〜がほしいです、〜たいです、〜ほしがります、〜たがります、〜といいです</p>
+                            <p>Practice wanting things, wanting to do actions, third-person desire, and hoped-for situations.</p>
+                        </div>
+                        <div class="gp-session-controls">
+                            <label>Questions
+                                <select id="gp-count-7">
+                                    <option value="10">10</option>
+                                    <option value="25" selected>25</option>
+                                    <option value="40">40</option>
+                                </select>
+                            </label>
+                            <button class="gp-note-button" data-gp-notes="desire" aria-expanded="false" aria-controls="gp-note-desire" title="Show grammar notes" type="button">?</button>
+                            <button class="practice-start" data-gp-start="desire" type="button">Start session <span aria-hidden="true">→</span></button>
+                        </div>
+                        <div class="gp-note-tip" id="gp-note-desire" data-gp-note-tip="desire" role="tooltip" hidden></div>
+                    </article>
+                    <article class="gp-session-card is-ready" data-gp-session-card="appearance">
+                        <span class="gp-session-number">08</span>
+                        <div>
+                            <h4>Appearance, visible emotion, and unchanged state</h4>
+                            <p lang="ja">〜そうです、〜がっています、〜がります、〜まま</p>
+                            <p>Practice outside appearances, third-person feelings, general tendencies, and states left unchanged.</p>
+                        </div>
+                        <div class="gp-session-controls">
+                            <label>Questions
+                                <select id="gp-count-8">
+                                    <option value="10">10</option>
+                                    <option value="25" selected>25</option>
+                                    <option value="40">40</option>
+                                </select>
+                            </label>
+                            <button class="gp-note-button" data-gp-notes="appearance" aria-expanded="false" aria-controls="gp-note-appearance" title="Show grammar notes" type="button">?</button>
+                            <button class="practice-start" data-gp-start="appearance" type="button">Start session <span aria-hidden="true">→</span></button>
+                        </div>
+                        <div class="gp-note-tip" id="gp-note-appearance" data-gp-note-tip="appearance" role="tooltip" hidden></div>
+                    </article>
+                    <article class="gp-session-card is-ready" data-gp-session-card="reason">
+                        <span class="gp-session-number">09</span>
+                        <div>
+                            <h4>Reasons and causes</h4>
+                            <p lang="ja">〜から、〜からです、〜ので、〜て、〜くて、〜で</p>
+                            <p>Practice direct reasons, polite explanations, emotional causes, apologies, and thanks.</p>
+                        </div>
+                        <div class="gp-session-controls">
+                            <label>Questions
+                                <select id="gp-count-9">
+                                    <option value="10">10</option>
+                                    <option value="25" selected>25</option>
+                                    <option value="40">40</option>
+                                </select>
+                            </label>
+                            <button class="gp-note-button" data-gp-notes="reason" aria-expanded="false" aria-controls="gp-note-reason" title="Show grammar notes" type="button">?</button>
+                            <button class="practice-start" data-gp-start="reason" type="button">Start session <span aria-hidden="true">→</span></button>
+                        </div>
+                        <div class="gp-note-tip" id="gp-note-reason" data-gp-note-tip="reason" role="tooltip" hidden></div>
+                    </article>
+                    <article class="gp-session-card is-ready" data-gp-session-card="purpose">
+                        <span class="gp-session-number">10</span>
+                        <div>
+                            <h4>Purpose and intended outcomes</h4>
+                            <p lang="ja">〜に、〜ため(に)、〜ように</p>
+                            <p>Practice movement goals, intentional purposes, and desired outcomes without mixing the forms.</p>
+                        </div>
+                        <div class="gp-session-controls">
+                            <label>Questions
+                                <select id="gp-count-10">
+                                    <option value="10">10</option>
+                                    <option value="25" selected>25</option>
+                                    <option value="40">40</option>
+                                </select>
+                            </label>
+                            <button class="gp-note-button" data-gp-notes="purpose" aria-expanded="false" aria-controls="gp-note-purpose" title="Show grammar notes" type="button">?</button>
+                            <button class="practice-start" data-gp-start="purpose" type="button">Start session <span aria-hidden="true">→</span></button>
+                        </div>
+                        <div class="gp-note-tip" id="gp-note-purpose" data-gp-note-tip="purpose" role="tooltip" hidden></div>
+                    </article>
+                    <div class="gp-roadmap" aria-label="Planned grammar sessions">
+                        <span class="is-active">01</span><span class="is-active">02</span><span class="is-active">03</span><span class="is-active">04</span><span class="is-active">05</span>
+                        <span class="is-active">06</span><span class="is-active">07</span><span class="is-active">08</span><span class="is-active">09</span><span class="is-active">10</span>
+                        <span>11</span><span>12</span><span>13</span><span>14</span><span>15</span>
+                        <span>16</span><span>17</span><span>18</span><span>19</span><span>20</span>
+                        <span>21</span><span>22</span><span>23</span><span>24</span><span>25</span>
+                    </div>
+                </div>
+                <p class="conjugation-status" id="gp-status">Session 01 through 10 are ready. Each uses a mixed bank of typed blanks, sentence choices, pattern recognition, and reading-style prompts.</p>
+                <div class="gp-session" id="gp-session" hidden>
+                    <div class="rh-top">
+                        <button class="cs-home" id="gp-home" type="button" aria-label="Leave grammar practice" title="Leave practice"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg></button>
+                        <div class="rh-stats">
+                            <button class="gp-session-note-button" id="gp-session-notes" data-gp-notes aria-expanded="false" aria-controls="gp-session-note-panel" title="Show grammar notes" type="button">?</button>
+                            <span id="gp-correct">✓ 0</span><span id="gp-progress">1 / 25</span>
+                        </div>
+                    </div>
+                    <div class="gp-session-note-panel" id="gp-session-note-panel" role="tooltip" hidden></div>
+                    <div class="gp-hero" id="gp-hero">
+                        <p class="rh-hero-label" id="gp-type">COMPARISON PATTERNS</p>
+                        <h3 id="gp-prompt"></h3>
+                        <p id="gp-subprompt"></p>
+                    </div>
+                    <p class="rh-band" id="gp-band">Choose the most natural Japanese sentence.</p>
+                    <div class="gp-body" id="gp-body"></div>
+                </div>
+                <div class="conjugation-complete" id="gp-complete" hidden>
+                    <span class="practice-welcome-mark" aria-hidden="true">文</span>
+                    <h3>Grammar session complete</h3>
+                    <p id="gp-result"></p>
+                    <div class="conjugation-final-stats gp-final-stats">
+                        <div><span>Accuracy</span><strong id="gp-final-accuracy">0%</strong></div>
+                        <div><span>Correct</span><strong id="gp-final-correct">0</strong></div>
+                        <div><span>Practice bank</span><strong id="gp-final-bank">0 items</strong></div>
+                    </div>
+                    <div class="pitch-missed" id="gp-missed"></div>
+                    <button class="practice-start" id="gp-again" type="button">Practice again</button>
+                </div>
             </section>
 
             <section class="practice-section tab-panel" id="practice-panel" role="tabpanel" aria-labelledby="practice-tab" tabindex="0" aria-hidden="true" hidden>
@@ -471,14 +719,22 @@
                     <div class="nominal-conjugation-heading">
                         <p class="eyebrow section-eyebrow">READING HELP</p>
                         <h3>Reading help</h3>
-                        <p>Three short training modes that build the habits you need for long reading passages: spotting stacked grammar, finding sentence breaks, and separating what was said or thought.</p>
+                        <p>Five training modes that build the habits you need for long reading passages: spotting stacked grammar, finding sentence breaks, separating what was said or thought, tracking who did what, and checking short-passage meaning.</p>
                     </div>
                     <div class="rh-modes" id="rh-setup">
                         <article class="rh-mode-card">
                             <span class="rh-mode-num" aria-hidden="true">1</span>
                             <h4>Grammar stacking</h4>
-                            <p>A verb has had one to four grammar patterns added in a row. Enter the letters of the patterns, in order, using the table.</p>
+                            <p>Peel apart long verb endings from three angles: pattern order, hidden base verb, and the meaning role of each grammar layer.</p>
                             <p class="rh-mode-example" lang="ja">買う → 買ってもらえるかもしれない<br><span>l + i + d</span></p>
+                            <label>Focus
+                                <select id="rh-stack-focus">
+                                    <option value="mixed" selected>Mixed goals</option>
+                                    <option value="order">Pattern order</option>
+                                    <option value="base">Base recovery</option>
+                                    <option value="meaning">Meaning role</option>
+                                </select>
+                            </label>
                             <label>Patterns stacked
                                 <select id="rh-steps">
                                     <option value="0" selected>Random (1–4)</option>
@@ -496,29 +752,66 @@
                                 </select>
                             </label>
                             <label>Questions
-                                <select id="rh-count-stack"><option value="10" selected>10</option><option value="20">20</option><option value="30">30</option></select>
+                                <select id="rh-count-stack"><option value="10" selected>10</option><option value="20">20</option><option value="30">30</option><option value="50">50</option></select>
                             </label>
                             <button class="practice-start" type="button" data-rh-start="stack">Start →</button>
                         </article>
                         <article class="rh-mode-card">
                             <span class="rh-mode-num" aria-hidden="true">2</span>
                             <h4>Sentence breaks</h4>
-                            <p>Long sentences are easier to read in chunks. Tap between words to place a “/” after the particles and endings that signal a break.</p>
+                            <p>Train chunking from three angles: place the slash, find the main clause, and name what the connector is doing.</p>
                             <p class="rh-mode-example" lang="ja">雨なので<b>/</b>今日はうちで映画を見ます。</p>
+                            <label>Focus
+                                <select id="rh-break-focus">
+                                    <option value="mixed" selected>Mixed goals</option>
+                                    <option value="mark">Place breaks</option>
+                                    <option value="main">Find main clause</option>
+                                    <option value="role">Connector role</option>
+                                </select>
+                            </label>
                             <label>Questions
-                                <select id="rh-count-breaks"><option value="10" selected>10</option><option value="20">20</option><option value="30">30</option></select>
+                                <select id="rh-count-breaks"><option value="10" selected>10</option><option value="20">20</option><option value="30">30</option><option value="50">50</option></select>
                             </label>
                             <button class="practice-start" type="button" data-rh-start="breaks">Start →</button>
                         </article>
                         <article class="rh-mode-card">
                             <span class="rh-mode-num" aria-hidden="true">3</span>
                             <h4>Said &amp; thought</h4>
-                            <p>Find what someone said, thought or wrote. Tap the start and the end of the part that belongs in quotation marks 「 」.</p>
+                            <p>Train quoted/thought content from four angles: mark the span, identify who reports it, classify the reporting verb, and read the quote's force.</p>
                             <p class="rh-mode-example" lang="ja">友だちは私に<b>「</b>おはよう<b>」</b>と言った。</p>
+                            <label>Focus
+                                <select id="rh-quote-focus">
+                                    <option value="mixed" selected>Mixed goals</option>
+                                    <option value="mark">Mark quote span</option>
+                                    <option value="source">Who reports it</option>
+                                    <option value="verb">Reporting verb</option>
+                                    <option value="force">Quote meaning</option>
+                                </select>
+                            </label>
                             <label>Questions
-                                <select id="rh-count-quotes"><option value="10" selected>10</option><option value="20">20</option><option value="30">30</option></select>
+                                <select id="rh-count-quotes"><option value="10" selected>10</option><option value="20">20</option><option value="30">30</option><option value="50">50</option></select>
                             </label>
                             <button class="practice-start" type="button" data-rh-start="quotes">Start →</button>
+                        </article>
+                        <article class="rh-mode-card">
+                            <span class="rh-mode-num" aria-hidden="true">4</span>
+                            <h4>Who did it?</h4>
+                            <p>Level 1 agent tracking. Read benefactive, passive, and causative sentences and choose who actually did the action, received it, or caused it.</p>
+                            <p class="rh-mode-example" lang="ja">妹は私に荷物を持ってもらいました。<br><span>Who carried it?</span></p>
+                            <label>Questions
+                                <select id="rh-count-agents"><option value="10" selected>10</option><option value="20">20</option><option value="30">30</option><option value="50">50</option></select>
+                            </label>
+                            <button class="practice-start" type="button" data-rh-start="agents">Start →</button>
+                        </article>
+                        <article class="rh-mode-card">
+                            <span class="rh-mode-num" aria-hidden="true">5</span>
+                            <h4>Short passages</h4>
+                            <p>Read compact N4-style notices, messages, and diary entries. Answer detail, reason, sequence, and inference questions without translating every word.</p>
+                            <p class="rh-mode-example" lang="ja">図書館は工事のため、来週の月曜日まで休みです。<br><span>Why is it closed?</span></p>
+                            <label>Questions
+                                <select id="rh-count-passages"><option value="10" selected>10</option><option value="20">20</option><option value="30">30</option><option value="50">50</option></select>
+                            </label>
+                            <button class="practice-start" type="button" data-rh-start="passages">Start →</button>
                         </article>
                     </div>
                     <p class="conjugation-status" id="rh-status"></p>
