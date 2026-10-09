@@ -51,6 +51,24 @@
                 <button class="content-tab" id="reading-tab" data-section="reading" type="button" role="tab" aria-selected="false" aria-controls="reading-panel" tabindex="-1">Reading</button>
                 <button class="content-tab" id="speaking-tab" data-section="speaking" type="button" role="tab" aria-selected="false" aria-controls="pitch-panel" tabindex="-1">Speaking</button>
             </div>
+            <div class="sub-tabs" id="sub-tabs" aria-label="Tools in this section">
+                <div class="sub-tab-group" data-subtab-group="vocabulary" role="tablist" aria-label="Vocabulary tools">
+                    <button class="sub-tab is-active" type="button" role="tab" aria-selected="true" aria-controls="vocabulary-panel" data-subtab-section="vocabulary" data-subtab-target="vocabulary-panel">Dictionary</button>
+                    <button class="sub-tab" type="button" role="tab" aria-selected="false" aria-controls="practice-panel" data-subtab-section="vocabulary" data-subtab-target="practice-panel">Daily practice</button>
+                </div>
+                <div class="sub-tab-group" data-subtab-group="grammar" role="tablist" aria-label="Grammar tools" hidden>
+                    <button class="sub-tab is-active" type="button" role="tab" aria-selected="true" aria-controls="grammar-panel" data-subtab-section="grammar" data-subtab-target="grammar-panel">Patterns</button>
+                    <button class="sub-tab" type="button" role="tab" aria-selected="false" aria-controls="grammar-practice-panel" data-subtab-section="grammar" data-subtab-target="grammar-practice-panel">Practice</button>
+                    <button class="sub-tab" type="button" role="tab" aria-selected="false" aria-controls="conjugation-panel" data-subtab-section="grammar" data-subtab-target="conjugation-panel">Verb conjugation</button>
+                    <button class="sub-tab" type="button" role="tab" aria-selected="false" aria-controls="nominal-conjugation-panel" data-subtab-section="grammar" data-subtab-target="nominal-conjugation-panel">Adjective conjugation</button>
+                </div>
+                <div class="sub-tab-group" data-subtab-group="reading" role="tablist" aria-label="Reading tools" hidden>
+                    <button class="sub-tab is-active" type="button" role="tab" aria-selected="true" aria-controls="reading-panel" data-subtab-section="reading" data-subtab-target="reading-panel">Reading help</button>
+                </div>
+                <div class="sub-tab-group" data-subtab-group="speaking" role="tablist" aria-label="Speaking tools" hidden>
+                    <button class="sub-tab is-active" type="button" role="tab" aria-selected="true" aria-controls="pitch-panel" data-subtab-section="speaking" data-subtab-target="pitch-panel">Pitch practice</button>
+                </div>
+            </div>
 
             <section class="dictionary-layout tab-panel" id="vocabulary-panel" role="tabpanel" aria-labelledby="vocabulary-tab" tabindex="0" aria-label="Dictionary entries">
                 <div class="results-column">

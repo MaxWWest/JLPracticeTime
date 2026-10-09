@@ -44,6 +44,7 @@ const vocabularyTab = document.querySelector("#vocabulary-tab");
 const grammarTab = document.querySelector("#grammar-tab");
 const readingTab = document.querySelector("#reading-tab");
 const speakingTab = document.querySelector("#speaking-tab");
+const subTabsContainer = document.querySelector("#sub-tabs");
 const vocabularyPanel = document.querySelector("#vocabulary-panel");
 const grammarPanel = document.querySelector("#grammar-panel");
 const grammarPracticePanel = document.querySelector("#grammar-practice-panel");
@@ -210,28 +211,43 @@ function escapeHtml(value) {
 	})[character]);
 }
 
+const sectionTabs = [
+	{ name: "vocabulary", tab: vocabularyTab, panels: [vocabularyPanel, practicePanel], defaultPanel: "vocabulary-panel" },
+	{ name: "grammar", tab: grammarTab, panels: [grammarPanel, grammarPracticePanel, conjugationPanel, nominalConjugationPanel], defaultPanel: "grammar-panel" },
+	{ name: "reading", tab: readingTab, panels: [readingPanel], defaultPanel: "reading-panel" },
+	{ name: "speaking", tab: speakingTab, panels: [pitchPanel], defaultPanel: "pitch-panel" }
+];
+const activeSubtabs = Object.fromEntries(sectionTabs.map(({ name, defaultPanel }) => [name, defaultPanel]));
+const allSectionPanels = sectionTabs.flatMap(({ panels }) => panels);
+
 function activateTab(tabName) {
-	const tabs = [
-		{ name: "vocabulary", tab: vocabularyTab, panels: [vocabularyPanel, practicePanel] },
-		{ name: "grammar", tab: grammarTab, panels: [grammarPanel, grammarPracticePanel, conjugationPanel, nominalConjugationPanel] },
-		{ name: "reading", tab: readingTab, panels: [readingPanel] },
-		{ name: "speaking", tab: speakingTab, panels: [pitchPanel], onActivate: updatePitchSetup }
-	];
-	const activeTab = tabs.find(({ name }) => name === tabName) || tabs[0];
-	const activePanels = new Set(activeTab.panels);
+	const activeTab = sectionTabs.find(({ name }) => name === tabName) || sectionTabs[0];
+	const targetPanelId = activeSubtabs[activeTab.name] || activeTab.defaultPanel;
+	const activePanels = new Set([document.querySelector(`#${targetPanelId}`)]);
 	document.body.dataset.activeSection = activeTab.name;
-	tabs.forEach(({ name, tab }) => {
+	document.body.dataset.activeSubtab = targetPanelId;
+	sectionTabs.forEach(({ name, tab }) => {
 		const active = name === activeTab.name;
 		tab.classList.toggle("is-active", active);
 		tab.setAttribute("aria-selected", String(active));
 		tab.tabIndex = active ? 0 : -1;
 	});
-	[vocabularyPanel, practicePanel, grammarPanel, grammarPracticePanel, conjugationPanel, nominalConjugationPanel, readingPanel, pitchPanel].forEach((panel) => {
+	document.querySelectorAll("[data-subtab-group]").forEach((group) => {
+		const active = group.dataset.subtabGroup === activeTab.name;
+		group.hidden = !active;
+		group.querySelectorAll("[data-subtab-target]").forEach((button) => {
+			const selected = active && button.dataset.subtabTarget === targetPanelId;
+			button.classList.toggle("is-active", selected);
+			button.setAttribute("aria-selected", String(selected));
+			button.tabIndex = selected ? 0 : -1;
+		});
+	});
+	allSectionPanels.forEach((panel) => {
 		const active = activePanels.has(panel);
 		panel.hidden = !active;
 		panel.setAttribute("aria-hidden", String(!active));
 	});
-	activeTab.onActivate?.();
+	if (targetPanelId === "pitch-panel") updatePitchSetup();
 }
 
 function getVisibleWords() {
@@ -4024,12 +4040,7 @@ grammarTab.addEventListener("click", () => activateTab("grammar"));
 readingTab.addEventListener("click", () => activateTab("reading"));
 speakingTab.addEventListener("click", () => activateTab("speaking"));
 document.querySelector(".content-tabs").addEventListener("keydown", (event) => {
-	const tabs = [
-		{ tab: vocabularyTab, name: "vocabulary" },
-		{ tab: grammarTab, name: "grammar" },
-		{ tab: readingTab, name: "reading" },
-		{ tab: speakingTab, name: "speaking" }
-	];
+	const tabs = sectionTabs.map(({ tab, name }) => ({ tab, name }));
 	if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
 	event.preventDefault();
 	const currentIndex = tabs.findIndex(({ tab }) => tab === event.target);
@@ -4039,6 +4050,28 @@ document.querySelector(".content-tabs").addEventListener("keydown", (event) => {
 	const { tab: nextTab, name } = tabs[nextIndex];
 	nextTab.focus();
 	activateTab(name);
+});
+subTabsContainer.addEventListener("click", (event) => {
+	const button = event.target.closest("[data-subtab-target]");
+	if (!button) return;
+	activeSubtabs[button.dataset.subtabSection] = button.dataset.subtabTarget;
+	activateTab(button.dataset.subtabSection);
+});
+subTabsContainer.addEventListener("keydown", (event) => {
+	if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+	const group = event.target.closest("[data-subtab-group]");
+	if (!group) return;
+	const buttons = [...group.querySelectorAll("[data-subtab-target]")];
+	const currentIndex = buttons.indexOf(event.target);
+	if (currentIndex === -1) return;
+	event.preventDefault();
+	const nextIndex = event.key === "Home" ? 0
+		: event.key === "End" ? buttons.length - 1
+			: (currentIndex + (event.key === "ArrowRight" ? 1 : -1) + buttons.length) % buttons.length;
+	const nextButton = buttons[nextIndex];
+	nextButton.focus();
+	activeSubtabs[nextButton.dataset.subtabSection] = nextButton.dataset.subtabTarget;
+	activateTab(nextButton.dataset.subtabSection);
 });
 
 practiceLevel.addEventListener("change", updatePracticeDashboard);
