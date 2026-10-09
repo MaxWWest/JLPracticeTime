@@ -655,6 +655,72 @@
 				{ prompt: "Why was the package not delivered today?", answer: "No one was home.", options: ["No one was home.", "The address was wrong.", "The package was too heavy.", "It was raining."], explanation: "ご不在でした means the recipient was absent/not home." },
 				{ prompt: "How can the recipient change the time?", answer: "Call the number or apply on the website.", options: ["Call the number or apply on the website.", "Go to the library.", "Wait until next month.", "Write to the school."], explanation: "電話するか、ウェブサイトで申し込んでください." }
 			]
+		},
+		{
+			level: 2,
+			title: "Study Room Change",
+			text: "大学の図書館では、試験期間中だけ読書室の使い方が変わります。朝八時から十時までは、予約している学生だけが入れます。十時を過ぎたら、予約していない学生も使えますが、席がいっぱいのときは一時間で交代してください。パソコンを使いたい人は、入口で学生証を見せて、番号札をもらってください。",
+			en: "During exam season, reserved students enter first; others can use seats after 10, and computer users need a numbered ticket.",
+			questions: [
+				{ type: "sequence", prompt: "When can students without reservations use the reading room?", answer: "After 10:00.", options: ["After 10:00.", "Before 8:00.", "Only from 8:00 to 10:00.", "Only after the exam period ends."], explanation: "十時を過ぎたら、予約していない学生も使えます gives the time.", evidence: "十時を過ぎたら、予約していない学生も使えます" },
+				{ type: "inference", prompt: "What should a student do if they want to use a computer?", answer: "Show their student ID at the entrance and get a numbered ticket.", options: ["Show their student ID at the entrance and get a numbered ticket.", "Reserve a seat after 10:00 only.", "Change seats every hour.", "Go to another library."], explanation: "パソコンを使いたい人は introduces the required action.", evidence: "入口で学生証を見せて、番号札をもらってください" },
+				{ type: "detail", prompt: "What happens when all seats are full?", answer: "Students should switch after one hour.", options: ["Students should switch after one hour.", "No one can enter all day.", "Only reserved students can stay.", "Students must use computers instead."], explanation: "席がいっぱいのときは一時間で交代してください gives the rule.", evidence: "席がいっぱいのときは一時間で交代してください" }
+			]
+		},
+		{
+			level: 2,
+			title: "Weekend Volunteer Email",
+			text: "今週の日曜日、川のそうじボランティアをします。雨が少し降っても行いますが、朝七時の時点で強い雨なら中止します。参加する人は、汚れてもいい服を着て、軍手と飲み物を持ってきてください。道具はこちらで用意します。終わったあとで、近くの公民館で昼ご飯を食べます。",
+			en: "The river cleanup happens in light rain, is canceled for heavy rain at 7 a.m., and participants bring clothes, gloves, and drinks.",
+			questions: [
+				{ type: "inference", prompt: "When will the volunteer event be canceled?", answer: "If it is raining hard at 7 a.m.", options: ["If it is raining hard at 7 a.m.", "If it rains a little.", "If people forget drinks.", "If the community center is closed."], explanation: "強い雨なら中止します gives the cancellation condition.", evidence: "朝七時の時点で強い雨なら中止します" },
+				{ type: "detail", prompt: "What do participants not need to bring?", answer: "Tools.", options: ["Tools.", "Work gloves.", "A drink.", "Clothes that can get dirty."], explanation: "道具はこちらで用意します means the organizers prepare tools.", evidence: "道具はこちらで用意します" },
+				{ type: "sequence", prompt: "What will participants do after the cleanup?", answer: "Eat lunch at the nearby community center.", options: ["Eat lunch at the nearby community center.", "Buy tools at the river.", "Meet at 7 a.m. again.", "Go home before lunch."], explanation: "終わったあとで marks what happens after the cleanup.", evidence: "終わったあとで、近くの公民館で昼ご飯を食べます" }
+			]
+		},
+		{
+			level: 2,
+			title: "Shared House Rule",
+			text: "このシェアハウスでは、台所を使ったあとで、使った物をすぐ洗ってください。夜十一時を過ぎたら、洗濯機は使えません。ただし、次の日の朝までに必要な服がある場合は、管理人に相談してください。友だちを呼ぶことはできますが、泊まる場合は三日前までに知らせなければなりません。",
+			en: "Residents clean kitchen items after use, avoid the washing machine after 11, ask the manager for urgent laundry, and notify ahead for overnight guests.",
+			questions: [
+				{ type: "sequence", prompt: "When should residents wash kitchen items?", answer: "Right after using them.", options: ["Right after using them.", "Before using the kitchen.", "After 11 p.m.", "Three days before using them."], explanation: "台所を使ったあとで sets the timing.", evidence: "台所を使ったあとで、使った物をすぐ洗ってください" },
+				{ type: "inference", prompt: "What should someone do if they need clothes by the next morning?", answer: "Ask the manager.", options: ["Ask the manager.", "Use the washing machine after 11 without asking.", "Call a friend.", "Wait three days."], explanation: "ただし marks the exception to the washing-machine rule.", evidence: "次の日の朝までに必要な服がある場合は、管理人に相談してください" },
+				{ type: "detail", prompt: "By when must residents report an overnight guest?", answer: "By three days before.", options: ["By three days before.", "By 11 p.m. that night.", "The next morning.", "Right after using the kitchen."], explanation: "三日前までに知らせなければなりません gives the deadline.", evidence: "泊まる場合は三日前までに知らせなければなりません" }
+			]
+		},
+		{
+			level: 2,
+			title: "Class Trip Message",
+			text: "来月の社会見学では、朝九時に駅前に集まります。美術館に入る前に、先生がチケットを配りますから、自分で買わないでください。昼ご飯は美術館の近くの公園で食べる予定です。ただし、雨が降ったら、バスの中で食べます。帰りは学校ではなく、駅で解散します。",
+			en: "Students meet at the station, receive tickets from the teacher, eat lunch in the park unless it rains, and finish at the station.",
+			questions: [
+				{ type: "detail", prompt: "Where will students meet in the morning?", answer: "In front of the station.", options: ["In front of the station.", "At school.", "Inside the museum.", "In the park."], explanation: "駅前に集まります gives the meeting place.", evidence: "朝九時に駅前に集まります" },
+				{ type: "inference", prompt: "Why should students not buy their own tickets?", answer: "Because the teacher will hand them out.", options: ["Because the teacher will hand them out.", "Because the museum is free.", "Because the trip is canceled.", "Because they will eat on the bus."], explanation: "先生がチケットを配りますから gives the reason for not buying.", evidence: "先生がチケットを配りますから、自分で買わないでください" },
+				{ type: "sequence", prompt: "Where will students separate at the end?", answer: "At the station.", options: ["At the station.", "At school.", "At the museum entrance.", "At the park."], explanation: "帰りは...駅で解散します gives the final location.", evidence: "帰りは学校ではなく、駅で解散します" }
+			]
+		},
+		{
+			level: 2,
+			title: "Clinic Reservation Notice",
+			text: "この病院では、来週から予約の方法が変わります。電話での予約は午前中だけになりますが、インターネットでは一日中予約できます。初めて来る人は、予約していても、保険証を確認するために十五分早く来てください。予約を取り消す場合は、前の日の午後六時までに連絡してください。",
+			en: "Phone reservations become morning-only, online reservations are all day, first-time patients arrive early, and cancellations are due by 6 p.m. the day before.",
+			questions: [
+				{ type: "detail", prompt: "When can people make reservations by phone?", answer: "Only in the morning.", options: ["Only in the morning.", "All day.", "After 6 p.m.", "Only next week."], explanation: "電話での予約は午前中だけになります gives the phone rule.", evidence: "電話での予約は午前中だけになります" },
+				{ type: "reason", prompt: "Why should first-time patients arrive fifteen minutes early?", answer: "To have their insurance card checked.", options: ["To have their insurance card checked.", "To cancel their reservation.", "To use the internet.", "To call in the morning."], explanation: "保険証を確認するために gives the purpose/reason.", evidence: "保険証を確認するために十五分早く来てください" },
+				{ type: "sequence", prompt: "By when should someone cancel a reservation?", answer: "By 6 p.m. the day before.", options: ["By 6 p.m. the day before.", "Fifteen minutes before.", "Any time next week.", "Only in the morning."], explanation: "前の日の午後六時までに marks the deadline.", evidence: "前の日の午後六時までに連絡してください" }
+			]
+		},
+		{
+			level: 2,
+			title: "Part-Time Work Memo",
+			text: "店長からのメモです。明日は新しいメニューの写真を撮るので、開店時間がいつもより三十分遅くなります。アルバイトの人は十時ではなく、九時半に来て準備を手伝ってください。お客さんには、入口の紙を見せて説明します。写真を撮っている間は、店の中で大きな音を出さないようにしてください。",
+			en: "The shop opens thirty minutes late because of menu photos, but part-time workers arrive early to help prepare.",
+			questions: [
+				{ type: "reason", prompt: "Why will the shop open later than usual?", answer: "Because photos of the new menu will be taken.", options: ["Because photos of the new menu will be taken.", "Because part-time workers are late.", "Because customers need training.", "Because the entrance is broken."], explanation: "写真を撮るので gives the reason.", evidence: "新しいメニューの写真を撮るので、開店時間がいつもより三十分遅くなります" },
+				{ type: "sequence", prompt: "When should part-time workers come?", answer: "At 9:30.", options: ["At 9:30.", "At 10:00.", "Thirty minutes after opening.", "After the photos are finished."], explanation: "十時ではなく、九時半に来て says not 10:00 but 9:30.", evidence: "十時ではなく、九時半に来て準備を手伝ってください" },
+				{ type: "inference", prompt: "What should workers avoid while photos are being taken?", answer: "Making loud noise inside the shop.", options: ["Making loud noise inside the shop.", "Showing paper to customers.", "Helping with preparation.", "Coming before opening."], explanation: "〜ないようにしてください tells what they should avoid.", evidence: "写真を撮っている間は、店の中で大きな音を出さないようにしてください" }
+			]
 		}
 	];
 
@@ -667,9 +733,24 @@
 		return "detail";
 	}
 
+	const passageTypeLabels = {
+		detail: "Detail lookup",
+		reason: "Reason",
+		sequence: "Time / sequence",
+		inference: "Inference / rule"
+	};
+
+	const passageTypeHints = {
+		detail: "Scan for the noun, place, person, or object named in the question. You usually do not need to translate every sentence.",
+		reason: "Look for reason markers like ので, から, ため, or a sentence that explains why the rule or result happens.",
+		sequence: "Track time words and order markers: before, after, until, by, first, next, or what changes at a certain time.",
+		inference: "Use the rule or condition in the passage to decide what someone should do or what will happen."
+	};
+
 	const passageBank = passageSources.flatMap((source) => source.questions.map((question) => ({
 		...question,
 		type: question.type || classifyPassageQuestion(question),
+		level: source.level || 1,
 		title: source.title,
 		text: source.text,
 		en: source.en,
@@ -1061,8 +1142,12 @@
 	function focusReadingBank(mode, bank) {
 		const selectorId = { agents: "rh-agent-focus", mood: "rh-mood-focus", passages: "rh-passage-focus" }[mode];
 		const focus = selectorId ? $(`#${selectorId}`)?.value || "mixed" : "mixed";
-		if (focus === "mixed") return bank;
-		const filtered = bank.filter((item) => item.role === focus || item.type === focus);
+		let filtered = bank;
+		if (mode === "passages") {
+			const passageLevel = $("#rh-passage-level")?.value || "all";
+			if (passageLevel !== "all") filtered = filtered.filter((item) => String(item.level) === passageLevel);
+		}
+		if (focus !== "mixed") filtered = filtered.filter((item) => item.role === focus || item.type === focus);
 		return filtered.length ? filtered : bank;
 	}
 
@@ -1230,7 +1315,7 @@
 		const item = session.items[(session.index - 1) % session.items.length];
 		session.current = { item, selected: null };
 		els.hero.innerHTML = `
-			<p class="rh-hero-label">${escapeHtml(item.title)}</p>
+			<p class="rh-hero-label">${escapeHtml(item.title)} · Level ${escapeHtml(item.level)} · ${escapeHtml(passageTypeLabels[item.type] || "Mixed")}</p>
 			<p class="rh-passage" lang="ja">${renderJa(item.text)}</p>`;
 		els.band.textContent = item.prompt;
 		els.body.innerHTML = `
@@ -1238,7 +1323,7 @@
 				${item.options.map((option) => `<button type="button" class="rh-choice-option" data-choice="${escapeHtml(option)}">${escapeHtml(option)}</button>`).join("")}
 			</div>
 			<p class="answer-feedback rh-feedback" id="rh-feedback" aria-live="polite"></p>
-			<div class="rh-hint-table"><h4>Passage gist</h4><p>${escapeHtml(item.en)}</p></div>
+			<div class="rh-hint-table"><h4>Reading target</h4><p>${escapeHtml(passageTypeHints[item.type] || passageTypeHints.detail)}</p></div>
 			<button class="practice-start rh-next" id="rh-next" type="button" hidden>Next →</button>`;
 	}
 
@@ -1249,7 +1334,9 @@
 		const feedback = $("#rh-feedback");
 		feedback.className = `answer-feedback rh-feedback ${correct ? "is-correct" : "is-incorrect"}`;
 		feedback.innerHTML = `${correct ? "Correct!" : `Not quite. The answer is <strong>${escapeHtml(item.answer)}</strong>.`}
-			<span class="rh-translation">${escapeHtml(item.explanation)}</span>`;
+			${item.evidence ? `<span class="rh-answer-line" lang="ja">${renderJa(item.evidence)}</span>` : ""}
+			<span class="rh-translation">${escapeHtml(item.explanation)}</span>
+			<span class="rh-translation"><strong>Gist:</strong> ${escapeHtml(item.en)}</span>`;
 		document.querySelectorAll(".rh-choice-option").forEach((button) => {
 			button.disabled = true;
 			const value = button.dataset.choice;
