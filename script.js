@@ -4193,6 +4193,8 @@ document.addEventListener("keydown", (event) => {
 	if (event.key === "Escape") closeGrammarPracticeNotes();
 	if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
 		event.preventDefault();
+		activeSubtabs.vocabulary = "vocabulary-panel";
+		activateTab("vocabulary");
 		searchInput.focus();
 	}
 	if (event.key === "Escape" && document.activeElement === searchInput) {

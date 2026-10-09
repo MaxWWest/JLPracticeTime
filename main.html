@@ -9,9 +9,9 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css">
-    <script src="script.js" defer></script>
-    <script src="reading.js" defer></script>
+    <link rel="stylesheet" href="styles.css?v=20261009-search-move">
+    <script src="script.js?v=20261009-search-move" defer></script>
+    <script src="reading.js?v=20261009-reading" defer></script>
 </head>
 <body>
     <div class="page-shell">
@@ -31,18 +31,9 @@
                 <div class="hero-copy">
                     <p class="eyebrow"><span class="eyebrow-line"></span> JAPANESE, ONE WORD AT A TIME</p>
                     <h1 id="hero-title">Find the words<br>you’re <span>looking for.</span></h1>
-                    <p class="hero-description">A friendly little dictionary for your Japanese learning journey. Search by Japanese, romaji, or English.</p>
+                    <p class="hero-description">A friendly little study space for building vocabulary, grammar control, reading confidence, and spoken Japanese awareness.</p>
                 </div>
                 <div class="hero-stamp" aria-hidden="true"><span>日本語</span><small>NIHONGO</small></div>
-
-                <form class="search-form" id="search-form" role="search">
-                    <span class="search-icon" aria-hidden="true">⌕</span>
-                    <label class="visually-hidden" for="search-input">Search Japanese words</label>
-                    <input id="search-input" type="search" placeholder="Try “water”, “mizu”, or “水”…" autocomplete="off">
-                    <kbd>⌘ K</kbd>
-                    <button type="submit" aria-label="Search dictionary">Search <span aria-hidden="true">↗</span></button>
-                </form>
-                <p class="search-hint">A few ideas: <button class="suggestion" type="button" data-query="hello">hello</button><span>·</span><button class="suggestion" type="button" data-query="ありがとう">ありがとう</button><span>·</span><button class="suggestion" type="button" data-query="食べる">食べる</button></p>
             </section>
 
             <div class="content-tabs" role="tablist" aria-label="Japanese study sections">
@@ -88,6 +79,14 @@
                             </select>
                         </label>
                     </div>
+                    <form class="search-form dictionary-search-form" id="search-form" role="search">
+                        <span class="search-icon" aria-hidden="true">⌕</span>
+                        <label class="visually-hidden" for="search-input">Search Japanese words</label>
+                        <input id="search-input" type="search" placeholder="Search Japanese, romaji, or English…" autocomplete="off">
+                        <kbd>⌘ K</kbd>
+                        <button type="submit" aria-label="Search dictionary">Search <span aria-hidden="true">↗</span></button>
+                    </form>
+                    <p class="search-hint">Try <button class="suggestion" type="button" data-query="hello">hello</button><span>·</span><button class="suggestion" type="button" data-query="ありがとう">ありがとう</button><span>·</span><button class="suggestion" type="button" data-query="食べる">食べる</button></p>
                     <div class="category-list" id="category-list" aria-label="Filter by category"></div>
                     <div class="word-grid" id="word-grid" aria-live="polite"></div>
                     <p class="page-status" id="page-status" aria-live="polite"></p>
