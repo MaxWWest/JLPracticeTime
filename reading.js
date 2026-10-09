@@ -1,5 +1,6 @@
 (() => {
 	const $ = (selector) => document.querySelector(selector);
+	const renderJa = (value) => window.renderJapaneseTextWithFurigana ? window.renderJapaneseTextWithFurigana(value) : escapeHtml(value);
 	const els = {
 		setup: $("#rh-setup"), status: $("#rh-status"), session: $("#rh-session"), home: $("#rh-home"),
 		correct: $("#rh-correct"), progress: $("#rh-progress"), hero: $("#rh-hero"), band: $("#rh-band"), body: $("#rh-body"),
@@ -190,7 +191,7 @@
 		return chunks.map((chunk, index) => {
 			const isTarget = chunk.end === targetPosition;
 			const slash = index < chunks.length - 1 ? `<span class="rh-answer-mark${isTarget ? " is-target" : ""}">/</span>` : "";
-			return `${escapeHtml(chunk.text)}${slash}`;
+			return `${renderJa(chunk.text)}${slash}`;
 		}).join("");
 	}
 
@@ -1212,7 +1213,7 @@
 		session.current = { item, selected: null };
 		els.hero.innerHTML = `
 			<p class="rh-hero-label">${escapeHtml(item.title)}</p>
-			<p class="rh-passage" lang="ja">${escapeHtml(item.text)}</p>`;
+			<p class="rh-passage" lang="ja">${renderJa(item.text)}</p>`;
 		els.band.textContent = item.prompt;
 		els.body.innerHTML = `
 			<div class="rh-choice-list" role="group" aria-label="Answer choices">
@@ -1250,7 +1251,7 @@
 		session.current = { item, choiceAnswer: item.answer };
 		els.hero.innerHTML = `
 			<p class="rh-hero-label">Who did it? · ${escapeHtml(item.level)} · ${escapeHtml(item.pattern)}</p>
-			<p class="rh-sentence" lang="ja">${escapeHtml(item.sentence)}</p>`;
+			<p class="rh-sentence" lang="ja">${renderJa(item.sentence)}</p>`;
 		els.band.textContent = item.prompt;
 		els.body.innerHTML = `
 			<div class="rh-choice-list" role="group" aria-label="Agent role choices">
@@ -1268,7 +1269,7 @@
 		const answerLang = item.role === "meaning" ? "" : ' lang="ja"';
 		feedback.className = `answer-feedback rh-feedback ${correct ? "is-correct" : "is-incorrect"}`;
 		feedback.innerHTML = `${correct ? "Correct!" : `Not quite. The answer is <strong${answerLang}>${escapeHtml(choiceAnswer)}</strong>.`}
-			<span class="rh-answer-line" lang="ja">${escapeHtml(item.sentence)}</span>
+			<span class="rh-answer-line" lang="ja">${renderJa(item.sentence)}</span>
 			<span class="rh-translation">${escapeHtml(item.explanation)}</span>`;
 		document.querySelectorAll(".rh-choice-option").forEach((button) => {
 			button.disabled = true;
@@ -1288,7 +1289,7 @@
 		session.current = { item, choiceAnswer: item.answer };
 		els.hero.innerHTML = `
 			<p class="rh-hero-label">Narrator mood · ${escapeHtml(item.level)} · ${escapeHtml(item.category)}</p>
-			<p class="rh-sentence" lang="ja">${escapeHtml(item.sentence)}</p>`;
+			<p class="rh-sentence" lang="ja">${renderJa(item.sentence)}</p>`;
 		els.band.textContent = item.prompt;
 		els.body.innerHTML = `
 			<div class="rh-choice-list" role="group" aria-label="Narrator mood choices">
@@ -1305,7 +1306,7 @@
 		const feedback = $("#rh-feedback");
 		feedback.className = `answer-feedback rh-feedback ${correct ? "is-correct" : "is-incorrect"}`;
 		feedback.innerHTML = `${correct ? "Correct!" : `Not quite. The answer is <strong>${escapeHtml(choiceAnswer)}</strong>.`}
-			<span class="rh-answer-line" lang="ja">${escapeHtml(item.sentence)}</span>
+			<span class="rh-answer-line" lang="ja">${renderJa(item.sentence)}</span>
 			<span class="rh-translation">${escapeHtml(item.explanation)}</span>`;
 		document.querySelectorAll(".rh-choice-option").forEach((button) => {
 			button.disabled = true;
@@ -1340,7 +1341,7 @@
 		}
 		els.body.innerHTML = `
 			<div class="rh-choice-list" role="group" aria-label="Sentence break choices">
-				${shuffled(options).map((option) => `<button type="button" class="rh-choice-option" data-choice="${escapeHtml(option)}">${task.type === "main" ? `<span lang="ja">${escapeHtml(option)}</span>` : escapeHtml(option)}</button>`).join("")}
+				${shuffled(options).map((option) => `<button type="button" class="rh-choice-option" data-choice="${escapeHtml(option)}">${task.type === "main" ? `<span lang="ja">${renderJa(option)}</span>` : escapeHtml(option)}</button>`).join("")}
 			</div>
 			<p class="answer-feedback rh-feedback" id="rh-feedback" aria-live="polite"></p>
 			<div class="rh-hint-table"><h4>${task.type === "main" ? "Reading move" : "Connector clue"}</h4><p>${task.type === "main" ? "Supporting chunks often come first. The main clause is usually the final chunk that completes the sentence." : escapeHtml(role.explanation)}</p></div>
@@ -1438,7 +1439,9 @@
 	function drawSentence(checked = false) {
 		const { item } = session.current;
 		const isBreaks = session.mode === "breaks";
-		const chars = [...item.text];
+		const tokens = window.getJapaneseFuriganaTokens
+			? window.getJapaneseFuriganaTokens(item.text)
+			: [...item.text].map((char) => ({ text: char, html: escapeHtml(char) }));
 		const marks = (position) => {
 			if (isBreaks) return session.current.breaks.has(position) ? "/" : "";
 			const parts = [];
@@ -1451,8 +1454,13 @@
 			return `<button type="button" class="rh-gap${mark ? " is-marked" : ""}" data-gap="${position}" aria-label="${isBreaks ? "Break" : "Quote mark"} before character ${position + 1}" ${checked ? "disabled" : ""}>${mark}</button>`;
 		};
 		const firstGap = isBreaks ? 1 : 0;
-		const lastGap = isBreaks ? chars.length - 1 : chars.length;
-		$("#rh-sentence").innerHTML = chars.map((char, index) => `${index >= firstGap && index <= lastGap ? gap(index) : ""}<span class="rh-char">${escapeHtml(char)}</span>`).join("") + (lastGap === chars.length ? gap(chars.length) : "");
+		const lastGap = isBreaks ? item.text.length - 1 : item.text.length;
+		let position = 0;
+		$("#rh-sentence").innerHTML = tokens.map((token) => {
+			const chunk = `${position >= firstGap && position <= lastGap ? gap(position) : ""}<span class="rh-char">${token.html}</span>`;
+			position += token.text.length;
+			return chunk;
+		}).join("") + (lastGap === item.text.length ? gap(item.text.length) : "");
 	}
 
 	function placeQuoteMark(position) {
@@ -1466,16 +1474,28 @@
 	}
 
 	function renderAnswerSentence(item, kind, marks) {
-		const chars = [...item.text];
-		let out = "";
-		chars.forEach((char, index) => {
-			if (kind === "breaks" && marks.breaks.has(index) && index > 0) out += '<span class="rh-answer-mark">/</span>';
+		const insertions = [];
+		if (kind === "breaks") {
+			marks.breaks.forEach((position) => {
+				if (position > 0) insertions.push({ position, html: '<span class="rh-answer-mark">/</span>' });
+			});
+		}
+		if (kind === "quotes") {
 			const quoteClass = marks.targetQuote ? " rh-quote-target" : "";
-			if (kind === "quotes" && marks.start === index) out += `<span class="rh-answer-mark${quoteClass}">「</span>`;
-			if (kind === "quotes" && marks.end === index) out += `<span class="rh-answer-mark${quoteClass}">」</span>`;
-			out += escapeHtml(char);
-		});
-		if (kind === "quotes" && marks.end === chars.length) out += `<span class="rh-answer-mark${marks.targetQuote ? " rh-quote-target" : ""}">」</span>`;
+			insertions.push({ position: marks.start, html: `<span class="rh-answer-mark${quoteClass}">「</span>` });
+			insertions.push({ position: marks.end, html: `<span class="rh-answer-mark${quoteClass}">」</span>` });
+		}
+		let out = "";
+		let cursor = 0;
+		insertions
+			.filter((insertion) => Number.isInteger(insertion.position) && insertion.position >= 0 && insertion.position <= item.text.length)
+			.sort((a, b) => a.position - b.position)
+			.forEach((insertion) => {
+				out += renderJa(item.text.slice(cursor, insertion.position));
+				out += insertion.html;
+				cursor = insertion.position;
+			});
+		out += renderJa(item.text.slice(cursor));
 		return out;
 	}
 

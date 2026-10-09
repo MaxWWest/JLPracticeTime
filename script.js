@@ -272,10 +272,69 @@ function categoryFromPartsOfSpeech(partsOfSpeech = []) {
 
 function renderJapaneseWithFurigana(example) {
 	if (!example) return "";
-	return example.furigana
-		? escapeHtml(example.furigana).replace(/\{([^{}|]+)\|([^{}|]+)\}/g, "<ruby>$1<rt>$2</rt></ruby>")
-		: escapeHtml(example.ja || "");
+	return renderJapaneseTextWithFurigana(example.furigana || example.ja || "");
 }
+
+const furiganaAutoEntries = [
+	["一生懸命", "いっしょうけんめい"], ["新幹線", "しんかんせん"], ["図書館", "としょかん"], ["教科書", "きょうかしょ"],
+	["作文", "さくぶん"], ["宿題", "しゅくだい"], ["漢字", "かんじ"], ["黒板", "こくばん"], ["先生", "せんせい"], ["学生", "がくせい"],
+	["学校", "がっこう"], ["授業", "じゅぎょう"], ["教室", "きょうしつ"], ["説明", "せつめい"], ["質問", "しつもん"], ["勉強", "べんきょう"],
+	["練習", "れんしゅう"], ["発表", "はっぴょう"], ["試験", "しけん"], ["合格", "ごうかく"], ["名前", "なまえ"], ["文法", "ぶんぽう"],
+	["友だち", "ともだち"], ["友達", "ともだち"], ["家族", "かぞく"], ["祖母", "そぼ"], ["先輩", "せんぱい"], ["兄", "あに"], ["弟", "おとうと"],
+	["姉", "あね"], ["妹", "いもうと"], ["母", "はは"], ["父", "ちち"], ["子ども", "こども"], ["田中", "たなか"], ["山田", "やまだ"],
+	["店員", "てんいん"], ["店長", "てんちょう"], ["駅員", "えきいん"], ["医者", "いしゃ"], ["管理人", "かんりにん"], ["お客様", "おきゃくさま"],
+	["今日", "きょう"], ["昨日", "きのう"], ["明日", "あした"], ["来週", "らいしゅう"], ["来月", "らいげつ"], ["毎日", "まいにち"],
+	["毎朝", "まいあさ"], ["朝", "あさ"], ["昼", "ひる"], ["夜", "よる"], ["午後", "ごご"], ["時間", "じかん"], ["始め", "はじめ"],
+	["最後", "さいご"], ["場合", "ばあい"], ["間", "あいだ"], ["前", "まえ"], ["後", "あと"], ["中", "なか"], ["上", "うえ"], ["下", "した"],
+	["右", "みぎ"], ["左", "ひだり"], ["駅", "えき"], ["会社", "かいしゃ"], ["公園", "こうえん"], ["海", "うみ"], ["町", "まち"],
+	["部屋", "へや"], ["場所", "ばしょ"], ["入口", "いりぐち"], ["出口", "でぐち"], ["事務所", "じむしょ"], ["体育館", "たいいくかん"],
+	["映画館", "えいがかん"], ["銀行", "ぎんこう"], ["本屋", "ほんや"], ["交番", "こうばん"], ["冷蔵庫", "れいぞうこ"], ["黒い", "くろい"],
+	["青い", "あおい"], ["赤い", "あかい"], ["新しい", "あたらしい"], ["古い", "ふるい"], ["大きな", "おおきな"], ["小さい", "ちいさい"],
+	["短い", "みじかい"], ["長い", "ながい"], ["近い", "ちかい"], ["遠い", "とおい"], ["難しい", "むずかしい"], ["易しい", "やさしい"],
+	["親切", "しんせつ"], ["便利", "べんり"], ["不便", "ふべん"], ["安心", "あんしん"], ["心配", "しんぱい"], ["大丈夫", "だいじょうぶ"],
+	["無事", "ぶじ"], ["残念", "ざんねん"], ["丁寧", "ていねい"], ["静か", "しずか"], ["苦手", "にがて"], ["上手", "じょうず"],
+	["電話", "でんわ"], ["会議", "かいぎ"], ["資料", "しりょう"], ["予定", "よてい"], ["予約", "よやく"], ["約束", "やくそく"],
+	["連絡", "れんらく"], ["計画", "けいかく"], ["成功", "せいこう"], ["失敗", "しっぱい"], ["財布", "さいふ"], ["写真", "しゃしん"],
+	["荷物", "にもつ"], ["弁当", "べんとう"], ["野菜", "やさい"], ["料理", "りょうり"], ["食事", "しょくじ"], ["牛乳", "ぎゅうにゅう"],
+	["薬", "くすり"], ["風邪", "かぜ"], ["熱", "ねつ"], ["頭", "あたま"], ["足", "あし"], ["手", "て"], ["犬", "いぬ"], ["雨", "あめ"],
+	["雪", "ゆき"], ["台風", "たいふう"], ["富士山", "ふじさん"], ["洗濯物", "せんたくもの"], ["洗濯機", "せんたくき"], ["電車", "でんしゃ"],
+	["自転車", "じてんしゃ"], ["車", "くるま"], ["道", "みち"], ["席", "せき"], ["券", "けん"], ["本", "ほん"], ["日記", "にっき"],
+	["物", "もの"], ["人", "ひと"], ["何", "なに"], ["日本語", "にほんご"], ["英語", "えいご"], ["中国語", "ちゅうごくご"],
+	["行", "い"], ["来", "き"], ["帰", "かえ"], ["見", "み"], ["聞", "き"], ["読", "よ"], ["書", "か"], ["話", "はな"], ["買", "か"],
+	["食", "た"], ["飲", "の"], ["作", "つく"], ["使", "つか"], ["持", "も"], ["入", "い"], ["出", "だ"], ["忘", "わす"], ["思", "おも"],
+	["考", "かんが"], ["言", "い"], ["教", "おし"], ["直", "なお"], ["探", "さが"], ["貸", "か"], ["借", "か"], ["選", "えら"],
+	["洗", "あら"], ["掃除", "そうじ"], ["準備", "じゅんび"], ["注文", "ちゅうもん"], ["交換", "こうかん"], ["旅行", "りょこう"],
+	["運動", "うんどう"], ["残業", "ざんぎょう"], ["仕事", "しごと"]
+].sort((a, b) => b[0].length - a[0].length);
+
+function getJapaneseFuriganaTokens(value, { auto = true } = {}) {
+	const source = String(value || "");
+	const tokens = [];
+	for (let index = 0; index < source.length;) {
+		const exact = source.slice(index).match(/^\{([^{}|]+)\|([^{}|]+)\}/);
+		if (exact) {
+			tokens.push({ text: exact[1], html: `<ruby>${escapeHtml(exact[1])}<rt>${escapeHtml(exact[2])}</rt></ruby>` });
+			index += exact[0].length;
+			continue;
+		}
+		const entry = auto ? furiganaAutoEntries.find(([kanji]) => source.startsWith(kanji, index)) : null;
+		if (entry) {
+			tokens.push({ text: entry[0], html: `<ruby>${escapeHtml(entry[0])}<rt>${escapeHtml(entry[1])}</rt></ruby>` });
+			index += entry[0].length;
+			continue;
+		}
+		tokens.push({ text: source[index], html: escapeHtml(source[index]) });
+		index += 1;
+	}
+	return tokens;
+}
+
+function renderJapaneseTextWithFurigana(value, { auto = true } = {}) {
+	return getJapaneseFuriganaTokens(value, { auto }).map((token) => token.html).join("");
+}
+
+window.getJapaneseFuriganaTokens = getJapaneseFuriganaTokens;
+window.renderJapaneseTextWithFurigana = renderJapaneseTextWithFurigana;
 
 async function loadVocabulary() {
 	const status = document.querySelector("#data-status");
@@ -2917,9 +2976,9 @@ function showGrammarPracticeQuestion() {
 	gpState.answered = false;
 	gpEls.hero.className = "gp-hero";
 	gpEls.type.textContent = `${gpState.sessionLabel || "GRAMMAR PRACTICE"} · ${question.kind}`;
-	gpEls.prompt.textContent = question.prompt;
-	gpEls.subprompt.textContent = question.subprompt;
-	gpEls.band.textContent = question.band;
+	gpEls.prompt.innerHTML = renderJapaneseTextWithFurigana(question.prompt);
+	gpEls.subprompt.innerHTML = renderJapaneseTextWithFurigana(question.subprompt);
+	gpEls.band.innerHTML = renderJapaneseTextWithFurigana(question.band);
 	gpEls.progress.textContent = `${gpState.index + 1} / ${gpState.queue.length}`;
 	gpEls.correct.textContent = `✓ ${gpState.correct}`;
 	if (question.mode === "text") {
@@ -2939,7 +2998,7 @@ function showGrammarPracticeQuestion() {
 			<div class="gp-options">
 				${question.options.map((option, index) => {
 					const lang = jpLangAttribute(option);
-					return `<button type="button" data-gp-choice="${index}"><span>${String.fromCharCode(65 + index)}</span><span${lang}>${escapeHtml(option)}</span></button>`;
+					return `<button type="button" data-gp-choice="${index}"><span>${String.fromCharCode(65 + index)}</span><span${lang}>${renderJapaneseTextWithFurigana(option)}</span></button>`;
 				}).join("")}
 			</div>
 		<p class="rh-feedback" id="gp-feedback" aria-live="polite"></p>
@@ -2964,8 +3023,8 @@ function answerGrammarPractice(value) {
 	feedback.className = `rh-feedback ${isCorrect ? "is-correct" : "is-incorrect"}`;
 	explanation.hidden = false;
 	explanation.innerHTML = `
-		<p><span>Answer</span><strong${jpLangAttribute(question.answer)}>${escapeHtml(question.answer)}</strong></p>
-		<p>${escapeHtml(question.explanation)}</p>
+		<p><span>Answer</span><strong${jpLangAttribute(question.answer)}>${renderJapaneseTextWithFurigana(question.answer)}</strong></p>
+		<p>${renderJapaneseTextWithFurigana(question.explanation)}</p>
 		<button class="practice-start rh-next" type="button" id="gp-next">Next <span aria-hidden="true">→</span></button>
 	`;
 	if (question.mode === "choice") {
@@ -2999,7 +3058,7 @@ function finishGrammarPractice() {
 	gpEls["final-correct"].textContent = `${gpState.correct}/${total}`;
 	gpEls["final-bank"].textContent = `${gpState.bank.length} items`;
 	gpEls.missed.innerHTML = gpState.missed.length
-		? `<h4>Review these patterns</h4>${gpState.missed.slice(0, 6).map((question) => `<div class="pitch-missed-item"><span>${escapeHtml(question.kind)}</span><span lang="ja">${escapeHtml(question.answer)}</span><small>${escapeHtml(question.explanation)}</small></div>`).join("")}`
+		? `<h4>Review these patterns</h4>${gpState.missed.slice(0, 6).map((question) => `<div class="pitch-missed-item"><span>${escapeHtml(question.kind)}</span><span lang="ja">${renderJapaneseTextWithFurigana(question.answer)}</span><small>${renderJapaneseTextWithFurigana(question.explanation)}</small></div>`).join("")}`
 		: "";
 }
 
