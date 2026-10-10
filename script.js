@@ -2354,6 +2354,921 @@ function buildPurposePracticeBank() {
 	];
 }
 
+function uniqueGrammarOptions(options, fallback = []) {
+	const unique = Array.from(new Set([...options, ...fallback].filter(Boolean)));
+	return unique.slice(0, Math.max(4, Math.min(unique.length, 6)));
+}
+
+function buildExtensionGrammarPracticeBank(config) {
+	const labels = config.patterns.map((pattern) => pattern.label);
+	const usages = config.patterns.map((pattern) => pattern.usage);
+	const explanations = config.patterns.map((pattern) => pattern.explanation);
+	const allPoints = config.patterns.flatMap((pattern) => pattern.points || []);
+	const allSentences = config.patterns.flatMap((pattern) => pattern.items.map((item) => item.sentence));
+	const allMeanings = config.patterns.flatMap((pattern) => pattern.items.map((item) => item.meaning));
+	const bank = [];
+	for (const pattern of config.patterns) {
+		const otherSentences = allSentences.filter((sentence) => !pattern.items.some((item) => item.sentence === sentence));
+		const otherMeanings = allMeanings.filter((meaning) => !pattern.items.some((item) => item.meaning === meaning));
+		const otherUsages = usages.filter((usage) => usage !== pattern.usage);
+		const otherExplanations = explanations.filter((explanation) => explanation !== pattern.explanation);
+		const otherPoints = allPoints.filter((point) => !(pattern.points || []).includes(point));
+		for (const item of pattern.items) {
+			const sentenceOptions = uniqueGrammarOptions([item.sentence, ...(item.wrongs || []), ...otherSentences]);
+			const meaningOptions = uniqueGrammarOptions([item.meaning, ...(item.meaningWrongs || []), ...otherMeanings]);
+			bank.push(makeChoiceQuestion({
+				kind: pattern.label,
+				prompt: item.clue || item.meaning,
+				subprompt: pattern.usage,
+				band: "Choose the sentence that matches the meaning.",
+				answer: item.sentence,
+				options: sentenceOptions,
+				explanation: item.explanation || pattern.explanation
+			}));
+			if (item.blankPrompt && item.blankAnswer) {
+				bank.push(makeTextQuestion({
+					kind: `${pattern.label} · blank`,
+					prompt: item.blankPrompt,
+					subprompt: item.blankClue || item.meaning,
+					band: "Type the missing grammar.",
+					answer: item.blankAnswer,
+					accepted: item.accepted,
+					placeholder: item.placeholder || item.blankAnswer,
+					explanation: item.explanation || pattern.explanation
+				}));
+				bank.push(makeChoiceQuestion({
+					kind: `${pattern.label} · form choice`,
+					prompt: item.blankPrompt,
+					subprompt: item.blankClue || item.meaning,
+					band: "Choose the grammar that completes the sentence.",
+					answer: item.blankAnswer,
+					options: uniqueGrammarOptions([item.blankAnswer, ...(item.accepted || []), ...config.patterns.flatMap((otherPattern) => otherPattern.items.map((otherItem) => otherItem.blankAnswer)).filter((answer) => answer !== item.blankAnswer)]),
+					explanation: item.explanation || pattern.explanation
+				}));
+			}
+			bank.push(makeChoiceQuestion({
+				kind: `${pattern.label} · meaning`,
+				prompt: item.sentence,
+				subprompt: "Choose the meaning or nuance.",
+				band: "Read the Japanese sentence.",
+				answer: item.meaning,
+				options: meaningOptions,
+				explanation: item.explanation || pattern.explanation
+			}));
+			bank.push(makeChoiceQuestion({
+				kind: "pattern recognition",
+				prompt: item.sentence,
+				subprompt: "Which grammar point is doing the main work?",
+				band: "Identify the pattern.",
+				answer: pattern.label,
+				options: uniqueGrammarOptions([pattern.label, ...labels.filter((label) => label !== pattern.label)]),
+				explanation: item.explanation || pattern.explanation
+			}));
+			bank.push(makeChoiceQuestion({
+				kind: `${pattern.label} · grammar job`,
+				prompt: item.sentence,
+				subprompt: "What is this grammar doing in the sentence?",
+				band: "Choose the grammar function.",
+				answer: pattern.usage,
+				options: uniqueGrammarOptions([pattern.usage, ...usages.filter((usage) => usage !== pattern.usage)]),
+				explanation: item.explanation || pattern.explanation
+			}));
+			bank.push(makeChoiceQuestion({
+				kind: `${pattern.label} · reverse lookup`,
+				prompt: item.meaning,
+				subprompt: "Choose the Japanese sentence that expresses this meaning.",
+				band: "Read from English back into Japanese.",
+				answer: item.sentence,
+				options: sentenceOptions,
+				explanation: item.explanation || pattern.explanation
+			}));
+			bank.push(makeChoiceQuestion({
+				kind: `${pattern.label} · usage`,
+				prompt: item.sentence,
+				subprompt: "Why is this pattern used here?",
+				band: "Choose the grammar job.",
+				answer: pattern.usage,
+				options: uniqueGrammarOptions([pattern.usage, ...otherUsages]),
+				explanation: item.explanation || pattern.explanation
+			}));
+			bank.push(makeChoiceQuestion({
+				kind: `${pattern.label} · nuance`,
+				prompt: item.sentence,
+				subprompt: "Choose the best rule explanation.",
+				band: "Explain the pattern.",
+				answer: pattern.explanation,
+				options: uniqueGrammarOptions([pattern.explanation, ...otherExplanations]),
+				explanation: item.explanation || pattern.explanation
+			}));
+			bank.push(makeTextQuestion({
+				kind: `${pattern.label} · production`,
+				prompt: item.meaning,
+				subprompt: `Use ${pattern.label}.`,
+				band: "Type the full Japanese sentence.",
+				answer: item.sentence,
+				accepted: [item.sentence, item.sentence.replace(/。$/, "")],
+				placeholder: "例: 日本語で答えてください。",
+				explanation: item.explanation || pattern.explanation
+			}));
+			bank.push(makeChoiceQuestion({
+				kind: `${pattern.label} · conversation`,
+				prompt: `A: ${item.clue || item.meaning} B: ＿＿＿＿`,
+				subprompt: `Answer using ${pattern.label}.`,
+				band: "Complete the mini-dialogue.",
+				answer: item.sentence,
+				options: sentenceOptions,
+				explanation: item.explanation || pattern.explanation
+			}));
+			if (item.blankPrompt && item.blankAnswer) {
+				const repairedSentence = item.blankPrompt.replace(/＿+/g, item.blankAnswer);
+				bank.push(makeChoiceQuestion({
+					kind: `${pattern.label} · repair`,
+					prompt: repairedSentence,
+					subprompt: "Which complete sentence is the clean version?",
+					band: "Repair the grammar.",
+					answer: item.sentence,
+					options: uniqueGrammarOptions([item.sentence, repairedSentence, ...sentenceOptions]),
+					explanation: item.explanation || pattern.explanation
+				}));
+			}
+			bank.push(makeChoiceQuestion({
+				kind: `${pattern.label} · exclusion`,
+				prompt: item.sentence,
+				subprompt: "Which pattern is NOT the main grammar here?",
+				band: "Reject the distractor.",
+				answer: labels.find((label) => label !== pattern.label) || "No other pattern",
+				options: [pattern.label, labels.find((label) => label !== pattern.label) || "No other pattern"],
+				explanation: `The main pattern is ${pattern.label}: ${pattern.explanation}`
+			}));
+		}
+		(pattern.points || []).slice(0, 2).forEach((point) => {
+			bank.push(makeChoiceQuestion({
+				kind: `${pattern.label} · rule check`,
+				prompt: pattern.label,
+				subprompt: "Which rule belongs to this pattern?",
+				band: "Choose the accurate rule.",
+				answer: point,
+				options: uniqueGrammarOptions([point, ...otherPoints]),
+				explanation: pattern.explanation
+			}));
+		});
+	}
+	for (const pattern of config.patterns) {
+		bank.push(makeChoiceQuestion({
+			kind: "pattern contrast",
+			prompt: pattern.usage,
+			subprompt: "Which grammar point matches this job?",
+			band: "Choose the pattern.",
+			answer: pattern.label,
+			options: uniqueGrammarOptions([pattern.label, ...labels.filter((label) => label !== pattern.label)]),
+			explanation: pattern.explanation
+		}));
+	}
+	for (let index = 0; index < config.patterns.length; index += 1) {
+		for (let compareIndex = index + 1; compareIndex < config.patterns.length; compareIndex += 1) {
+			const first = config.patterns[index];
+			const second = config.patterns[compareIndex];
+			bank.push(makeChoiceQuestion({
+				kind: "two-pattern contrast",
+				prompt: `${first.label} vs ${second.label}`,
+				subprompt: "Which contrast is correct?",
+				band: "Separate the jobs.",
+				answer: `${first.label}: ${first.usage} / ${second.label}: ${second.usage}`,
+				options: uniqueGrammarOptions([
+					`${first.label}: ${first.usage} / ${second.label}: ${second.usage}`,
+					`${first.label}: ${second.usage} / ${second.label}: ${first.usage}`,
+					`${first.label}: ${first.explanation} / ${second.label}: ${first.explanation}`,
+					`${first.label}: ${second.explanation} / ${second.label}: ${second.explanation}`
+				]),
+				explanation: `${first.label}: ${first.explanation} ${second.label}: ${second.explanation}`
+			}));
+		}
+	}
+	for (const contrast of config.contrasts || []) {
+		bank.push(makeChoiceQuestion({
+			kind: contrast.kind || "nuance check",
+			prompt: contrast.prompt,
+			subprompt: contrast.subprompt,
+			band: contrast.band || "Choose the best answer.",
+			answer: contrast.answer,
+			options: uniqueGrammarOptions([contrast.answer, ...(contrast.options || [])]),
+			explanation: contrast.explanation
+		}));
+	}
+	return bank;
+}
+
+const extensionGrammarPracticeConfigs = [
+	{
+		id: "listing",
+		number: "11",
+		title: "Listing reasons and actions",
+		label: "LISTING",
+		intro: "This session separates reason-listing with し from representative-action listing with たり〜たり. The main trap is reading たり as a complete schedule or using し when the sentence is really listing actions.",
+		pitfalls: ["し lists reasons, qualities, or parallel facts and often implies there are more.", "たり〜たり lists representative actions without fixing the exact order.", "Use たり after the た-form and finish with します or しました."],
+		patterns: [
+			{
+				label: "〜し",
+				form: "plain form + し",
+				usage: "List multiple reasons or qualities.",
+				explanation: "し lists reasons or qualities and often suggests there are other reasons too.",
+				points: ["Attach し to plain forms.", "A single し can still imply unstated additional reasons.", "Often appears before a conclusion such as 行きましょう or 買います."],
+				items: [
+					{ sentence: "この店は安いし、おいしいし、よく来ます。", meaning: "I come often because this shop is cheap and tasty.", clue: "Give multiple reasons for going to the shop.", blankPrompt: "この店は安い＿＿、おいしい＿＿、よく来ます。", blankAnswer: "し", accepted: ["し"], explanation: "Use し after each reason: 安いし、おいしいし." },
+					{ sentence: "今日は頭が痛いし、早く帰りたいです。", meaning: "My head hurts and I want to go home early, with more reasons implied.", clue: "Give one stated reason while implying there may be more.", blankPrompt: "今日は頭が痛い＿＿、早く帰りたいです。", blankAnswer: "し" }
+				]
+			},
+			{
+				label: "〜も〜し",
+				form: "noun も + plain form + し",
+				usage: "Add parallel information with も while listing.",
+				explanation: "も highlights that another similar fact is being added to the list.",
+				points: ["Use も to mark the additional item.", "The structure is useful for piling up positive or negative facts.", "It is not a sequence marker."],
+				items: [
+					{ sentence: "宿題も多いし、アルバイトもあるし、今週は忙しいです。", meaning: "This week is busy because there is a lot of homework and also part-time work.", clue: "Add two parallel reasons for being busy.", blankPrompt: "宿題も多い＿＿、アルバイトもある＿＿、今週は忙しいです。", blankAnswer: "し" },
+					{ sentence: "この部屋は広いし、台所もきれいです。", meaning: "The room is spacious, and the kitchen is clean too.", clue: "Add another good point about a room.", blankPrompt: "この部屋は広い＿＿、台所もきれいです。", blankAnswer: "し" }
+				]
+			},
+			{
+				label: "〜たり〜たりします",
+				form: "た-form + り + た-form + りします",
+				usage: "List representative actions or repeated paired actions.",
+				explanation: "たり〜たり lists examples of actions; it does not mean only those actions happened.",
+				points: ["Use the た-form plus り.", "End the list with します, しました, or しています.", "Opposite actions can show repeated back-and-forth movement."],
+				items: [
+					{ sentence: "休みの日は本を読んだり、映画を見たりします。", meaning: "On days off, I do things like read books and watch movies.", clue: "List representative weekend activities.", blankPrompt: "休みの日は本を読ん＿＿、映画を見＿＿します。", blankAnswer: "だり", accepted: ["だり"], explanation: "読んだり uses the た-form 読んだ + り; 見たり uses 見た + り." },
+					{ sentence: "赤ちゃんは泣いたり笑ったりしています。", meaning: "The baby keeps crying and laughing back and forth.", clue: "Describe repeated opposite actions.", blankPrompt: "赤ちゃんは泣い＿＿笑っ＿＿しています。", blankAnswer: "たり", accepted: ["たり"] }
+				]
+			}
+		],
+		contrasts: [
+			{ prompt: "Which pattern lists sample actions without saying the exact order?", subprompt: "泳ぐ, テニスをする, 食べる...", answer: "〜たり〜たりします", options: ["〜し", "〜も〜し", "〜からです"], explanation: "たり〜たり gives representative actions, not a reason list." }
+		]
+	},
+	{
+		id: "certainty",
+		number: "12",
+		title: "Possibility and evidence",
+		label: "POSSIBILITY",
+		intro: "This session separates weak possibility, confident expectation, and evidence-based appearance. The subtle skill is deciding how certain the speaker sounds and what kind of evidence they have.",
+		pitfalls: ["かもしれません is weak: maybe, perhaps.", "はずです is stronger and needs a reason or objective basis.", "ようです and みたいです are based on observation or impression; みたい is more casual."],
+		patterns: [
+			{
+				label: "〜かもしれません",
+				form: "plain form + かもしれません",
+				usage: "Express possibility or uncertainty.",
+				explanation: "かもしれません means the speaker thinks something may be true, but is not certain.",
+				points: ["Use plain forms before it.", "It is weaker than はずです.", "Nouns and na-adjectives do not need だ before かもしれません in polite Japanese."],
+				items: [
+					{ sentence: "明日は雪が降るかもしれません。", meaning: "It may snow tomorrow.", clue: "Say that snow tomorrow is possible.", blankPrompt: "明日は雪が降る＿＿＿＿。", blankAnswer: "かもしれません" },
+					{ sentence: "このノートはサキさんのかもしれません。", meaning: "This notebook might be Saki's.", clue: "You are not sure whose notebook it is.", blankPrompt: "このノートはサキさんの＿＿＿＿。", blankAnswer: "かもしれません" }
+				]
+			},
+			{
+				label: "〜はずです",
+				form: "plain form + はずです",
+				usage: "State a confident expectation based on reason.",
+				explanation: "はずです sounds like the speaker has evidence or a logical basis.",
+				points: ["Use it when you are confident, not just guessing.", "Nouns take の before はずです.", "It often appears with schedules, known facts, or visible evidence."],
+				items: [
+					{ sentence: "三時ですから、母はもう飛行機に乗ったはずです。", meaning: "It is 3:00, so my mother should already be on the plane.", clue: "Make a confident inference from the time.", blankPrompt: "三時ですから、母はもう飛行機に乗った＿＿＿＿。", blankAnswer: "はずです" },
+					{ sentence: "この犬は二さいの時うちに来たので、今年十二さいのはずです。", meaning: "This dog should be twelve this year, based on when it came to the house.", clue: "Make an objective calculation-based expectation.", blankPrompt: "今年十二さいの＿＿＿＿。", blankAnswer: "はずです" }
+				]
+			},
+			{
+				label: "〜ようです / 〜みたいです",
+				form: "plain form + ようです / みたいです; noun + のようです / みたいです",
+				usage: "Describe an impression based on evidence.",
+				explanation: "ようです and みたいです say it seems/looks like something from evidence; みたい is more casual.",
+				points: ["ようです is safer in formal writing.", "With nouns, use のようです but noun + みたいです.", "With na-adjectives, use なようです but na-adjective + みたいです.", "Do not confuse these with appearance そうです, which attaches to stems."],
+				items: [
+					{ sentence: "玄関にだれか来たようです。", meaning: "It seems someone came to the entrance.", clue: "You heard or noticed evidence at the entrance.", blankPrompt: "玄関にだれか来た＿＿＿＿。", blankAnswer: "ようです" },
+					{ sentence: "このお菓子は星みたいですね。", meaning: "This snack looks like a star.", clue: "Say casually that something looks like a star.", blankPrompt: "このお菓子は星＿＿＿＿ね。", blankAnswer: "みたいです" }
+				]
+			}
+		]
+	},
+	{
+		id: "advice",
+		number: "13",
+		title: "Instructions and warnings",
+		label: "ADVICE",
+		intro: "This session separates direct instructions from advice and urgent colloquial pressure. なさい sounds like authority, ほうがいいです is advice, and ないと pushes action by implying a bad result.",
+		pitfalls: ["なさい is not a friendly suggestion; it usually comes from teachers, parents, or instructions.", "ほうがいいです is advice and often carries a mild warning.", "ないと is colloquial and often leaves the bad result unstated."],
+		patterns: [
+			{ label: "〜なさい", form: "ます-stem + なさい", usage: "Give an instruction from a position of authority.", explanation: "なさい is used for instructions by parents, teachers, and tests.", points: ["Attach to the ます-stem.", "It can sound bossy outside authority contexts.", "Common in exam instructions and parent-child speech."], items: [
+				{ sentence: "宿題を早く出しなさい。", meaning: "Turn in your homework quickly.", clue: "A teacher gives a direct instruction.", blankPrompt: "宿題を早く出し＿＿。", blankAnswer: "なさい" },
+				{ sentence: "次の言葉を漢字で書きなさい。", meaning: "Write the following words in kanji.", clue: "An exam instruction.", blankPrompt: "次の言葉を漢字で書き＿＿。", blankAnswer: "なさい" }
+			] },
+			{ label: "〜ほうがいいです", form: "た-form / ない-form + ほうがいいです", usage: "Give advice or a mild warning.", explanation: "ほうがいいです recommends one action as the better choice.", points: ["Use た-form for do it: 行ったほうがいい.", "Use ない-form for do not do it.", "Often appears with よ or ね in conversation."], items: [
+				{ sentence: "寒いから、コートを着たほうがいいですよ。", meaning: "It is cold, so you should wear a coat.", clue: "Give mild advice to wear a coat.", blankPrompt: "コートを着た＿＿＿＿。", blankAnswer: "ほうがいいです" },
+				{ sentence: "ねつがあるので、今日は出かけないほうがいいです。", meaning: "You have a fever, so it is better not to go out today.", clue: "Advise against going out.", blankPrompt: "今日は出かけない＿＿＿＿。", blankAnswer: "ほうがいいです" }
+			] },
+			{ label: "〜ないと", form: "ない-form + と", usage: "Urge action because things will go badly otherwise.", explanation: "ないと is a casual way to say unless you do it, there will be trouble.",
+				points: ["It is often used colloquially.", "The bad result may be omitted.", "It pushes action more urgently than neutral advice."], items: [
+					{ sentence: "急がないと、電車に間に合いませんよ。", meaning: "If we do not hurry, we will not make the train.", clue: "Warn that not hurrying will cause a problem.", blankPrompt: "急が＿＿、電車に間に合いませんよ。", blankAnswer: "ないと" },
+					{ sentence: "ご飯の前には手を洗わないと。", meaning: "You need to wash your hands before eating.", clue: "A short colloquial reminder.", blankPrompt: "ご飯の前には手を洗わ＿＿。", blankAnswer: "ないと" }
+			] }
+		]
+	},
+	{
+		id: "conditionals",
+		number: "14",
+		title: "Conditionals",
+		label: "CONDITIONALS",
+		intro: "This session compares the four major N4 conditional shapes. たら is flexible, ば focuses on condition-result, なら responds to a topic or information, and と is for automatic or natural results.",
+		pitfalls: ["Do not use と before requests, commands, invitations, or speaker intentions.", "なら often picks up someone else's topic: if it is X you mean...", "ば can sound unnatural before speaker-volitional results when the condition is an action verb."],
+		patterns: [
+			{ label: "〜たら", form: "た-form + ら", usage: "If/when a condition happens, another result or action follows.", explanation: "たら is flexible and can be used before requests or volitional actions.", points: ["Can mean if or when.", "Can follow もし.", "Works well before commands, requests, and invitations."], items: [
+				{ sentence: "もし水がなかったら、わたしたちは生きられません。", meaning: "If there were no water, we could not live.", clue: "Use an assumed condition.", blankPrompt: "水がなかっ＿＿、生きられません。", blankAnswer: "たら" },
+				{ sentence: "天気がよかったら、どこかへ行きませんか。", meaning: "If the weather is good, shall we go somewhere?", clue: "A condition before an invitation.", blankPrompt: "天気がよかっ＿＿、どこかへ行きませんか。", blankAnswer: "たら" }
+			] },
+			{ label: "〜ば", form: "conditional ば", usage: "State that if a condition is met, a result follows.", explanation: "ば focuses on condition-result and often appears with adjectives or non-volitional results.", points: ["Often natural with adjectives: 寒ければ.", "For action verbs, avoid following it with commands or speaker intentions in basic N4 practice.", "もし can appear before it."], items: [
+				{ sentence: "バスに乗れば、駅まで十分です。", meaning: "If you take the bus, it takes ten minutes to the station.", clue: "A condition-result statement.", blankPrompt: "バスに乗れ＿＿、駅まで十分です。", blankAnswer: "ば" },
+				{ sentence: "じしょを使わなければ、この本は読めません。", meaning: "If you do not use a dictionary, you cannot read this book.", clue: "A negative condition.", blankPrompt: "じしょを使わなけれ＿＿、この本は読めません。", blankAnswer: "ば" }
+			] },
+			{ label: "〜なら", form: "plain form / noun + なら", usage: "Respond to a topic, condition, or information already raised.", explanation: "なら is often used when the speaker reacts to what someone said or to a topic.", points: ["Useful for advice based on the listener's topic.", "Can follow nouns directly.", "It does not require the condition to happen first in time."], items: [
+				{ sentence: "京都に行くなら、ガイドブックを貸しましょうか。", meaning: "If you are going to Kyoto, shall I lend you a guidebook?", clue: "Respond to the topic of going to Kyoto.", blankPrompt: "京都に行く＿＿、ガイドブックを貸しましょうか。", blankAnswer: "なら" },
+				{ sentence: "子どもの名前なら、『みちる』がいいです。", meaning: "If it is a child's name, Michiru is good.", clue: "Give advice based on a topic.", blankPrompt: "子どもの名前＿＿、『みちる』がいいです。", blankAnswer: "なら" }
+			] },
+			{ label: "〜と", form: "plain non-past + と", usage: "Show an automatic, natural, or definite result.", explanation: "と connects a trigger to a result that naturally or inevitably follows.", points: ["Common with machines, directions, nature, and habits.", "Do not follow it with commands or invitations.", "Past forms are not used before this conditional と in the basic pattern."], items: [
+				{ sentence: "このボタンを押すと、きっぷが出ます。", meaning: "When you press this button, a ticket comes out.", clue: "A machine result happens automatically.", blankPrompt: "このボタンを押す＿＿、きっぷが出ます。", blankAnswer: "と" },
+				{ sentence: "あの角を左に曲がると、駅が見えます。", meaning: "When you turn left at that corner, the station comes into view.", clue: "A direction-result sentence.", blankPrompt: "あの角を左に曲がる＿＿、駅が見えます。", blankAnswer: "と" }
+			] }
+		]
+	},
+	{
+		id: "tara-nara",
+		number: "15",
+		title: "After it happens vs if that topic",
+		label: "たら / なら",
+		intro: "This session zooms in on the contrast between たら and なら. たら often means after or once something happens; なら often means if that is the topic or if what you said is true.",
+		pitfalls: ["Use たら for after/when an event has actually occurred.", "Use なら when responding to another person's plan, topic, or information.", "なら does not necessarily mean the first action happens before the second."],
+		patterns: [
+			{ label: "〜たら", form: "た-form + ら", usage: "When/after the event happens, do the following action.", explanation: "たら can mark a future event that must happen before the next action.", points: ["Often means once/after in practical instructions.", "Can be used when the speaker knows the event will occur.", "Works naturally with requests and decisions after the condition."], items: [
+				{ sentence: "三時になったら、休みましょう。", meaning: "When it becomes 3:00, let's take a break.", clue: "Do something after the time comes.", blankPrompt: "三時になっ＿＿、休みましょう。", blankAnswer: "たら" },
+				{ sentence: "お湯がわいたら、火を止めてください。", meaning: "When the water boils, please turn off the heat.", clue: "An instruction after an event happens.", blankPrompt: "お湯がわい＿＿、火を止めてください。", blankAnswer: "たら" }
+			] },
+			{ label: "〜なら", form: "plain form / noun + なら", usage: "Give judgment or advice in light of a topic.", explanation: "なら often answers or builds on something the other person brought up.", points: ["It is excellent for recommendations.", "It can attach to nouns and plain forms.", "It often sounds like if you mean X..." ], items: [
+				{ sentence: "ケーキなら、駅前の店がおいしいですよ。", meaning: "If it is cake you want, the shop in front of the station is good.", clue: "Recommend a shop based on the topic cake.", blankPrompt: "ケーキ＿＿、駅前の店がおいしいですよ。", blankAnswer: "なら" },
+				{ sentence: "テレビを見ていないなら、もう消してよ。", meaning: "If you are not watching the TV, turn it off.", clue: "Respond to the current state as a topic.", blankPrompt: "テレビを見ていない＿＿、もう消してよ。", blankAnswer: "なら" }
+			] }
+		]
+	},
+	{
+		id: "concession",
+		number: "16",
+		title: "Even if and although",
+		label: "CONCESSION",
+		intro: "This session compares ても and のに. ても means even if/regardless of, while のに says the actual result is unexpected and often carries surprise, disappointment, or reproach.",
+		pitfalls: ["ても can describe a hypothetical condition or a fact.", "のに is often emotional: surprise, dissatisfaction, or reproach.", "Avoid using のに before requests, commands, or speaker intentions."],
+		patterns: [
+			{ label: "〜ても", form: "て-form / くても / でも + も", usage: "Even if or regardless of a condition.", explanation: "ても says the expected result does not happen even under that condition.", points: ["Use verb て-form + も.", "Use i-adjective くても and noun/na-adjective でも.", "Often appears with もし, いくら, or どんなに."], items: [
+				{ sentence: "雨が降っても、れんしゅうは休みません。", meaning: "Even if it rains, practice will not be canceled.", clue: "Regardless of rain, practice continues.", blankPrompt: "雨が降っ＿＿、れんしゅうは休みません。", blankAnswer: "ても" },
+				{ sentence: "この説明は何回読んでも、意味がわかりません。", meaning: "No matter how many times I read this explanation, I do not understand it.", clue: "Repeated effort still does not work.", blankPrompt: "何回読ん＿＿、意味がわかりません。", blankAnswer: "でも" }
+			] },
+			{ label: "〜のに", form: "plain form + のに; noun/na-adjective + な のに", usage: "Although/despite, with surprise or dissatisfaction.", explanation: "のに marks an unexpected contrast and often shows the speaker's feeling.", points: ["Use な before のに after nouns and na-adjectives.", "Often expresses surprise, dissatisfaction, regret, or reproach.", "The main clause should not be a request or command in basic usage."], items: [
+				{ sentence: "宿題をやったのに、持ってきませんでした。", meaning: "Although I did the homework, I did not bring it.", clue: "Show frustration at an unexpected result.", blankPrompt: "宿題をやった＿＿、持ってきませんでした。", blankAnswer: "のに" },
+				{ sentence: "雨が降っていないのに、あの人はかさをさしています。", meaning: "Although it is not raining, that person is holding an umbrella.", clue: "The situation is unexpected.", blankPrompt: "雨が降っていない＿＿、かさをさしています。", blankAnswer: "のに" }
+			] }
+		]
+	},
+	{
+		id: "quotation",
+		number: "17",
+		title: "Quoting and embedded questions",
+		label: "QUOTING",
+		intro: "This session trains the difference between quoted content with と and embedded questions with か or かどうか. The key is whether the embedded content is a statement/thought or a question.",
+		pitfalls: ["Use と for quoted speech, names, thoughts, and ideas.", "Use か when an interrogative like だれ, 何, いつ, or どこ is inside the embedded question.", "Use かどうか for whether/if when there is no question word."],
+		patterns: [
+			{ label: "〜と", form: "quoted content + と", usage: "Quote speech, names, or thoughts.", explanation: "と marks the content of saying, thinking, writing, or naming.", points: ["Use before 言います, 思います, 書きます, 聞きました, etc.", "For third-person thoughts, と思っています is often safer than と思います.", "Names can also use と: 花と言います."], items: [
+				{ sentence: "先生は『宿題を出してください』と言いました。", meaning: "The teacher said, 'Please turn in the homework.'", clue: "Quote what the teacher said.", blankPrompt: "先生は『宿題を出してください』＿＿言いました。", blankAnswer: "と" },
+				{ sentence: "私は日本へ行きたいと思っています。", meaning: "I have been thinking that I want to go to Japan.", clue: "Quote a thought.", blankPrompt: "日本へ行きたい＿＿思っています。", blankAnswer: "と" }
+			] },
+			{ label: "〜か", form: "question word clause + か", usage: "Embed a question that includes a question word.", explanation: "Embedded questions with words like だれ, 何, いつ, or どこ take か.", points: ["Do not keep ですか inside the embedded clause.", "The whole embedded question becomes part of a larger sentence.", "Common with 知っています, 教えてください, 忘れました."], items: [
+				{ sentence: "パーティーにだれが来るか教えてください。", meaning: "Please tell me who is coming to the party.", clue: "Embed a who-question.", blankPrompt: "だれが来る＿＿教えてください。", blankAnswer: "か" },
+				{ sentence: "きのうどうやって帰ったか覚えていません。", meaning: "I do not remember how I got home yesterday.", clue: "Embed a how-question.", blankPrompt: "どうやって帰った＿＿覚えていません。", blankAnswer: "か" }
+			] },
+			{ label: "〜かどうか", form: "plain form + かどうか", usage: "Embed whether/if without a question word.", explanation: "かどうか means whether or not.", points: ["Use it when there is no question word.", "It often follows plain forms.", "Use it with 知る, わかる, チェックする, 調べる."], items: [
+				{ sentence: "旅行に行けるかどうかまだわかりません。", meaning: "I still do not know whether I can go on the trip.", clue: "Embed a whether question.", blankPrompt: "旅行に行ける＿＿＿＿まだわかりません。", blankAnswer: "かどうか" },
+				{ sentence: "ビザが必要かどうか調べます。", meaning: "I will check whether a visa is necessary.", clue: "Check whether something is true.", blankPrompt: "ビザが必要＿＿＿＿調べます。", blankAnswer: "かどうか" }
+			] }
+		]
+	},
+	{
+		id: "intention",
+		number: "18",
+		title: "Intentions and plans",
+		label: "INTENTION",
+		intro: "This session compares ようと思います, ようと思っています, and つもりです. They all describe plans, but they differ in how newly formed or firm the intention feels.",
+		pitfalls: ["ようと思います often describes an intention decided now or expressed at the moment.", "ようと思っています suggests an intention that has continued for some time.", "つもりはありません is a strong way to deny intention."],
+		patterns: [
+			{ label: "〜ようと思います", form: "volitional form + と思います", usage: "Express intention, often formed now.", explanation: "ようと思います states that the speaker intends to do something.", points: ["Subject is usually first person.", "Use volitional form: 行こう, 買おう, しよう.", "Negative intention can be 〜ないようにしよう or 〜つもりはありません depending on nuance."], items: [
+				{ sentence: "いい天気だから、出かけようと思います。", meaning: "Because the weather is nice, I think I will go out.", clue: "State an intention being formed now.", blankPrompt: "出かけ＿＿と思います。", blankAnswer: "よう" },
+				{ sentence: "旅行に行くので、かばんを買おうと思います。", meaning: "Because I am going on a trip, I think I will buy a bag.", clue: "State a plan to buy a bag.", blankPrompt: "かばんを買＿＿と思います。", blankAnswer: "おう" }
+			] },
+			{ label: "〜ようと思っています", form: "volitional form + と思っています", usage: "Express an intention held for some time.", explanation: "思っています suggests the intention has already existed and continues.", points: ["Often used for future plans held from before.", "Still usually first person at N4.", "Compare with ようと思います, which can feel more immediate."], items: [
+				{ sentence: "来年ヨーロッパを旅行しようと思っています。", meaning: "I am thinking of traveling in Europe next year.", clue: "A plan held over time.", blankPrompt: "旅行し＿＿と思っています。", blankAnswer: "よう" },
+				{ sentence: "今日は図書館に寄ろうと思っています。", meaning: "I am planning to stop by the library today.", clue: "A plan already in mind.", blankPrompt: "図書館に寄＿＿と思っています。", blankAnswer: "ろう" }
+			] },
+			{ label: "〜つもりです", form: "dictionary / ない-form + つもりです", usage: "State a plan or intention.", explanation: "つもりです expresses a planned intention; つもりはありません is a strong denial.", points: ["Use dictionary form for do, ない-form for not do.", "Can sound firmer than ようと思っています.", "For third-person plans, add そうです/らしいです/と言っていました."], items: [
+				{ sentence: "夏休みに国へ帰るつもりです。", meaning: "I plan to return to my country during summer vacation.", clue: "State a firm plan.", blankPrompt: "国へ帰る＿＿＿＿。", blankAnswer: "つもりです" },
+				{ sentence: "私は自分の意見を変えるつもりはありません。", meaning: "I have no intention of changing my opinion.", clue: "Strongly deny intention.", blankPrompt: "意見を変える＿＿＿＿。", blankAnswer: "つもりはありません" }
+			] }
+		]
+	},
+	{
+		id: "hearsay",
+		number: "19",
+		title: "Reported speech and hearsay",
+		label: "HEARSAY",
+		intro: "This session separates direct reported speech from information you heard or read. と言っていました keeps somebody's words, そうです passes along information, and らしいです is hearsay or an inference with less definite detail.",
+		pitfalls: ["Hearsay そうです attaches to plain forms, unlike appearance そうです from Session 8.", "らしいです is often less direct or less detailed than そうです.", "In questions, reported speech often uses 何と言っていましたか."],
+		patterns: [
+			{ label: "〜と言っていました", form: "plain/quoted content + と言っていました", usage: "Report what someone said earlier.", explanation: "と言っていました restates previous speech.", points: ["Use と to mark the said content.", "Question form often uses 何と言っていましたか.", "Useful for passing on messages."], items: [
+				{ sentence: "トムさんは今日休むと言っていました。", meaning: "Tom said he would be absent today.", clue: "Report what Tom said earlier.", blankPrompt: "今日休む＿＿言っていました。", blankAnswer: "と" },
+				{ sentence: "サラさんはさいふをなくしたと言っていましたよ。", meaning: "Sara said she lost her wallet.", clue: "Pass along Sara's words.", blankPrompt: "さいふをなくした＿＿言っていましたよ。", blankAnswer: "と" }
+			] },
+			{ label: "〜そうです", form: "plain form + そうです / noun・na-adjective + だそうです", usage: "Pass on information heard or read.", explanation: "Hearsay そうです reports information from a source, not visual appearance.", points: ["Attach to plain forms.", "Nouns and na-adjectives usually take だ before hearsay そうです.", "Do not drop adjective い like appearance そう."], items: [
+				{ sentence: "天気予報によると、明日は寒いそうです。", meaning: "According to the weather forecast, tomorrow will be cold.", clue: "Report information from the forecast.", blankPrompt: "明日は寒い＿＿＿＿。", blankAnswer: "そうです" },
+				{ sentence: "新聞で読みましたが、駅前で火事があったそうです。", meaning: "I read in the newspaper that there was a fire in front of the station.", clue: "Report read information.", blankPrompt: "火事があった＿＿＿＿。", blankAnswer: "そうです" }
+			] },
+			{ label: "〜らしいです", form: "plain form + らしいです", usage: "Pass on less direct information or a reasonable inference.", explanation: "らしいです says something seems to be true based on what you heard, noticed, or inferred.", points: ["Often less source-specific than そうです.", "Can also describe something typical: 男らしい, 春らしい.", "For this session, focus on hearsay/inference."], items: [
+				{ sentence: "聞いた話では、あの山にはさるがいるらしいです。", meaning: "From what I heard, there seem to be monkeys on that mountain.", clue: "Pass on information heard indirectly.", blankPrompt: "さるがいる＿＿＿＿。", blankAnswer: "らしいです" },
+				{ sentence: "この店は有名らしいね。よく名前を聞くよ。", meaning: "This shop seems to be famous; I hear the name often.", clue: "Infer from reputation.", blankPrompt: "この店は有名＿＿ね。", blankAnswer: "らしい" }
+			] }
+		]
+	},
+	{
+		id: "change",
+		number: "20",
+		title: "Making and becoming",
+		label: "CHANGE",
+		intro: "This session separates deliberate change with します from natural change with なります, then adds ようになります for new abilities or habits and なくなります for habits or states that stop.",
+		pitfalls: ["Use します when someone deliberately makes the change.", "Use なります when the thing or situation changes.", "Use なくなります, not ようになりません, for the basic idea that a habit or state no longer happens."],
+		patterns: [
+			{ label: "〜く/〜にします", form: "i-adj く / na-adj・noun に + します", usage: "Someone deliberately changes a state.", explanation: "します marks intentional change caused by someone.", points: ["i-adjectives become くします.", "na-adjectives and nouns use にします.", "Good for volume, length, color, portions, and choices."], items: [
+				{ sentence: "テレビの音を大きくしました。", meaning: "I made the TV volume louder.", clue: "Someone deliberately changed the volume.", blankPrompt: "テレビの音を大き＿＿しました。", blankAnswer: "く" },
+				{ sentence: "ご飯の量を半分にしてください。", meaning: "Please make the amount of rice half.", clue: "Ask someone to change an amount.", blankPrompt: "ご飯の量を半分＿＿してください。", blankAnswer: "に" }
+			] },
+			{ label: "〜く/〜になります", form: "i-adj く / na-adj・noun に + なります", usage: "A state changes or becomes something.", explanation: "なります describes the result of a change, not deliberate action by the subject.", points: ["i-adjectives become くなります.", "na-adjectives and nouns use になります.", "Used for weather, age, skill level, quantity, and states."], items: [
+				{ sentence: "子犬はすぐ大きくなります。", meaning: "Puppies get big quickly.", clue: "A natural change.", blankPrompt: "子犬はすぐ大き＿＿なります。", blankAnswer: "く" },
+				{ sentence: "この店ではおきゃくさんの数が半分になりました。", meaning: "At this shop, the number of customers became half.", clue: "A situation changed.", blankPrompt: "数が半分＿＿なりました。", blankAnswer: "に" }
+			] },
+			{ label: "〜ようになります / 〜なくなります", form: "dictionary / potential verb + ようになります; ない-form stem + なくなります", usage: "Become able to do something, start doing it regularly, or stop doing it.", explanation: "ようになります describes a new ability or habit; なくなります describes a habit or state no longer happening.", points: ["Often follows potential verbs for ability.", "Dictionary form + ようになります can show a new habit.", "ない-form stem + なくなります means no longer do.", "Do not use ようになります with verbs that already directly express change."], items: [
+				{ sentence: "日本語が上手に読めるようになりました。", meaning: "I became able to read Japanese well.", clue: "Ability changed over time.", blankPrompt: "読める＿＿＿＿。", blankAnswer: "ようになりました" },
+				{ sentence: "このごろ、前ほど本を読まなくなりました。", meaning: "Lately I no longer read books as much as before.", clue: "A habit decreased.", blankPrompt: "本を読ま＿＿なりました。", blankAnswer: "なく" }
+			] }
+		]
+	},
+	{
+		id: "decisions",
+		number: "21",
+		title: "Decisions and arrangements",
+		label: "DECISIONS",
+		intro: "This session separates personal choice, personal action decisions, and decisions arranged by outside factors. にします and ことにします are speaker-side decisions; になります and ことになります present the decision as settled externally.",
+		pitfalls: ["Noun + にします means choose/decide on a thing.", "Verb dictionary/ない + ことにします means personally decide to do or not do.", "ことになります often hides the decider and sounds like an arrangement or rule."],
+		patterns: [
+			{ label: "〜にします", form: "noun + にします", usage: "Choose or decide on a noun.", explanation: "にします is used when the speaker chooses an option.", points: ["Common when ordering food or choosing plans.", "It implies an active decision.", "Do not use ことにします after a simple noun choice."], items: [
+				{ sentence: "ばんご飯はカレーにします。", meaning: "I will have curry for dinner.", clue: "Choose curry.", blankPrompt: "ばんご飯はカレー＿＿します。", blankAnswer: "に" },
+				{ sentence: "このケーキ、おいしそうですね。これにします。", meaning: "This cake looks good. I will take this one.", clue: "Choose this cake.", blankPrompt: "これ＿＿します。", blankAnswer: "に" }
+			] },
+			{ label: "〜ことにします", form: "dictionary / ない-form + ことにします", usage: "Decide to do or not do an action.", explanation: "ことにします frames the action as the speaker's decision.", points: ["Use dictionary form for do.", "Use ない-form for not do.", "The speaker has agency in the decision."], items: [
+				{ sentence: "今日からたばこをやめることにします。", meaning: "I have decided to quit smoking from today.", clue: "Personal decision to do an action.", blankPrompt: "たばこをやめる＿＿＿＿。", blankAnswer: "ことにします" },
+				{ sentence: "夏休みは国へ帰らないことにしました。", meaning: "I decided not to return to my country for summer vacation.", clue: "Personal decision not to do something.", blankPrompt: "国へ帰らない＿＿＿＿。", blankAnswer: "ことにしました" }
+			] },
+			{ label: "〜になります / ことになります", form: "noun に / verb dictionary + ことになります", usage: "State an arrangement or decided outcome.", explanation: "なります presents the result as decided or arranged, often without naming the decider.", points: ["Noun + になります for date/name/result.", "Verb + ことになります for arranged actions.", "It is less personal than ことにします."], items: [
+				{ sentence: "さよならパーティーは三月十五日になりました。", meaning: "The farewell party has been set for March 15.", clue: "An arranged date.", blankPrompt: "三月十五日＿＿なりました。", blankAnswer: "に" },
+				{ sentence: "来月、アメリカに行くことになりました。", meaning: "It has been decided/arranged that I will go to America next month.", clue: "An externally arranged plan.", blankPrompt: "アメリカに行く＿＿＿＿。", blankAnswer: "ことになりました" }
+			] }
+		]
+	},
+	{
+		id: "te-auxiliary",
+		number: "22",
+		title: "Trying, preparing, and finishing",
+		label: "TE HELPERS",
+		intro: "This session trains three important te-form helpers. てみます tries an action, ておきます prepares in advance or leaves a state, and てしまいます shows completion or regret.",
+		pitfalls: ["てみます is for trying/checking, not simply doing.", "ておきます can mean do in advance or leave as-is depending on context.", "てしまいます can be neutral completion or regret over an unwanted result."],
+		patterns: [
+			{ label: "〜てみます", form: "て-form + みます", usage: "Try doing something to see what happens.", explanation: "てみます expresses trying an action or testing something.", points: ["Attach to te-form.", "Often used for first attempts, tasting, wearing, asking, or checking.", "Can be used in recommendations: 食べてみてください."], items: [
+				{ sentence: "くつを買う前に、はいてみます。", meaning: "Before buying shoes, I will try them on.", clue: "Try something to check it.", blankPrompt: "くつを買う前に、はい＿＿ます。", blankAnswer: "てみ" },
+				{ sentence: "この料理を食べてみてください。", meaning: "Please try eating this dish.", clue: "Recommend trying food.", blankPrompt: "この料理を食べ＿＿ください。", blankAnswer: "てみて" }
+			] },
+			{ label: "〜ておきます", form: "て-form + おきます", usage: "Do in advance or leave something in a state.", explanation: "ておきます prepares for later or keeps a state as it is.", points: ["Often means do now for future convenience.", "Can also mean leave it open/there/as-is.", "Common before trips, meetings, and guests."], items: [
+				{ sentence: "にもつをかばんに入れておきます。", meaning: "I will put the luggage in the bag in advance.", clue: "Prepare in advance.", blankPrompt: "にもつをかばんに入れ＿＿ます。", blankAnswer: "ておき" },
+				{ sentence: "まどはそのまま開けておいてください。", meaning: "Please leave the window open as it is.", clue: "Leave a state unchanged.", blankPrompt: "まどは開け＿＿ください。", blankAnswer: "ておいて" }
+			] },
+			{ label: "〜てしまいます", form: "て-form + しまいます", usage: "Complete fully or express regret over an unwanted result.", explanation: "てしまいます can mean finish completely or unfortunately do something.", points: ["Context decides completion vs regret.", "Often appears with もう for completion.", "With mistakes, losing, forgetting, breaking, it often sounds regretful."], items: [
+				{ sentence: "今日買った本はもう読んでしまいました。", meaning: "I already finished reading the book I bought today.", clue: "Complete an action fully.", blankPrompt: "もう読ん＿＿ました。", blankAnswer: "でしまい" },
+				{ sentence: "あの人の名前を忘れてしまいました。", meaning: "I unfortunately forgot that person's name.", clue: "Regret an unwanted result.", blankPrompt: "名前を忘れ＿＿ました。", blankAnswer: "てしまい" }
+			] }
+		]
+	},
+	{
+		id: "giving",
+		number: "23",
+		title: "Giving and receiving favors",
+		label: "GIVING",
+		intro: "This session trains direction and benefit. あげる moves from the speaker side outward, くれる moves toward the speaker side, and もらう focuses on the receiver getting something or having someone do a favor.",
+		pitfalls: ["Do not use あげる when the speaker side receives the benefit.", "Use くれる when someone does something for me/my side.", "Use もらう when the receiver is the topic and gets the benefit; use いただく/さしあげる for higher status situations."],
+		patterns: [
+			{ label: "あげます / 〜てあげます", form: "giver は receiver に noun をあげます / te-form + あげます", usage: "The speaker side or someone close gives/does for someone else.", explanation: "あげます sends a thing or favor outward from the speaker side.", points: ["Receiver is marked with に.", "Use さしあげます for higher-status receivers.", "Avoid using it too directly when it sounds self-congratulatory."], items: [
+				{ sentence: "妹はサラさんに花をあげました。", meaning: "My younger sister gave flowers to Sara.", clue: "A speaker-side person gives outward.", blankPrompt: "妹はサラさんに花を＿＿ました。", blankAnswer: "あげ" },
+				{ sentence: "サッカー場に行くの？地図を書いてあげるよ。", meaning: "Going to the soccer field? I will draw you a map.", clue: "Do a favor for someone else.", blankPrompt: "地図を書い＿＿よ。", blankAnswer: "てあげる" }
+			] },
+			{ label: "くれます / 〜てくれます", form: "giver は speaker side に noun をくれます / te-form + くれます", usage: "Someone gives or does something for the speaker side.", explanation: "くれます shows a benefit coming toward the speaker's side.", points: ["The receiver is speaker/my family/my side.", "Often omits 私に when obvious.", "Use くださいます for higher-status givers."], items: [
+				{ sentence: "山田さんは私に時計をくれました。", meaning: "Yamada gave me a watch.", clue: "A benefit comes to me.", blankPrompt: "山田さんは私に時計を＿＿ました。", blankAnswer: "くれ" },
+				{ sentence: "友だちが店の場所を教えてくれました。", meaning: "My friend told me the shop location as a favor.", clue: "Someone did a favor for me.", blankPrompt: "場所を教え＿＿ました。", blankAnswer: "てくれ" }
+			] },
+			{ label: "もらいます / 〜てもらいます", form: "receiver は giver に/から noun をもらいます / te-form + もらいます", usage: "The receiver gets something or has someone do a favor.", explanation: "もらいます focuses on the receiver gaining the benefit.", points: ["The giver is marked with に or から.", "Use いただきます for higher-status givers.", "てもらいます means have someone do something for you."], items: [
+				{ sentence: "私は先生に本をいただきました。", meaning: "I received a book from my teacher.", clue: "Receive from a higher-status person.", blankPrompt: "先生に本を＿＿ました。", blankAnswer: "いただき" },
+				{ sentence: "サラさんにいっしょに病院へ行ってもらった。", meaning: "I had Sara go to the hospital with me.", clue: "Receive a favor/action.", blankPrompt: "病院へ行っ＿＿。", blankAnswer: "てもらった" }
+			] }
+		]
+	},
+	{
+		id: "passive",
+		number: "24",
+		title: "Passive sentences",
+		label: "PASSIVE",
+		intro: "This session separates direct passive, suffering/affected passive, and neutral event passive. The key reading skill is identifying who did the action and who is affected by it.",
+		pitfalls: ["In direct passive, the doer is usually marked with に.", "Suffering passive can affect the speaker's body, belongings, or situation indirectly.", "Neutral event passive describes facts without strong speaker emotion."],
+		patterns: [
+			{ label: "direct passive", form: "person は doer に verb passive", usage: "The subject receives another person's action.", explanation: "Direct passive makes the affected person the subject.", points: ["The doer often takes に.", "The subject may be omitted if it is the speaker.", "Can be positive or negative depending on the verb/context."], items: [
+				{ sentence: "今日は先生にほめられました。", meaning: "I was praised by the teacher today.", clue: "The speaker receives praise.", blankPrompt: "先生にほめ＿＿ました。", blankAnswer: "られ" },
+				{ sentence: "女の人に道を聞かれました。", meaning: "A woman asked me for directions.", clue: "The speaker was asked by someone.", blankPrompt: "道を聞か＿＿ました。", blankAnswer: "れ" }
+			] },
+			{ label: "suffering passive", form: "person は doer に affected thing を verb passive", usage: "The speaker side is affected by another action or event.", explanation: "Suffering passive often expresses annoyance, inconvenience, or personal impact.", points: ["The affected person is the subject.", "Body parts and belongings often appear with を.", "The action is not necessarily done directly to the subject."], items: [
+				{ sentence: "電車の中で足をふまれました。", meaning: "Someone stepped on my foot in the train.", clue: "An unpleasant thing happened to the speaker's foot.", blankPrompt: "足をふま＿＿ました。", blankAnswer: "れ" },
+				{ sentence: "弟にケーキを食べられてしまいました。", meaning: "My younger brother ate my cake, unfortunately.", clue: "The speaker is affected by someone eating their cake.", blankPrompt: "ケーキを食べ＿＿しまいました。", blankAnswer: "られて" }
+			] },
+			{ label: "neutral event passive", form: "thing/event は passive verb", usage: "State a public fact without focusing on emotion.", explanation: "Neutral passive describes events or facts such as openings, readings, and creation.", points: ["The subject is often a thing or event.", "No emotional sufferer is required.", "Useful for news, history, and factual statements."], items: [
+				{ sentence: "来年、夏のオリンピックが開かれます。", meaning: "The Summer Olympics will be held next year.", clue: "A public event passive.", blankPrompt: "オリンピックが開か＿＿ます。", blankAnswer: "れ" },
+				{ sentence: "この本は世界中で読まれています。", meaning: "This book is read all over the world.", clue: "A neutral fact about a book.", blankPrompt: "世界中で読ま＿＿ています。", blankAnswer: "れ" }
+			] }
+		]
+	},
+	{
+		id: "causative",
+		number: "25",
+		title: "Causative and causative-passive",
+		label: "CAUSATIVE",
+		intro: "This session trains making, letting, emotional causing, and being forced to do something. Causative can be permissive or coercive; causative-passive usually feels forced or reluctant.",
+		pitfalls: ["With transitive causatives, the causee is usually に so the original object can stay を.", "With intransitive causatives, the causee is often を, but に can appear when permission or letting is emphasized.", "Causative-passive させられます means the subject is made to do something."],
+		patterns: [
+			{ label: "〜(さ)せます", form: "causative verb", usage: "Make or let someone do something; cause an emotion.", explanation: "Causative means make/let/cause depending on context.", points: ["る-verbs usually take させます.", "う-verbs change to the あ-row + せます.", "Causee marking depends on the verb: に is common when there is another を object; を is common with intransitives."], items: [
+				{ sentence: "店長はアルバイトを一人やめさせました。", meaning: "The manager made one part-time worker quit.", clue: "Make someone do something.", blankPrompt: "アルバイトを一人やめ＿＿ました。", blankAnswer: "させ" },
+				{ sentence: "けんは犬を自由にあそばせます。", meaning: "Ken lets the dog play freely.", clue: "Let someone/something do something.", blankPrompt: "犬を自由にあそば＿＿ます。", blankAnswer: "せ" }
+			] },
+			{ label: "〜させてくれませんか", form: "causative te-form + くれませんか", usage: "Ask someone to let you do something.", explanation: "させてくれませんか politely asks for permission to do an action.", points: ["The subject is usually the speaker wanting permission.", "It literally asks the listener to let the speaker do it.", "Useful for requests like copy, rest, borrow, participate."], items: [
+				{ sentence: "このノート、コピーさせてくれませんか。", meaning: "Could you let me copy this notebook?", clue: "Ask permission to copy.", blankPrompt: "コピー＿＿＿＿。", blankAnswer: "させてくれませんか" },
+				{ sentence: "今日は早く帰らせてください。", meaning: "Please let me go home early today.", clue: "Ask to be allowed to go home early.", blankPrompt: "早く帰ら＿＿ください。", blankAnswer: "せて" }
+			] },
+			{ label: "〜させられます", form: "causative-passive", usage: "Be made/forced to do something or be caused to feel something.", explanation: "させられます says the subject is forced into an action or caused to react.", points: ["Often has a reluctant feeling.", "The forced person is the subject.", "Can also express being emotionally caused to laugh, cry, or be surprised."], items: [
+				{ sentence: "店長にアルバイトをやめさせられました。", meaning: "I was made to quit my part-time job by the manager.", clue: "Be forced to quit.", blankPrompt: "アルバイトをやめ＿＿ました。", blankAnswer: "させられ" },
+				{ sentence: "子どもがおそくまで帰ってこなくて、心配させられました。", meaning: "The child did not come home until late, and I was made worried.", clue: "Someone caused an emotion.", blankPrompt: "心配＿＿ました。", blankAnswer: "させられ" }
+			] }
+		]
+	}
+];
+
+const extensionGrammarPracticeQualityItems = {
+	certainty: {
+		"〜かもしれません": [
+			{ sentence: "電車が遅れるかもしれません。", meaning: "The train may be late.", clue: "State a weak possibility about the train.", blankPrompt: "電車が遅れる＿＿＿＿。", blankAnswer: "かもしれません", wrongs: ["電車が遅れるはずです。", "電車が遅れそうです。", "電車が遅れるそうです。"] },
+			{ sentence: "あしたは学校が休みかもしれません。", meaning: "School may be off tomorrow.", clue: "You are not certain about tomorrow's school schedule.", blankPrompt: "あしたは学校が休み＿＿＿＿。", blankAnswer: "かもしれません", wrongs: ["あしたは学校が休みのはずです。", "あしたは学校が休みそうです。", "あしたは学校が休みらしいです。"] }
+		],
+		"〜はずです": [
+			{ sentence: "田中さんは毎日七時に来るので、もうすぐ来るはずです。", meaning: "Tanaka comes at seven every day, so he should come soon.", clue: "Make a confident inference from a regular habit.", blankPrompt: "もうすぐ来る＿＿＿＿。", blankAnswer: "はずです", wrongs: ["もうすぐ来るかもしれません。", "もうすぐ来そうです。", "もうすぐ来るみたいです。"] },
+			{ sentence: "ここは図書館のはずです。地図にそう書いてあります。", meaning: "This should be the library. The map says so.", clue: "Use noun + の + はずです.", blankPrompt: "ここは図書館＿＿＿＿。", blankAnswer: "のはずです", wrongs: ["ここは図書館はずです。", "ここは図書館かもしれません。", "ここは図書館そうです。"] }
+		],
+		"〜ようです / 〜みたいです": [
+			{ sentence: "外がぬれているので、雨が降ったようです。", meaning: "The outside is wet, so it seems it rained.", clue: "Infer from visible evidence.", blankPrompt: "雨が降った＿＿＿＿。", blankAnswer: "ようです", wrongs: ["雨が降ったそうです。", "雨が降ったはずです。", "雨が降りそうです。"] },
+			{ sentence: "この町は静かなようです。人があまりいません。", meaning: "This town seems quiet; there are not many people.", clue: "Use なようです after a na-adjective.", blankPrompt: "この町は静か＿＿＿＿。", blankAnswer: "なようです", wrongs: ["この町は静かようです。", "この町は静かそうです。", "この町は静かのようです。"] }
+		]
+	},
+	advice: {
+		"〜なさい": [
+			{ sentence: "テストの前に名前を書きなさい。", meaning: "Write your name before the test.", clue: "An exam instruction.", blankPrompt: "名前を書き＿＿。", blankAnswer: "なさい", wrongs: ["名前を書いたほうがいいです。", "名前を書かないと。", "名前を書きましょうか。"] },
+			{ sentence: "早く部屋をかたづけなさい。", meaning: "Clean your room quickly.", clue: "A parent gives a direct instruction.", blankPrompt: "部屋をかたづけ＿＿。", blankAnswer: "なさい", wrongs: ["部屋をかたづけませんか。", "部屋をかたづけたところです。", "部屋をかたづけるはずです。"] }
+		],
+		"〜ほうがいいです": [
+			{ sentence: "明日は試験ですから、早く寝たほうがいいです。", meaning: "The exam is tomorrow, so you should sleep early.", clue: "Give advice based on tomorrow's exam.", blankPrompt: "早く寝た＿＿＿＿。", blankAnswer: "ほうがいいです", wrongs: ["早く寝ないほうがいいです。", "早く寝なさい。", "早く寝るかもしれません。"] },
+			{ sentence: "その店は高いので、そこで買わないほうがいいですよ。", meaning: "That shop is expensive, so you had better not buy it there.", clue: "Advise against doing something.", blankPrompt: "そこで買わない＿＿＿＿。", blankAnswer: "ほうがいいです", wrongs: ["そこで買ったほうがいいです。", "そこで買わなさい。", "そこで買わないと。"] }
+		],
+		"〜ないと": [
+			{ sentence: "そろそろ行かないと。", meaning: "I/We have to go soon.", clue: "A short colloquial pressure statement.", blankPrompt: "そろそろ行か＿＿。", blankAnswer: "ないと", wrongs: ["そろそろ行きなさい。", "そろそろ行ったほうがいいです。", "そろそろ行くはずです。"] },
+			{ sentence: "薬を飲まないと、もっと悪くなりますよ。", meaning: "If you do not take the medicine, you will get worse.", clue: "Warn about a bad result if the action is not done.", blankPrompt: "薬を飲ま＿＿、もっと悪くなりますよ。", blankAnswer: "ないと", wrongs: ["薬を飲まなくても", "薬を飲んだら", "薬を飲んでも"] }
+		]
+	},
+	conditionals: {
+		"〜たら": [
+			{ sentence: "駅に着いたら、電話してください。", meaning: "When you arrive at the station, please call me.", clue: "A request after a future event.", blankPrompt: "駅に着い＿＿、電話してください。", blankAnswer: "たら", wrongs: ["駅に着くと、電話してください。", "駅に着けば、電話してください。", "駅に着くなら、電話してください。"] },
+			{ sentence: "宿題が終わったら、ゲームをしてもいいです。", meaning: "When the homework is finished, you may play games.", clue: "Permission after completion.", blankPrompt: "宿題が終わっ＿＿、ゲームをしてもいいです。", blankAnswer: "たら", wrongs: ["宿題が終わると", "宿題が終われば", "宿題が終わるなら"] }
+		],
+		"〜ば": [
+			{ sentence: "安ければ、このかばんを買います。", meaning: "If it is cheap, I will buy this bag.", clue: "Use adjective ば for a condition.", blankPrompt: "安けれ＿＿、このかばんを買います。", blankAnswer: "ば", wrongs: ["安いと、このかばんを買いましょう。", "安かったのに、このかばんを買います。", "安いなら、このかばんを買いました。"] },
+			{ sentence: "時間があれば、手伝います。", meaning: "If I have time, I will help.", clue: "A condition-result statement.", blankPrompt: "時間があれ＿＿、手伝います。", blankAnswer: "ば", wrongs: ["時間があると、手伝いませんか。", "時間があるのに、手伝います。", "時間があったそうです。"] }
+		],
+		"〜なら": [
+			{ sentence: "日本語の辞書なら、あの本屋にありますよ。", meaning: "If it is a Japanese dictionary you mean, that bookstore has one.", clue: "Respond to a topic with helpful information.", blankPrompt: "日本語の辞書＿＿、あの本屋にありますよ。", blankAnswer: "なら", wrongs: ["日本語の辞書と", "日本語の辞書たら", "日本語の辞書のに"] },
+			{ sentence: "忙しいなら、私が行きましょうか。", meaning: "If you are busy, shall I go?", clue: "Respond to the listener's situation.", blankPrompt: "忙しい＿＿、私が行きましょうか。", blankAnswer: "なら", wrongs: ["忙しいと", "忙しければ", "忙しかったのに"] }
+		],
+		"〜と": [
+			{ sentence: "春になると、花が咲きます。", meaning: "When spring comes, flowers bloom.", clue: "A natural result.", blankPrompt: "春になる＿＿、花が咲きます。", blankAnswer: "と", wrongs: ["春になったら、花を見に行きませんか。", "春になるなら、花を咲かせてください。", "春になっても、花が咲きます。"] },
+			{ sentence: "この道をまっすぐ行くと、右に銀行があります。", meaning: "If you go straight on this road, there is a bank on the right.", clue: "A directions result.", blankPrompt: "まっすぐ行く＿＿、右に銀行があります。", blankAnswer: "と", wrongs: ["まっすぐ行くと、右に曲がってください。", "まっすぐ行けば、右に銀行へ行きませんか。", "まっすぐ行ったのに、右に銀行があります。"] }
+		]
+	},
+	"tara-nara": {
+		"〜たら": [
+			{ sentence: "仕事が終わったら、メールします。", meaning: "When work is finished, I will email.", clue: "The email happens after finishing work.", blankPrompt: "仕事が終わっ＿＿、メールします。", blankAnswer: "たら", wrongs: ["仕事が終わるなら、メールします。", "仕事が終わると、メールしましょうか。", "仕事が終わったのに、メールします。"] },
+			{ sentence: "雨がやんだら、出かけましょう。", meaning: "When the rain stops, let's go out.", clue: "A shared action after the event.", blankPrompt: "雨がやん＿＿、出かけましょう。", blankAnswer: "だら", wrongs: ["雨がやむなら、出かけましょう。", "雨がやむと、出かけましょう。", "雨がやんでも、出かけましょう。"] }
+		],
+		"〜なら": [
+			{ sentence: "時間がないなら、タクシーで行きましょう。", meaning: "If you do not have time, let's go by taxi.", clue: "Respond to the information that there is no time.", blankPrompt: "時間がない＿＿、タクシーで行きましょう。", blankAnswer: "なら", wrongs: ["時間がなかったら、タクシーで行きました。", "時間がないと、タクシーで行きましょう。", "時間がないのに、タクシーで行きましょう。"] },
+			{ sentence: "漢字の勉強なら、このアプリが便利です。", meaning: "If it is kanji study, this app is convenient.", clue: "Give advice based on a topic.", blankPrompt: "漢字の勉強＿＿、このアプリが便利です。", blankAnswer: "なら", wrongs: ["漢字の勉強たら", "漢字の勉強と", "漢字の勉強のに"] }
+		]
+	},
+	concession: {
+		"〜ても": [
+			{ sentence: "高くても、この靴を買いたいです。", meaning: "Even if they are expensive, I want to buy these shoes.", clue: "Concede that the price may be high.", blankPrompt: "高く＿＿、この靴を買いたいです。", blankAnswer: "ても", wrongs: ["高いのに、この靴を買いたいです。", "高ければ、この靴を買いたいです。", "高かったら、この靴を買いたかったです。"] },
+			{ sentence: "子どもでも、このゲームはできます。", meaning: "Even children can play this game.", clue: "Use noun + でも.", blankPrompt: "子ども＿＿、このゲームはできます。", blankAnswer: "でも", wrongs: ["子どもなのに", "子どもなら", "子どもだそうです"] }
+		],
+		"〜のに": [
+			{ sentence: "約束したのに、友だちは来ませんでした。", meaning: "Although my friend promised, they did not come.", clue: "Show disappointment at the result.", blankPrompt: "約束した＿＿、友だちは来ませんでした。", blankAnswer: "のに", wrongs: ["約束しても、友だちは来ませんでした。", "約束したら、友だちは来ませんでした。", "約束するなら、友だちは来ませんでした。"] },
+			{ sentence: "まだ新しいのに、このかばんはもうこわれました。", meaning: "Although this bag is still new, it already broke.", clue: "Unexpected negative result.", blankPrompt: "まだ新しい＿＿、このかばんはもうこわれました。", blankAnswer: "のに", wrongs: ["まだ新しくても", "まだ新しいなら", "まだ新しいそうで"] }
+		]
+	},
+	quotation: {
+		"〜と": [
+			{ sentence: "この花は日本語で『さくら』と言います。", meaning: "This flower is called sakura in Japanese.", clue: "Quote a name.", blankPrompt: "『さくら』＿＿言います。", blankAnswer: "と", wrongs: ["『さくら』か言います。", "『さくら』かどうか言います。", "『さくら』なら言います。"] },
+			{ sentence: "兄は来月引っこすと言っていました。", meaning: "My older brother said he will move next month.", clue: "Report what someone said.", blankPrompt: "来月引っこす＿＿言っていました。", blankAnswer: "と", wrongs: ["来月引っこすか言っていました。", "来月引っこすかどうか言っていました。", "来月引っこすそうと言っていました。"] }
+		],
+		"〜か": [
+			{ sentence: "どこでチケットを買うか知っていますか。", meaning: "Do you know where to buy tickets?", clue: "Embed a where-question.", blankPrompt: "どこでチケットを買う＿＿知っていますか。", blankAnswer: "か", wrongs: ["どこでチケットを買うかどうか知っていますか。", "どこでチケットを買うと知っていますか。", "どこでチケットを買うなら知っていますか。"] },
+			{ sentence: "先生が何を言ったか聞こえませんでした。", meaning: "I could not hear what the teacher said.", clue: "Embed a what-question.", blankPrompt: "何を言った＿＿聞こえませんでした。", blankAnswer: "か", wrongs: ["何を言ったかどうか聞こえませんでした。", "何を言ったと聞こえませんでした。", "何を言ったそうです。"] }
+		],
+		"〜かどうか": [
+			{ sentence: "この漢字が正しいかどうか確認してください。", meaning: "Please confirm whether this kanji is correct.", clue: "No question word, so use whether.", blankPrompt: "正しい＿＿＿＿確認してください。", blankAnswer: "かどうか", wrongs: ["正しいか確認してください。", "正しいと確認してください。", "正しいなら確認してください。"] },
+			{ sentence: "山田さんが来るかどうかまだ知りません。", meaning: "I still do not know whether Yamada is coming.", clue: "Embed whether someone is coming.", blankPrompt: "山田さんが来る＿＿＿＿まだ知りません。", blankAnswer: "かどうか", wrongs: ["山田さんが来るかまだ知りません。", "山田さんが来るとまだ知りません。", "山田さんが来るならまだ知りません。"] }
+		]
+	},
+	intention: {
+		"〜ようと思います": [
+			{ sentence: "今夜は早く寝ようと思います。", meaning: "I think I will go to bed early tonight.", clue: "State an intention now.", blankPrompt: "早く寝＿＿と思います。", blankAnswer: "よう", wrongs: ["早く寝るつもりはありません。", "早く寝たそうです。", "早く寝るはずです。"] },
+			{ sentence: "駅まで歩こうと思います。", meaning: "I think I will walk to the station.", clue: "Use the volitional form of 歩く.", blankPrompt: "駅まで歩＿＿と思います。", blankAnswer: "こう", wrongs: ["駅まで歩くと思います。", "駅まで歩きたいと思います。", "駅まで歩いたところです。"] }
+		],
+		"〜ようと思っています": [
+			{ sentence: "卒業したら、日本で働こうと思っています。", meaning: "I am thinking of working in Japan after graduation.", clue: "A future intention held over time.", blankPrompt: "日本で働＿＿と思っています。", blankAnswer: "こう", wrongs: ["日本で働くところです。", "日本で働いたことがあります。", "日本で働くらしいです。"] },
+			{ sentence: "来月から毎日漢字を練習しようと思っています。", meaning: "I am planning to practice kanji every day from next month.", clue: "A continuing plan.", blankPrompt: "漢字を練習し＿＿と思っています。", blankAnswer: "よう", wrongs: ["漢字を練習するはずです。", "漢字を練習したそうです。", "漢字を練習するかもしれません。"] }
+		],
+		"〜つもりです": [
+			{ sentence: "週末は家で勉強するつもりです。", meaning: "I plan to study at home this weekend.", clue: "State a concrete plan.", blankPrompt: "家で勉強する＿＿＿＿。", blankAnswer: "つもりです", wrongs: ["家で勉強したところです。", "家で勉強するそうです。", "家で勉強してしまいます。"] },
+			{ sentence: "今年は車を買わないつもりです。", meaning: "I do not plan to buy a car this year.", clue: "State a plan not to do something.", blankPrompt: "車を買わない＿＿＿＿。", blankAnswer: "つもりです", wrongs: ["車を買わないはずです。", "車を買わなくなりました。", "車を買わないようです。"] }
+		]
+	},
+	hearsay: {
+		"〜と言っていました": [
+			{ sentence: "先生はテストは来週だと言っていました。", meaning: "The teacher said the test is next week.", clue: "Report a noun sentence with だ.", blankPrompt: "テストは来週だ＿＿言っていました。", blankAnswer: "と", wrongs: ["テストは来週と聞こえました。", "テストは来週か言っていました。", "テストは来週そうです。"] },
+			{ sentence: "父は少し遅れると言っていました。", meaning: "My father said he would be a little late.", clue: "Pass along someone's message.", blankPrompt: "少し遅れる＿＿言っていました。", blankAnswer: "と", wrongs: ["少し遅れそうと言っていました。", "少し遅れるかどうかと言っていました。", "少し遅れたらと言っていました。"] }
+		],
+		"〜そうです": [
+			{ sentence: "ニュースでは、台風が来るそうです。", meaning: "According to the news, a typhoon is coming.", clue: "Report information from the news.", blankPrompt: "台風が来る＿＿＿＿。", blankAnswer: "そうです", wrongs: ["台風が来そうです。", "台風が来たようです。", "台風が来るはずです。"] },
+			{ sentence: "先生の話では、試験は簡単だそうです。", meaning: "According to the teacher, the test is easy.", clue: "Use だそうです after a na-adjective.", blankPrompt: "試験は簡単＿＿＿＿。", blankAnswer: "だそうです", wrongs: ["試験は簡単そうです。", "試験は簡単らしいです。", "試験は簡単ようです。"] }
+		],
+		"〜らしいです": [
+			{ sentence: "うわさでは、駅前に新しい店ができるらしいです。", meaning: "According to rumors, a new shop seems to be opening in front of the station.", clue: "Pass along indirect rumor.", blankPrompt: "新しい店ができる＿＿＿＿。", blankAnswer: "らしいです", wrongs: ["新しい店ができそうです。", "新しい店ができたところです。", "新しい店ができますと言っていました。"] },
+			{ sentence: "あの人は医者らしいです。白い服を着ています。", meaning: "That person seems to be a doctor; they are wearing white clothes.", clue: "Infer from appearance or context.", blankPrompt: "あの人は医者＿＿＿＿。", blankAnswer: "らしいです", wrongs: ["あの人は医者そうです。", "あの人は医者のはずです。", "あの人は医者みたいにです。"] }
+		]
+	},
+	change: {
+		"〜く/〜にします": [
+			{ sentence: "字をもっと大きくしてください。", meaning: "Please make the letters bigger.", clue: "Ask someone to deliberately change size.", blankPrompt: "字をもっと大き＿＿してください。", blankAnswer: "く", wrongs: ["字がもっと大きくなってください。", "字をもっと大きいにしてください。", "字をもっと大きくなりました。"] },
+			{ sentence: "部屋を静かにしました。", meaning: "I made the room quiet.", clue: "Someone deliberately changed the state.", blankPrompt: "部屋を静か＿＿しました。", blankAnswer: "に", wrongs: ["部屋が静かにしました。", "部屋を静かになりました。", "部屋を静かだしました。"] }
+		],
+		"〜く/〜になります": [
+			{ sentence: "夜になると、道が暗くなります。", meaning: "When night comes, the road gets dark.", clue: "A natural state change.", blankPrompt: "道が暗く＿＿ます。", blankAnswer: "なり", wrongs: ["道を暗くします。", "道が暗いします。", "道を暗くなります。"] },
+			{ sentence: "駅の前は便利になりました。", meaning: "The area in front of the station became convenient.", clue: "A place's state changed.", blankPrompt: "駅の前は便利＿＿なりました。", blankAnswer: "に", wrongs: ["駅の前を便利にしました。", "駅の前は便利くなりました。", "駅の前は便利でしました。"] }
+		],
+		"〜ようになります / 〜なくなります": [
+			{ sentence: "毎朝ジョギングするようになりました。", meaning: "I started jogging every morning.", clue: "A new habit developed.", blankPrompt: "毎朝ジョギングする＿＿＿＿。", blankAnswer: "ようになりました", wrongs: ["毎朝ジョギングになりました。", "毎朝ジョギングしておきました。", "毎朝ジョギングしそうです。"] },
+			{ sentence: "最近、甘い物を食べなくなりました。", meaning: "Recently, I stopped eating sweet things.", clue: "A habit stopped.", blankPrompt: "甘い物を食べ＿＿なりました。", blankAnswer: "なく", wrongs: ["甘い物を食べないようになりません。", "甘い物を食べないことにしました。", "甘い物を食べないはずです。"] }
+		]
+	},
+	decisions: {
+		"〜にします": [
+			{ sentence: "飲み物はお茶にします。", meaning: "I will choose tea for my drink.", clue: "Choose from options.", blankPrompt: "飲み物はお茶＿＿します。", blankAnswer: "に", wrongs: ["飲み物はお茶になります。", "飲み物はお茶ことにします。", "飲み物はお茶だそうです。"] },
+			{ sentence: "会議は来週の火曜日にします。", meaning: "We will set the meeting for next Tuesday.", clue: "Choose a date.", blankPrompt: "来週の火曜日＿＿します。", blankAnswer: "に", wrongs: ["来週の火曜日になります。", "来週の火曜日ことにします。", "来週の火曜日ようにします。"] }
+		],
+		"〜ことにします": [
+			{ sentence: "毎日十個単語を覚えることにしました。", meaning: "I decided to memorize ten words every day.", clue: "Personal decision to do an action.", blankPrompt: "単語を覚える＿＿＿＿。", blankAnswer: "ことにしました", wrongs: ["単語を覚えることになりました。", "単語を覚えるつもりはありません。", "単語を覚えるようです。"] },
+			{ sentence: "今年は新しいパソコンを買わないことにします。", meaning: "I will decide not to buy a new computer this year.", clue: "Personal decision not to do something.", blankPrompt: "パソコンを買わない＿＿＿＿。", blankAnswer: "ことにします", wrongs: ["パソコンを買わないことになります。", "パソコンを買わなくなります。", "パソコンを買わないそうです。"] }
+		],
+		"〜になります / ことになります": [
+			{ sentence: "出発は朝六時になりました。", meaning: "The departure has been set for six in the morning.", clue: "An arranged time.", blankPrompt: "朝六時＿＿なりました。", blankAnswer: "に", wrongs: ["朝六時をしました。", "朝六時ことにしました。", "朝六時ようになりました。"] },
+			{ sentence: "来週から大阪で働くことになりました。", meaning: "It has been decided that I will work in Osaka from next week.", clue: "An externally arranged outcome.", blankPrompt: "大阪で働く＿＿＿＿。", blankAnswer: "ことになりました", wrongs: ["大阪で働くことにしました。", "大阪で働こうと思います。", "大阪で働くつもりはありません。"] }
+		]
+	},
+	"te-auxiliary": {
+		"〜てみます": [
+			{ sentence: "この漢字を辞書で調べてみます。", meaning: "I will try looking up this kanji in a dictionary.", clue: "Try an action to check something.", blankPrompt: "辞書で調べ＿＿ます。", blankAnswer: "てみ", wrongs: ["辞書で調べておきます。", "辞書で調べてしまいます。", "辞書で調べたところです。"] },
+			{ sentence: "サイズが合うかどうか、着てみてもいいですか。", meaning: "May I try it on to see whether the size fits?", clue: "Try wearing clothes.", blankPrompt: "着＿＿てもいいですか。", blankAnswer: "てみ", wrongs: ["着ておい", "着てしまっ", "着られ"] }
+		],
+		"〜ておきます": [
+			{ sentence: "会議の前に資料を読んでおきます。", meaning: "I will read the materials before the meeting.", clue: "Prepare in advance.", blankPrompt: "資料を読ん＿＿ます。", blankAnswer: "でおき", wrongs: ["資料を読んでみます。", "資料を読んでしまいました。", "資料を読むところです。"] },
+			{ sentence: "電気はつけておいてください。", meaning: "Please leave the light on.", clue: "Keep the current state.", blankPrompt: "電気はつけ＿＿ください。", blankAnswer: "ておいて", wrongs: ["電気はつけてみてください。", "電気はつけてしまってください。", "電気はつけるところです。"] }
+		],
+		"〜てしまいます": [
+			{ sentence: "大切な書類をなくしてしまいました。", meaning: "I unfortunately lost important documents.", clue: "Regret over an unwanted result.", blankPrompt: "書類をなくし＿＿ました。", blankAnswer: "てしまい", wrongs: ["書類をなくしてみました。", "書類をなくしておきました。", "書類をなくせました。"] },
+			{ sentence: "宿題は全部やってしまいました。", meaning: "I finished all of the homework.", clue: "Complete something fully.", blankPrompt: "全部やっ＿＿ました。", blankAnswer: "てしまい", wrongs: ["全部やってみました。", "全部やっておきません。", "全部やるところです。"] }
+		]
+	},
+	giving: {
+		"あげます / 〜てあげます": [
+			{ sentence: "私は弟に自転車の乗り方を教えてあげました。", meaning: "I taught my younger brother how to ride a bicycle as a favor.", clue: "The speaker does a favor outward.", blankPrompt: "乗り方を教え＿＿ました。", blankAnswer: "てあげ", wrongs: ["乗り方を教えてくれました。", "乗り方を教えてもらいました。", "乗り方を教えられました。"] },
+			{ sentence: "友だちに写真を送ってあげます。", meaning: "I will send my friend the photo.", clue: "Do something for someone else.", blankPrompt: "写真を送っ＿＿ます。", blankAnswer: "てあげ", wrongs: ["写真を送ってくれます。", "写真を送ってもらいます。", "写真を送られます。"] }
+		],
+		"くれます / 〜てくれます": [
+			{ sentence: "母が駅まで車で送ってくれました。", meaning: "My mother drove me to the station.", clue: "Someone did a favor for the speaker side.", blankPrompt: "車で送っ＿＿ました。", blankAnswer: "てくれ", wrongs: ["車で送ってあげました。", "車で送ってもらいました。", "車で送らせました。"] },
+			{ sentence: "先生が難しい文法を説明してくださいました。", meaning: "The teacher kindly explained the difficult grammar.", clue: "A higher-status person did something for me.", blankPrompt: "文法を説明＿＿ました。", blankAnswer: "してください", wrongs: ["文法を説明してあげました。", "文法を説明してもらいました。", "文法を説明されました。"] }
+		],
+		"もらいます / 〜てもらいます": [
+			{ sentence: "私は友だちに写真を撮ってもらいました。", meaning: "I had my friend take a photo for me.", clue: "Receive a favor/action.", blankPrompt: "写真を撮っ＿＿ました。", blankAnswer: "てもらい", wrongs: ["写真を撮ってあげました。", "写真を撮ってくれました。", "写真を撮られました。"] },
+			{ sentence: "駅員さんに道を教えていただきました。", meaning: "I received directions from the station staff.", clue: "Receive help politely from someone outside your group.", blankPrompt: "道を教え＿＿ました。", blankAnswer: "ていただき", wrongs: ["道を教えてさしあげました。", "道を教えてくれました。", "道を教えられました。"] }
+		]
+	},
+	passive: {
+		"direct passive": [
+			{ sentence: "山田さんは先生に質問されました。", meaning: "Yamada was asked a question by the teacher.", clue: "Direct passive with the doer marked by に.", blankPrompt: "先生に質問＿＿ました。", blankAnswer: "され", wrongs: ["先生に質問しました。", "先生を質問されました。", "先生に質問させました。"] },
+			{ sentence: "私は友だちにパーティーへ招待されました。", meaning: "I was invited to a party by a friend.", clue: "Receive another person's action.", blankPrompt: "パーティーへ招待＿＿ました。", blankAnswer: "され", wrongs: ["パーティーへ招待しました。", "パーティーへ招待させました。", "パーティーへ招待してあげました。"] }
+		],
+		"suffering passive": [
+			{ sentence: "雨に降られて、服がぬれました。", meaning: "I got caught in the rain, and my clothes got wet.", clue: "Suffering passive from an event.", blankPrompt: "雨に降ら＿＿、服がぬれました。", blankAnswer: "れて", wrongs: ["雨が降って、服がぬれました。", "雨を降らせて、服がぬれました。", "雨に降っても、服がぬれました。"] },
+			{ sentence: "子どもにパソコンをこわされました。", meaning: "My computer was broken by a child, unfortunately.", clue: "The speaker is affected through a belonging.", blankPrompt: "パソコンをこわ＿＿ました。", blankAnswer: "され", wrongs: ["パソコンがこわれました。", "パソコンをこわしました。", "パソコンをこわさせました。"] }
+		],
+		"neutral event passive": [
+			{ sentence: "この寺は六百年前に建てられました。", meaning: "This temple was built 600 years ago.", clue: "A neutral historical fact.", blankPrompt: "六百年前に建て＿＿ました。", blankAnswer: "られ", wrongs: ["六百年前に建てました。", "六百年前に建てさせました。", "六百年前に建ててくれました。"] },
+			{ sentence: "会議は三階の部屋で行われます。", meaning: "The meeting will be held in the room on the third floor.", clue: "A neutral public/event passive.", blankPrompt: "三階の部屋で行わ＿＿ます。", blankAnswer: "れ", wrongs: ["三階の部屋で行います。", "三階の部屋で行かれます。", "三階の部屋で行わせます。"] }
+		]
+	},
+	causative: {
+		"〜(さ)せます": [
+			{ sentence: "母は子どもに野菜を食べさせました。", meaning: "The mother made the child eat vegetables.", clue: "Transitive causative with another を object.", blankPrompt: "野菜を食べ＿＿ました。", blankAnswer: "させ", wrongs: ["野菜を食べられました。", "野菜を食べてもらいました。", "野菜を食べてくれました。"] },
+			{ sentence: "先生は学生に作文を書かせました。", meaning: "The teacher made the students write essays.", clue: "Make someone perform an action.", blankPrompt: "作文を書か＿＿ました。", blankAnswer: "せ", wrongs: ["作文を書かれました。", "作文を書いてあげました。", "作文を書きました。"] }
+		],
+		"〜させてくれませんか": [
+			{ sentence: "少し休ませてくれませんか。", meaning: "Could you let me rest a little?", clue: "Ask permission to rest.", blankPrompt: "少し休ま＿＿。", blankAnswer: "せてくれませんか", wrongs: ["少し休んでくれませんか。", "少し休ませませんか。", "少し休まれませんか。"] },
+			{ sentence: "この会議に参加させていただけませんか。", meaning: "Could you allow me to participate in this meeting?", clue: "A polite permission request.", blankPrompt: "会議に参加＿＿いただけませんか。", blankAnswer: "させて", wrongs: ["会議に参加して", "会議に参加されて", "会議に参加してあげて"] }
+		],
+		"〜させられます": [
+			{ sentence: "子どものころ、毎日ピアノを練習させられました。", meaning: "When I was a child, I was made to practice piano every day.", clue: "Forced repeated action in the past.", blankPrompt: "ピアノを練習＿＿ました。", blankAnswer: "させられ", wrongs: ["ピアノを練習しました。", "ピアノを練習してもらいました。", "ピアノを練習されました。"] },
+			{ sentence: "その話を聞いて、笑わせられました。", meaning: "Hearing that story made me laugh.", clue: "Someone/something caused an emotional reaction.", blankPrompt: "笑わ＿＿ました。", blankAnswer: "せられ", wrongs: ["笑いました。", "笑わせました。", "笑ってもらいました。"] }
+		]
+	}
+};
+
+extensionGrammarPracticeConfigs.forEach((config) => {
+	const additions = extensionGrammarPracticeQualityItems[config.id];
+	if (!additions) return;
+	config.patterns.forEach((pattern) => {
+		if (additions[pattern.label]) {
+			pattern.items.push(...additions[pattern.label]);
+		}
+	});
+});
+
+const extensionGrammarPracticeQualityContrasts = {
+	certainty: [
+		{ kind: "trap · noun form", prompt: "Which sentence correctly uses ようです with a noun?", subprompt: "The object looks like a flower.", answer: "このかざりは花のようです。", options: ["このかざりは花のようです。", "このかざりは花ようです。", "このかざりは花そうです。", "このかざりは花だかもしれません。"], explanation: "Nouns take の before ようです, but not before みたいです." },
+		{ kind: "trap · weak vs strong", prompt: "You are only guessing. Which sentence is appropriately weak?", subprompt: "No clear evidence, no schedule.", answer: "山田さんは休みかもしれません。", options: ["山田さんは休みかもしれません。", "山田さんは休みのはずです。", "山田さんは休みそうです。", "山田さんは休みようです。"], explanation: "かもしれません is weak possibility; はずです needs stronger reason." }
+	],
+	advice: [
+		{ kind: "trap · advice direction", prompt: "Which sentence advises NOT doing something?", subprompt: "The food smells strange.", answer: "食べないほうがいいです。", options: ["食べないほうがいいです。", "食べたほうがいいです。", "食べなさい。", "食べなくてもいいです。"], explanation: "ない-form + ほうがいいです advises against the action." },
+		{ kind: "trap · omitted result", prompt: "Which sentence sounds like a casual urgent reminder?", subprompt: "The bad result is left unsaid.", answer: "もう行かないと。", options: ["もう行かないと。", "もう行きなさい。", "もう行ったほうがいいです。", "もう行ってもいいです。"], explanation: "ないと often omits the bad result in casual speech." }
+	],
+	conditionals: [
+		{ kind: "trap · command after condition", prompt: "Which conditional is best before a request?", subprompt: "When you finish, please tell me.", answer: "終わったら、教えてください。", options: ["終わったら、教えてください。", "終わると、教えてください。", "終われば、教えてください。", "終わるのに、教えてください。"], explanation: "たら is the safest N4 choice before requests and invitations." },
+		{ kind: "trap · automatic result", prompt: "Which sentence describes an automatic machine result?", subprompt: "Pressing the button makes the light turn on.", answer: "ボタンを押すと、電気がつきます。", options: ["ボタンを押すと、電気がつきます。", "ボタンを押したら、電気をつけてください。", "ボタンを押すなら、電気がつきましょう。", "ボタンを押したのに、電気がつきます。"], explanation: "と is strong for automatic or natural trigger-result sentences." }
+	],
+	"tara-nara": [
+		{ kind: "trap · topic response", prompt: "A: 京都に行きたいです。 B: ＿＿＿＿", subprompt: "B gives advice based on A's topic.", answer: "京都に行くなら、春がいいですよ。", options: ["京都に行くなら、春がいいですよ。", "京都に行ったら、春がいいですよ。", "京都に行くと、春がいいですよ。", "京都に行ったのに、春がいいですよ。"], explanation: "なら picks up the listener's plan or topic." }
+	],
+	concession: [
+		{ kind: "trap · のに cannot invite", prompt: "Which sentence is unnatural because のに is followed by an invitation?", subprompt: "Use たら for invitations.", answer: "雨が降っていないのに、散歩しませんか。", options: ["雨が降っていないのに、散歩しませんか。", "雨が降っていないのに、かさを持っています。", "雨が降っても、散歩します。", "雨が降ったら、散歩しません。"], explanation: "のに is for unexpected contrast, not for setting up invitations or requests." }
+	],
+	quotation: [
+		{ kind: "trap · question word", prompt: "Which embedded question is correct?", subprompt: "There is a question word: いつ.", answer: "いつ始まるか知っていますか。", options: ["いつ始まるか知っていますか。", "いつ始まるかどうか知っていますか。", "いつ始まると知っていますか。", "いつ始まるなら知っていますか。"], explanation: "Question-word clauses use か, not かどうか." },
+		{ kind: "trap · whether", prompt: "Which embedded question means whether the shop is open?", subprompt: "No question word.", answer: "店が開いているかどうか調べます。", options: ["店が開いているかどうか調べます。", "店がいつ開いているかどうか調べます。", "店が開いていると調べます。", "店が開いているなら調べます。"], explanation: "Use かどうか for whether/if when no question word appears." }
+	],
+	intention: [
+		{ kind: "trap · volitional form", prompt: "Which sentence correctly uses ようと思います?", subprompt: "I think I will study tonight.", answer: "今夜勉強しようと思います。", options: ["今夜勉強しようと思います。", "今夜勉強すると思います。", "今夜勉強したいと思っています。", "今夜勉強するつもりはありません。"], explanation: "ようと思います takes the volitional form: しよう, 行こう, 食べよう." },
+		{ kind: "trap · strong denial", prompt: "Which sentence strongly denies intention?", subprompt: "I have no intention of selling it.", answer: "売るつもりはありません。", options: ["売るつもりはありません。", "売ろうと思っています。", "売るかもしれません。", "売ったそうです。"], explanation: "つもりはありません is a strong no-intention statement." }
+	],
+	hearsay: [
+		{ kind: "trap · adjective そう", prompt: "Which sentence is hearsay, not appearance?", subprompt: "You heard/read that it is cold.", answer: "寒いそうです。", options: ["寒いそうです。", "寒そうです。", "寒くなさそうです。", "寒いようです。"], explanation: "Hearsay keeps the i-adjective い before そうです." },
+		{ kind: "trap · na-adjective hearsay", prompt: "Which sentence correctly reports that the test is easy?", subprompt: "Use hearsay そうです after a na-adjective.", answer: "試験は簡単だそうです。", options: ["試験は簡単だそうです。", "試験は簡単そうです。", "試験は簡単なそうです。", "試験は簡単のそうです。"], explanation: "Na-adjectives usually take だ before hearsay そうです." }
+	],
+	change: [
+		{ kind: "trap · transitive/intransitive", prompt: "Which sentence means someone made the room warm?", subprompt: "Choose deliberate change.", answer: "部屋を暖かくしました。", options: ["部屋を暖かくしました。", "部屋が暖かくなりました。", "部屋を暖かくなりました。", "部屋が暖かくしました。"], explanation: "を + します marks deliberate change; が + なります marks becoming." },
+		{ kind: "trap · no longer", prompt: "Which sentence means “I no longer drink coffee”?", subprompt: "Use なくなります for a stopped habit.", answer: "コーヒーを飲まなくなりました。", options: ["コーヒーを飲まなくなりました。", "コーヒーを飲まないようになりません。", "コーヒーを飲むようになりました。", "コーヒーを飲まないことにしました。"], explanation: "ない-stem + なくなりました is the basic stopped-habit pattern." }
+	],
+	decisions: [
+		{ kind: "trap · choice vs arrangement", prompt: "Which sentence presents the result as arranged by circumstances?", subprompt: "Not emphasizing personal choice.", answer: "来月転勤することになりました。", options: ["来月転勤することになりました。", "来月転勤することにしました。", "来月転勤しようと思います。", "来月転勤するかもしれません。"], explanation: "ことになりました presents a decided arrangement or outcome." },
+		{ kind: "trap · noun choice", prompt: "At a restaurant, which sentence chooses curry?", subprompt: "Simple noun choice.", answer: "カレーにします。", options: ["カレーにします。", "カレーことにします。", "カレーになります。", "カレーようにします。"], explanation: "Noun + にします is used for choosing an option." }
+	],
+	"te-auxiliary": [
+		{ kind: "trap · try vs prepare", prompt: "Which sentence means try eating it?", subprompt: "Testing the food.", answer: "食べてみます。", options: ["食べてみます。", "食べておきます。", "食べてしまいます。", "食べるところです。"], explanation: "てみます means try doing an action." },
+		{ kind: "trap · regret vs preparation", prompt: "Which sentence sounds like regret?", subprompt: "I lost my wallet.", answer: "財布をなくしてしまいました。", options: ["財布をなくしてしまいました。", "財布をなくしておきました。", "財布をなくしてみました。", "財布をなくすところです。"], explanation: "てしまいました often marks regret with unwanted events." }
+	],
+	giving: [
+		{ kind: "trap · direction", prompt: "Which sentence shows the benefit coming toward me?", subprompt: "My friend helped me.", answer: "友だちが手伝ってくれました。", options: ["友だちが手伝ってくれました。", "私は友だちを手伝ってあげました。", "友だちに手伝ってもらいました。", "友だちが手伝われました。"], explanation: "くれました shows someone did something for the speaker side." },
+		{ kind: "trap · receiver focus", prompt: "Which sentence focuses on me receiving help?", subprompt: "I had my friend help me.", answer: "友だちに手伝ってもらいました。", options: ["友だちに手伝ってもらいました。", "友だちが手伝ってくれました。", "私は友だちを手伝ってあげました。", "友だちに手伝われました。"], explanation: "てもらいました focuses on the receiver getting the favor." }
+	],
+	passive: [
+		{ kind: "trap · affected possession", prompt: "Which sentence uses suffering passive?", subprompt: "My bicycle was stolen and I was affected.", answer: "自転車をぬすまれました。", options: ["自転車をぬすまれました。", "自転車がぬすみました。", "自転車をぬすみました。", "自転車をぬすませました。"], explanation: "Suffering passive often uses the affected possession with を." },
+		{ kind: "trap · neutral event", prompt: "Which sentence is a neutral event passive?", subprompt: "No personal sufferer.", answer: "新しい駅が作られました。", options: ["新しい駅が作られました。", "弟にケーキを食べられました。", "先生にほめられました。", "雨に降られました。"], explanation: "Neutral passive reports a public fact or event without speaker emotion." }
+	],
+	causative: [
+		{ kind: "trap · causee marker", prompt: "Which sentence is the standard transitive causative?", subprompt: "The child eats vegetables.", answer: "子どもに野菜を食べさせました。", options: ["子どもに野菜を食べさせました。", "子どもを野菜を食べさせました。", "子どもが野菜を食べられました。", "子どもに野菜を食べてもらいました。"], explanation: "With a transitive verb, the causee is usually に so the original object can stay を." },
+		{ kind: "trap · permission request", prompt: "Which sentence asks permission to leave early?", subprompt: "Let me leave early.", answer: "早く帰らせてください。", options: ["早く帰らせてください。", "早く帰ってください。", "早く帰られてください。", "早く帰ってあげてください。"], explanation: "Causative te-form + ください asks to be allowed to do the action." }
+	]
+};
+
+const extensionGrammarPracticeExtraContrasts = {
+	listing: [
+		{ kind: "trap · し vs たり", prompt: "友だちに休日の例をいくつか言いたいです。", subprompt: "Reading books and watching movies are sample actions, not reasons.", answer: "本を読んだり、映画を見たりします。", options: ["本を読むし、映画を見るし、します。", "本を読んだり、映画を見たりします。", "本も読むし、映画も見るからです。", "本を読んで、映画を見るはずです。"], explanation: "Sample actions use た-form + り + た-form + りします." }
+	],
+	certainty: [
+		{ kind: "trap · certainty scale", prompt: "Which sentence sounds the most certain?", subprompt: "The speaker has a schedule or objective basis.", answer: "三時ですから、母はもう飛行機に乗ったはずです。", options: ["三時ですから、母はもう飛行機に乗ったはずです。", "母は飛行機に乗ったかもしれません。", "母は飛行機に乗ったみたいです。", "母は飛行機に乗りそうです。"], explanation: "はずです is the strongest expectation here because the speaker has a reason." },
+		{ kind: "trap · appearance vs hearsay", prompt: "You see dark clouds and make a personal impression.", subprompt: "Choose appearance/impression, not reported information.", answer: "雨が降りそうです。", options: ["雨が降りそうです。", "雨が降るそうです。", "雨が降ったはずです。", "雨が降ると言っていました。"], explanation: "Stem + そうです is appearance; plain-form + そうです is hearsay." }
+	],
+	advice: [
+		{ kind: "trap · tone", prompt: "A parent tells a child directly: Sleep early.", subprompt: "Choose the authority instruction.", answer: "早く寝なさい。", options: ["早く寝なさい。", "早く寝たほうがいいです。", "早く寝ないと。", "早く寝るかもしれません。"], explanation: "なさい is direct instruction from an authority figure." }
+	],
+	conditionals: [
+		{ kind: "trap · と restriction", prompt: "Which sentence is unnatural because と is followed by an invitation?", subprompt: "と should not normally be followed by volitional invitations or requests.", answer: "天気がいいと、散歩に行きませんか。", options: ["天気がいいと、散歩に行きませんか。", "このボタンを押すと、きっぷが出ます。", "春になると、花が咲きます。", "あの角を曲がると、駅が見えます。"], explanation: "Use たら for a condition before an invitation: 天気がよかったら、行きませんか." },
+		{ kind: "trap · なら topic", prompt: "A: 京都に行きたいです。 B: ＿＿＿＿", subprompt: "B responds to the topic and gives advice.", answer: "京都に行くなら、ガイドブックを貸しましょうか。", options: ["京都に行くなら、ガイドブックを貸しましょうか。", "京都に行くと、ガイドブックを貸しましょうか。", "京都に行けば、ガイドブックを貸しましょうか。", "京都に行ったのに、ガイドブックを貸しましょうか。"], explanation: "なら is natural when responding to a topic or plan someone just raised." }
+	],
+	"tara-nara": [
+		{ kind: "trap · order", prompt: "Which sentence means “after the water boils, turn off the heat”?", subprompt: "The first event must happen before the instruction.", answer: "お湯がわいたら、火を止めてください。", options: ["お湯がわいたら、火を止めてください。", "お湯がわくなら、火を止めてください。", "お湯がわくそうです、火を止めてください。", "お湯がわいても、火を止めてください。"], explanation: "たら is the natural choice for after/when an event happens." }
+	],
+	concession: [
+		{ kind: "trap · emotion", prompt: "Which sentence carries disappointment or surprise?", subprompt: "The speaker expected a different result.", answer: "宿題をやったのに、持ってきませんでした。", options: ["宿題をやったのに、持ってきませんでした。", "宿題をやっても、持ってきます。", "宿題をやったら、持ってきます。", "宿題をやるなら、持ってきます。"], explanation: "のに marks unexpected contrast and often emotional dissatisfaction." }
+	],
+	quotation: [
+		{ kind: "trap · か vs かどうか", prompt: "Which embedded clause needs かどうか?", subprompt: "There is no question word like だれ or いつ.", answer: "ビザが必要かどうか調べます。", options: ["ビザが必要かどうか調べます。", "だれが来るかどうか教えてください。", "いつ行くかどうか知っていますか。", "何を買うかどうか忘れました。"], explanation: "Use かどうか for whether/if. Use か alone when a question word is present." }
+	],
+	intention: [
+		{ kind: "trap · current vs continuing intention", prompt: "Which sentence best suggests the plan has been in mind for a while?", subprompt: "The intention continues over time.", answer: "来年ヨーロッパを旅行しようと思っています。", options: ["来年ヨーロッパを旅行しようと思っています。", "今から出かけようと思います。", "ヨーロッパを旅行したところです。", "ヨーロッパを旅行するかもしれません。"], explanation: "思っています suggests an intention that has already existed and continues." }
+	],
+	hearsay: [
+		{ kind: "trap · そうです split", prompt: "Which sentence reports information from a forecast?", subprompt: "Do not choose appearance そう.", answer: "天気予報によると、明日は寒いそうです。", options: ["天気予報によると、明日は寒いそうです。", "明日は寒そうです。", "明日は寒くなさそうです。", "明日は寒いはずです。"], explanation: "Plain adjective + そうです is hearsay; adjective stem + そうです is appearance." },
+		{ kind: "trap · source strength", prompt: "Which sounds like indirect rumor or inference rather than a clear quoted source?", subprompt: "The details/source are less direct.", answer: "あのホテルはあまりよくないらしいです。", options: ["あのホテルはあまりよくないらしいです。", "新聞で読んだそうです。", "先生はよくないと言っていました。", "ホテルはよくなさそうです。"], explanation: "らしいです often passes on less direct information or an inference." }
+	],
+	change: [
+		{ kind: "trap · make vs become", prompt: "Which sentence means someone deliberately made the room clean?", subprompt: "Choose します, not なります.", answer: "部屋をきれいにしました。", options: ["部屋をきれいにしました。", "部屋がきれいになりました。", "部屋をきれいになりました。", "部屋がきれいにしました。"], explanation: "します marks deliberate change by someone; なります marks the state changing." }
+	],
+	decisions: [
+		{ kind: "trap · personal vs arranged", prompt: "Which sentence presents the plan as arranged/decided externally?", subprompt: "The speaker is not emphasizing personal choice.", answer: "来月、アメリカに行くことになりました。", options: ["来月、アメリカに行くことになりました。", "来月、アメリカに行くことにしました。", "来月、アメリカに行こうと思います。", "来月、アメリカに行くつもりです。"], explanation: "ことになります presents the result as an arrangement or decided outcome." }
+	],
+	"te-auxiliary": [
+		{ kind: "trap · ておく meanings", prompt: "Which sentence means leave the window open, not prepare by opening it?", subprompt: "The state continues as-is.", answer: "まどはそのまま開けておいてください。", options: ["まどはそのまま開けておいてください。", "まどを開けてみてください。", "まどを開けてしまいました。", "まどを開けるはずです。"], explanation: "そのまま plus ておいてください means leave it in that state." }
+	],
+	giving: [
+		{ kind: "trap · benefit direction", prompt: "Which sentence means someone did a favor for me/my side?", subprompt: "The benefit comes toward the speaker.", answer: "友だちが店の場所を教えてくれました。", options: ["友だちが店の場所を教えてくれました。", "私は友だちに店の場所を教えてあげました。", "友だちに店の場所を教えてもらいました。", "私は友だちに地図を書いてあげました。"], explanation: "くれました shows the action benefits the speaker side." },
+		{ kind: "trap · receiver focus", prompt: "Which sentence focuses on the receiver getting a favor?", subprompt: "The receiver is the topic.", answer: "私はサラさんに病院へ行ってもらいました。", options: ["私はサラさんに病院へ行ってもらいました。", "サラさんが病院へ行ってくれました。", "私はサラさんを病院へ行ってあげました。", "サラさんに病院へ行かれました。"], explanation: "てもらいました focuses on the receiver getting someone to do a favor." }
+	],
+	passive: [
+		{ kind: "trap · passive type", prompt: "Which sentence is suffering passive?", subprompt: "The speaker is affected indirectly and negatively.", answer: "弟にケーキを食べられてしまいました。", options: ["弟にケーキを食べられてしまいました。", "この本は世界中で読まれています。", "先生にほめられました。", "来年オリンピックが開かれます。"], explanation: "The cake is eaten by someone else, and the speaker is affected by that nuisance." },
+		{ kind: "trap · doer marker", prompt: "In passive sentences, which particle often marks the doer?", subprompt: "先生にほめられました。", answer: "に", options: ["に", "を", "が", "までに"], explanation: "The doer in a passive sentence is often marked by に." }
+	],
+	causative: [
+		{ kind: "trap · causative vs causative-passive", prompt: "Which sentence means “I was forced to quit”?", subprompt: "The subject receives pressure to act.", answer: "店長にアルバイトをやめさせられました。", options: ["店長にアルバイトをやめさせられました。", "店長はアルバイトを一人やめさせました。", "店長にアルバイトをやめてもらいました。", "店長がアルバイトをやめてくれました。"], explanation: "させられました is causative-passive: was made/forced to do." },
+		{ kind: "trap · permission request", prompt: "Which sentence asks “Could you let me copy this notebook?”", subprompt: "The speaker asks permission to do the action.", answer: "このノート、コピーさせてくれませんか。", options: ["このノート、コピーさせてくれませんか。", "このノート、コピーしてくれませんか。", "このノート、コピーされませんか。", "このノート、コピーしてあげませんか。"], explanation: "させてくれませんか asks someone to let the speaker do an action." }
+	]
+};
+
+extensionGrammarPracticeConfigs.forEach((config) => {
+	config.contrasts = [
+		...(config.contrasts || []),
+		...(extensionGrammarPracticeQualityContrasts[config.id] || []),
+		...(extensionGrammarPracticeExtraContrasts[config.id] || [])
+	];
+});
+
+const extensionGrammarPracticeRuleNotes = Object.fromEntries(extensionGrammarPracticeConfigs.map((config) => [config.id, {
+	title: config.title,
+	intro: config.intro,
+	sections: config.patterns.map((pattern) => ({
+		heading: pattern.label,
+		pattern: pattern.form,
+		points: pattern.points,
+		examples: pattern.items.map((item) => item.sentence)
+	})),
+	pitfalls: config.pitfalls
+}]));
+
 const grammarPracticeRuleNotes = {
 	comparison: {
 		title: "Comparison patterns",
@@ -2391,7 +3306,7 @@ const grammarPracticeRuleNotes = {
 			},
 			{
 				heading: "のほうを with たい, のほうが with ほしい",
-				pattern: "赤いののほうを買いたいです。 / 赤いののほうがほしいです。",
+				pattern: "赤い物のほうを買いたいです。 / 赤い物のほうがほしいです。",
 				points: [
 					"たい behaves like an adjective, but the wanted action still has an object, so のほうを can sound natural with verbs like 選びたい or 買いたい.",
 					"ほしい describes the wanted thing itself, so the wanted item is usually marked with が.",
@@ -2847,12 +3762,66 @@ const grammarPracticeRuleNotes = {
 			"Do not forget の before ために or ための after nouns.",
 			"Do not use ために when the goal is a potential, non-volitional, negative-prevention, or third-person outcome; ように is usually the safer N4 pattern."
 		]
-	}
+	},
+	...extensionGrammarPracticeRuleNotes
 };
 
 function renderGrammarPracticeRuleNotes(sessionId) {
 	const note = grammarPracticeRuleNotes[sessionId];
-	if (!note) return "";
+	if (!note) {
+		const family = typeof grammarPracticeFamilyConfigs !== "undefined" ? grammarPracticeFamilyConfigs[sessionId] : null;
+		if (family) {
+			return `
+				<div class="gp-note-head">
+					<span>Mixed review</span>
+					<h5>${escapeHtml(family.title)}</h5>
+					<p>${escapeHtml(family.description)}</p>
+				</div>
+				<div class="gp-note-pitfalls">
+					<strong>How to use this round</strong>
+					<ul>
+						<li>Read the context first; the point is choosing between nearby grammar jobs.</li>
+						<li>Expect older misses, reading-style prompts, and boss questions to appear together.</li>
+						<li>When two answers look grammatical, choose the one that matches viewpoint, evidence, or speaker intent.</li>
+					</ul>
+				</div>
+			`;
+		}
+		if (sessionId === "mixed-boss") {
+			return `
+				<div class="gp-note-head">
+					<span>Mixed boss</span>
+					<h5>Cross-family boss round</h5>
+					<p>This round combines the hardest viewpoint, evidence, condition, purpose, report, and outcome contrasts from across the grammar set.</p>
+				</div>
+				<div class="gp-note-pitfalls">
+					<strong>How to attack it</strong>
+					<ul>
+						<li>Find the grammar job first: viewpoint, evidence, condition, purpose, or speaker intent.</li>
+						<li>Do not choose a pattern just because it is grammatical; choose the one that matches the situation.</li>
+						<li>Expect nearby patterns from different sessions to appear in the same passage.</li>
+					</ul>
+				</div>
+			`;
+		}
+		if (sessionId === "adaptive-review") {
+			return `
+				<div class="gp-note-head">
+					<span>Adaptive review</span>
+					<h5>Missed-pattern review</h5>
+					<p>This round pulls from grammar questions missed in earlier sessions. If there are no saved misses yet, it starts with core mixed review.</p>
+				</div>
+				<div class="gp-note-pitfalls">
+					<strong>What to watch</strong>
+					<ul>
+						<li>Do not memorize only the answer; reread the cue that made the other options wrong.</li>
+						<li>Misses from the same family can also reappear inside normal sessions as warm-up review.</li>
+					</ul>
+				</div>
+			`;
+		}
+		return "";
+	}
 	return `
 		<div class="gp-note-head">
 			<span>Rule notes</span>
@@ -2900,6 +3869,1115 @@ function toggleGrammarPracticeNotes(button) {
 	closeGrammarPracticeNotes(button);
 	tip.hidden = !willOpen;
 	button.setAttribute("aria-expanded", String(willOpen));
+}
+
+function makeGrammarOrderQuestion({ kind = "sentence ordering", prompt, fragments, answer, explanation }) {
+	const correct = answer || fragments.map((_, index) => String(index + 1)).join(" → ");
+	const distractors = [
+		[2, 1, 3, 4],
+		[1, 3, 2, 4],
+		[1, 2, 4, 3],
+		[3, 1, 2, 4],
+		[2, 3, 1, 4]
+	]
+		.map((order) => order.slice(0, fragments.length).join(" → "))
+		.filter((option) => option !== correct);
+	return makeChoiceQuestion({
+		kind,
+		prompt,
+		subprompt: fragments.map((fragment, index) => `${index + 1}. ${fragment}`).join(" / "),
+		band: "Choose the natural order.",
+		options: uniqueGrammarOptions([correct, ...distractors], [correct]),
+		answer: correct,
+		explanation
+	});
+}
+
+function makeGrammarDiagnosisQuestion({ kind = "error diagnosis", prompt, answer, options, explanation }) {
+	return makeChoiceQuestion({
+		kind,
+		prompt,
+		subprompt: "What is the main problem?",
+		band: "Pick the best diagnosis.",
+		options: uniqueGrammarOptions([answer, ...options], [answer]),
+		answer,
+		explanation
+	});
+}
+
+function makeGrammarContextBlank({ kind = "context blank", prompt, answer, accepted, explanation, placeholder = "Type the missing grammar" }) {
+	return makeTextQuestion({
+		kind,
+		prompt,
+		subprompt: "Complete the sentence from the context.",
+		band: "Type only the missing part.",
+		answer,
+		accepted: accepted || [answer],
+		explanation,
+		placeholder
+	});
+}
+
+function makeGrammarReadingQuestion({ kind = "grammar in reading", passage, prompt, answer, options, explanation }) {
+	return makeChoiceQuestion({
+		kind,
+		prompt: passage,
+		subprompt: prompt,
+		band: "Read the whole mini-passage before choosing.",
+		options: uniqueGrammarOptions([answer, ...options], [answer]),
+		answer,
+		explanation
+	});
+}
+
+function makeGrammarCorrectionQuestion({ kind = "wrong sentence correction", wrong, correct, explanation }) {
+	return makeTextQuestion({
+		kind,
+		prompt: wrong,
+		subprompt: "Rewrite the full sentence correctly.",
+		band: "Type the corrected Japanese sentence.",
+		answer: correct,
+		accepted: [correct, correct.replace(/。$/, "")],
+		explanation,
+		placeholder: correct
+	});
+}
+
+const advancedGrammarPracticePacks = {
+	comparison: [
+		makeGrammarDiagnosisQuestion({
+			prompt: "コーヒーと紅茶と、どちらを飲みたいですか。→ 紅茶のほうが飲みたいです。",
+			answer: "With 飲みたい, のほうを is usually better because tea is the thing chosen or drunk.",
+			options: ["より is always required after 紅茶.", "どちら cannot be used with たい.", "ほう cannot be used with drinks."],
+			explanation: "Adjective comparisons use のほうが, but object-choice verbs like 選ぶ, 飲む, 食べる, and 買う often use のほうを."
+		}),
+		makeGrammarOrderQuestion({
+			prompt: "Make: I want to buy the cheaper one.",
+			fragments: ["安い", "ほうを", "買いたい", "です"],
+			explanation: "For wanting to buy one option, the preferred item is the object: ほうを買いたいです."
+		}),
+		makeGrammarContextBlank({
+			prompt: "新幹線はバス＿＿速いです。",
+			answer: "より",
+			explanation: "より marks the thing being compared against."
+		})
+	],
+	time: [
+		makeGrammarDiagnosisQuestion({
+			prompt: "昨日、音楽を聞いているところで宿題をしました。",
+			answer: "ながら is better for doing two actions at the same time.",
+			options: ["ところです cannot follow verbs.", "までに is required for simultaneous actions.", "The sentence needs より."],
+			explanation: "ところです focuses on an action stage; ながら marks a side action done while the main action happens."
+		}),
+		makeGrammarOrderQuestion({
+			prompt: "Make: I will submit it by Friday.",
+			fragments: ["金曜日", "までに", "出して", "ください"],
+			explanation: "までに sets a deadline for a one-time completion."
+		}),
+		makeGrammarContextBlank({
+			prompt: "駅に着いた＿＿、電話します。",
+			answer: "ところで",
+			accepted: ["ところで", "ところです"],
+			explanation: "た形 + ところ marks just after completion."
+		})
+	],
+	invitation: [
+		makeGrammarDiagnosisQuestion({
+			prompt: "A: 荷物が重いです。 B: 私も持ちませんか。",
+			answer: "ましょうか is better because the speaker is offering to help.",
+			options: ["ませんか is only used for past tense.", "ましょうか cannot be used with people.", "荷物 needs が instead of を."],
+			explanation: "ませんか invites the listener to do something together; ましょうか offers the speaker's action."
+		}),
+		makeGrammarOrderQuestion({
+			prompt: "Make a natural offer: Shall I open the window?",
+			fragments: ["窓を", "開け", "ましょうか", "。"],
+			explanation: "Verb stem + ましょうか can offer help or ask for consent."
+		}),
+		makeGrammarContextBlank({
+			prompt: "一緒に昼ご飯を食べ＿＿＿＿。",
+			answer: "ませんか",
+			explanation: "ませんか invites another person to do something together."
+		})
+	],
+	ability: [
+		makeGrammarDiagnosisQuestion({
+			prompt: "この部屋から海が見ることができます。",
+			answer: "見えます is more natural for something naturally visible from a place.",
+			options: ["見ることができます is for hearing only.", "海 cannot be the subject.", "ができる cannot follow nouns."],
+			explanation: "見える/聞こえる describe natural perception, while 見られる/見ることができる emphasize ability or permission."
+		}),
+		makeGrammarOrderQuestion({
+			prompt: "Make: You can buy tickets here.",
+			fragments: ["ここで", "チケットを", "買うことが", "できます"],
+			explanation: "Verb dictionary form + ことができます gives a clear, formal ability/possibility statement."
+		}),
+		makeGrammarContextBlank({
+			prompt: "静かにしてください。先生の声がよく＿＿＿＿。",
+			answer: "聞こえません",
+			accepted: ["聞こえません", "きこえません"],
+			explanation: "聞こえる is natural ability to hear something, not intentional listening."
+		})
+	],
+	experience: [
+		makeGrammarDiagnosisQuestion({
+			prompt: "昨日、京都へ行ったことがあります。",
+			answer: "たことがあります is not used for one recent completed event like yesterday.",
+			options: ["京都 cannot be used with へ.", "たことがあります always means habit.", "昨日 requires ことがあります."],
+			explanation: "Use たことがあります for life experience, often with 一度, 何度も, or before-now framing."
+		}),
+		makeGrammarOrderQuestion({
+			prompt: "Make: I have eaten natto once.",
+			fragments: ["一度", "納豆を", "食べたことが", "あります"],
+			explanation: "一度 is a good cue for the past-experience pattern."
+		}),
+		makeGrammarContextBlank({
+			prompt: "忙しい日は、朝ご飯を食べない＿＿＿＿あります。",
+			answer: "ことも",
+			explanation: "こともあります means something sometimes happens."
+		})
+	],
+	permission: [
+		makeGrammarDiagnosisQuestion({
+			prompt: "明日までにレポートを書かなくてもいいです。",
+			answer: "This means you do not have to write it; use 書かなければなりません for obligation.",
+			options: ["なくてもいいです means prohibition.", "までに cannot be used with reports.", "The verb must be dictionary form."],
+			explanation: "なくてもいい removes necessity; なければなりません expresses necessity."
+		}),
+		makeGrammarOrderQuestion({
+			prompt: "Make: You must not enter here.",
+			fragments: ["ここに", "入っては", "いけません", "。"],
+			explanation: "て形 + はいけません expresses prohibition."
+		}),
+		makeGrammarContextBlank({
+			prompt: "薬はもう飲ま＿＿＿＿いいですよ。",
+			answer: "なくても",
+			explanation: "なくてもいいです means it is okay not to do the action."
+		})
+	],
+	desire: [
+		makeGrammarDiagnosisQuestion({
+			prompt: "妹は新しい自転車がほしいです。",
+			answer: "For a third person's desire, ほしがっています is usually safer.",
+			options: ["ほしい cannot describe objects.", "が must always become を.", "妹 cannot be a topic."],
+			explanation: "ほしい/たい directly express the speaker's desire; third-person desire often takes がる forms."
+		}),
+		makeGrammarOrderQuestion({
+			prompt: "Make: The child wants to read the book.",
+			fragments: ["子どもは", "本を", "読みたがって", "います"],
+			explanation: "Third-person desire with verbs uses たがる/たがっています."
+		}),
+		makeGrammarContextBlank({
+			prompt: "暑いですね。冷たい水が＿＿＿＿。",
+			answer: "ほしいです",
+			explanation: "Noun + がほしいです expresses the speaker's wanted thing."
+		})
+	],
+	appearance: [
+		makeGrammarDiagnosisQuestion({
+			prompt: "この肉は古いそうです。変なにおいがします。",
+			answer: "古そうです is better when judging from appearance or smell.",
+			options: ["そうです cannot follow adjectives.", "古いみたいです only reports news.", "におい cannot support inference."],
+			explanation: "Stem + そうです gives an appearance-based judgment; plain + そうです reports heard/read information."
+		}),
+		makeGrammarOrderQuestion({
+			prompt: "Make: The window is still open.",
+			fragments: ["窓が", "開いた", "まま", "です"],
+			explanation: "た形 + まま describes a state left unchanged."
+		}),
+		makeGrammarContextBlank({
+			prompt: "このケーキは甘＿＿＿＿ですね。",
+			answer: "そう",
+			explanation: "い-adjective stem + そう gives an appearance judgment."
+		})
+	],
+	reason: [
+		makeGrammarDiagnosisQuestion({
+			prompt: "頭が痛いので、早く帰れ！",
+			answer: "ので is too polite/soft before a command; から is better for direct commands.",
+			options: ["ので cannot explain reasons.", "帰れ cannot follow any reason clause.", "頭が痛い must use で."],
+			explanation: "ので is polite and explanatory; から works better before requests, commands, and strong speaker intention."
+		}),
+		makeGrammarOrderQuestion({
+			prompt: "Make: I was tired because I had a lot of work.",
+			fragments: ["仕事が", "多くて", "疲れました", "。"],
+			explanation: "て/くて can connect a cause to an emotion or resulting state."
+		}),
+		makeGrammarContextBlank({
+			prompt: "雨が降っている＿＿、さんぽに行きません。",
+			answer: "ので",
+			accepted: ["ので", "から"],
+			explanation: "Both can give reasons; ので sounds calmer and more explanatory."
+		})
+	],
+	purpose: [
+		makeGrammarDiagnosisQuestion({
+			prompt: "漢字を覚えるに、毎日書いています。",
+			answer: "Use ために for an action purpose; movement-purpose に needs a movement verb.",
+			options: ["ために cannot follow dictionary forms.", "覚える must become 覚えたい.", "毎日 cannot be used with purpose."],
+			explanation: "ます-stem + に is limited to purpose of movement, as in 買いに行く."
+		}),
+		makeGrammarOrderQuestion({
+			prompt: "Make: I opened the window so fresh air would come in.",
+			fragments: ["風が", "入るように", "窓を", "開けました"],
+			explanation: "ように marks a desired state or outcome."
+		}),
+		makeGrammarContextBlank({
+			prompt: "試験＿＿＿＿、毎日単語を覚えています。",
+			answer: "のために",
+			explanation: "Noun + のために expresses purpose."
+		})
+	],
+	listing: [
+		makeGrammarDiagnosisQuestion({
+			prompt: "休日は映画を見るし、本を読むし、します。",
+			answer: "Use たり〜たりします for representative actions; し lists reasons or parallel facts.",
+			options: ["たり cannot list actions.", "し must always be followed by です.", "見る should be 見て."],
+			explanation: "〜し〜し often supports a judgment; 〜たり〜たりします lists sample activities."
+		}),
+		makeGrammarOrderQuestion({
+			prompt: "Make: I am busy because I have homework and part-time work.",
+			fragments: ["宿題も", "多いし", "アルバイトも", "あります"],
+			explanation: "も + し can stack multiple reasons."
+		}),
+		makeGrammarContextBlank({
+			prompt: "この店は安い＿＿、おいしい＿＿、よく来ます。",
+			answer: "し",
+			explanation: "The same し fills both blanks to stack reasons."
+		})
+	],
+	certainty: [
+		makeGrammarDiagnosisQuestion({
+			prompt: "山田さんは毎日練習していますから、試験に合格するかもしれません。",
+			answer: "はずです is better when the evidence is strong and the speaker is confident.",
+			options: ["かもしれません is always impossible with から.", "はずです means visual appearance.", "合格する must become 合格した."],
+			explanation: "かもしれません is only possibility; はずです is a confident expectation based on evidence."
+		}),
+		makeGrammarOrderQuestion({
+			prompt: "Make: It seems the teacher is absent today.",
+			fragments: ["先生は", "今日は", "休みの", "ようです"],
+			explanation: "Noun + のようです is the standard form for evidence-based seeming."
+		}),
+		makeGrammarContextBlank({
+			prompt: "部屋が暗いですね。田中さんはもう帰った＿＿＿＿。",
+			answer: "かもしれません",
+			explanation: "The clue is uncertain; かもしれません fits weak possibility."
+		})
+	],
+	advice: [
+		makeGrammarDiagnosisQuestion({
+			prompt: "先生が学生に『早く帰ったほうがいいです』と言いました。",
+			answer: "なさい is more natural for a teacher's direct instruction to students.",
+			options: ["ほうがいいです cannot give advice.", "なさい is casual between friends only.", "帰る cannot become 帰りなさい."],
+			explanation: "なさい is an instruction from an authority figure; ほうがいい is advice."
+		}),
+		makeGrammarOrderQuestion({
+			prompt: "Make: You should not drink cold water.",
+			fragments: ["冷たい水を", "飲まない", "ほうが", "いいです"],
+			explanation: "ない形 + ほうがいいです gives negative advice."
+		}),
+		makeGrammarContextBlank({
+			prompt: "急いで。早く行か＿＿＿＿、間に合わないよ。",
+			answer: "ないと",
+			explanation: "ないと gives a colloquial warning: if you don't, trouble follows."
+		})
+	],
+	conditionals: [
+		makeGrammarDiagnosisQuestion({
+			prompt: "駅に着くと、電話してください。",
+			answer: "Use 着いたら for a request after a condition; と cannot lead into speaker requests.",
+			options: ["と is only used for past tense.", "たら cannot use verbs.", "電話する must be potential."],
+			explanation: "と is for automatic/natural results; たら is flexible for requests and intentions."
+		}),
+		makeGrammarOrderQuestion({
+			prompt: "Make: If you take the bus, it is ten minutes to the station.",
+			fragments: ["バスに", "乗れば", "駅まで", "10分です"],
+			explanation: "ば can state a general condition and result."
+		}),
+		makeGrammarContextBlank({
+			prompt: "春に＿＿＿＿、桜が咲きます。",
+			answer: "なると",
+			accepted: ["なると", "なれば"],
+			explanation: "と fits natural or automatic results."
+		})
+	],
+	"tara-nara": [
+		makeGrammarDiagnosisQuestion({
+			prompt: "京都に行ったら、ガイドブックを貸しましょうか。",
+			answer: "なら is better when responding to the other person's stated plan.",
+			options: ["たら cannot mean if.", "なら cannot follow place names.", "貸しましょうか requires と."],
+			explanation: "なら picks up a topic from the listener or context and gives judgment/advice about it."
+		}),
+		makeGrammarOrderQuestion({
+			prompt: "Make: When the work is finished, please turn off the light.",
+			fragments: ["仕事が", "終わったら", "電気を", "消してください"],
+			explanation: "たら can mean when/after in a future condition."
+		}),
+		makeGrammarContextBlank({
+			prompt: "A: 京都に行きたいです。 B: 京都に行く＿＿、この地図が便利ですよ。",
+			answer: "なら",
+			explanation: "なら responds to the topic just raised."
+		})
+	],
+	concession: [
+		makeGrammarDiagnosisQuestion({
+			prompt: "雨が降っているのに、かさを持っていません。",
+			answer: "Correct: のに marks surprise or dissatisfaction against expectation.",
+			options: ["Use ても because のに cannot show contrast.", "のに must be followed by a command.", "雨 requires なら."],
+			explanation: "のに often carries the speaker's surprise, frustration, or complaint."
+		}),
+		makeGrammarOrderQuestion({
+			prompt: "Make: Even if it is expensive, I want to buy it.",
+			fragments: ["高くても", "これを", "買いたい", "です"],
+			explanation: "ても allows the main result despite the condition."
+		}),
+		makeGrammarContextBlank({
+			prompt: "まだ新しい＿＿、もう壊れました。",
+			answer: "のに",
+			explanation: "New but already broken is contrary to expectation, so のに fits."
+		})
+	],
+	quotation: [
+		makeGrammarDiagnosisQuestion({
+			prompt: "先生は明日テストがありますとと言いました。",
+			answer: "Use only one と after the quoted content.",
+			options: ["Quoted speech never uses と.", "あります must become あるだ.", "先生 cannot be the subject of 言う."],
+			explanation: "The quote marker と comes once before 言いました/思います/書いてあります."
+		}),
+		makeGrammarOrderQuestion({
+			prompt: "Make: I do not remember whether I locked the door.",
+			fragments: ["ドアを", "閉めたか", "覚えて", "いません"],
+			explanation: "Embedded questions use か inside a larger sentence."
+		}),
+		makeGrammarContextBlank({
+			prompt: "田中さんは『少し遅れます』＿＿言っていました。",
+			answer: "と",
+			explanation: "と marks the quoted content."
+		})
+	],
+	intention: [
+		makeGrammarDiagnosisQuestion({
+			prompt: "来年、日本へ留学しようと思います。",
+			answer: "Correct: ようと思います states the speaker's intention.",
+			options: ["Use つもりです only for sudden decisions.", "ようと思います cannot be first person.", "留学 must use ために."],
+			explanation: "ようと思います often presents an intention currently held by the speaker."
+		}),
+		makeGrammarOrderQuestion({
+			prompt: "Make: I plan not to take the next exam.",
+			fragments: ["次の試験は", "受けない", "つもり", "です"],
+			explanation: "Dictionary/ない form + つもりです expresses a plan."
+		}),
+		makeGrammarContextBlank({
+			prompt: "週末は家で勉強する＿＿＿＿。",
+			answer: "つもりです",
+			explanation: "つもりです expresses a concrete plan."
+		})
+	],
+	hearsay: [
+		makeGrammarDiagnosisQuestion({
+			prompt: "新聞によると、駅前で事故があったらしいです。",
+			answer: "そうです is better for passing on specific news from a source.",
+			options: ["らしいです cannot express any inference.", "新聞によると must use みたいです.", "事故 needs がっています."],
+			explanation: "そうです reports heard/read information; らしいです is more indirect or rumor-like."
+		}),
+		makeGrammarOrderQuestion({
+			prompt: "Make: According to the news, the typhoon is coming tomorrow.",
+			fragments: ["ニュースによると", "明日", "台風が来る", "そうです"],
+			explanation: "Plain form + そうです reports information from a source."
+		}),
+		makeGrammarContextBlank({
+			prompt: "友だちの話では、あの店は有名＿＿＿＿。",
+			answer: "らしいです",
+			accepted: ["らしいです", "だそうです"],
+			explanation: "らしいです can pass on indirect information or rumor-like judgment."
+		})
+	],
+	change: [
+		makeGrammarDiagnosisQuestion({
+			prompt: "日本語が読めるになりました。",
+			answer: "Use 読めるようになりました for change into an ability/state.",
+			options: ["Potential verbs cannot express change.", "なりました cannot follow ように.", "読める should become 読んで."],
+			explanation: "Verb dictionary/potential + ようになります expresses a change in ability or habit."
+		}),
+		makeGrammarOrderQuestion({
+			prompt: "Make: Please make the sound smaller.",
+			fragments: ["音を", "小さく", "して", "ください"],
+			explanation: "Adjective adverbial + します marks deliberately making something a certain way."
+		}),
+		makeGrammarContextBlank({
+			prompt: "毎日練習して、漢字が書ける＿＿＿＿なりました。",
+			answer: "ように",
+			explanation: "ようになりました marks acquired ability."
+		})
+	],
+	decisions: [
+		makeGrammarDiagnosisQuestion({
+			prompt: "来月から日本語を勉強することになりました。",
+			answer: "This sounds like the decision was arranged or decided externally, not simply personal resolve.",
+			options: ["ことになりました can only be future tense.", "勉強する cannot attach to こと.", "Use にします for facts decided by others."],
+			explanation: "ことにします is personal decision; ことになります reports a decision or arrangement."
+		}),
+		makeGrammarOrderQuestion({
+			prompt: "Make: I decided to stop smoking.",
+			fragments: ["たばこを", "やめる", "ことに", "しました"],
+			explanation: "Dictionary form + ことにしました states the speaker's decision."
+		}),
+		makeGrammarContextBlank({
+			prompt: "会議は三時から始まる＿＿＿＿なりました。",
+			answer: "ことに",
+			explanation: "ことになりました reports a decided arrangement."
+		})
+	],
+	"te-auxiliary": [
+		makeGrammarDiagnosisQuestion({
+			prompt: "大切なメールを消しておきました。困りました。",
+			answer: "消してしまいました is better for regret over an accidental/unwanted completion.",
+			options: ["ておきました always shows regret.", "しまいました means preparation.", "消す cannot use てしまう."],
+			explanation: "ておきます prepares or leaves something in a state; てしまいます can show completion or regret."
+		}),
+		makeGrammarOrderQuestion({
+			prompt: "Make: Please leave the door open.",
+			fragments: ["ドアは", "開けて", "おいて", "ください"],
+			explanation: "ておく can mean leaving a state as it is."
+		}),
+		makeGrammarContextBlank({
+			prompt: "試験の前に、単語を復習し＿＿＿＿。",
+			answer: "ておきます",
+			explanation: "ておきます marks preparation before a future situation."
+		})
+	],
+	giving: [
+		makeGrammarDiagnosisQuestion({
+			prompt: "先生に宿題を見てくれました。",
+			answer: "Use 先生が見てくださいました or 先生に見てもらいました, depending on viewpoint.",
+			options: ["くれる is used when I give to the teacher.", "先生 can never be marked with が.", "もらう cannot be used with help."],
+			explanation: "くれる/くださる takes the giver as subject; もらう/いただく marks the giver with に/から."
+		}),
+		makeGrammarOrderQuestion({
+			prompt: "Make: My friend helped me move.",
+			fragments: ["友だちが", "引っ越しを", "手伝って", "くれました"],
+			explanation: "てくれる describes someone doing a favor for the speaker/in-group."
+		}),
+		makeGrammarContextBlank({
+			prompt: "先生が難しい文法を説明＿＿＿＿ました。",
+			answer: "してください",
+			explanation: "してくださいます is the respectful てくれる form for a higher-status giver."
+		})
+	],
+	passive: [
+		makeGrammarDiagnosisQuestion({
+			prompt: "私は友だちにプレゼントをあげられました。",
+			answer: "Use もらいました for receiving; passive is not the normal receiving pattern.",
+			options: ["あげられました is always polite receiving.", "友だち cannot take に.", "プレゼント must be the subject."],
+			explanation: "Passive marks being affected by an action; receiving a benefit normally uses もらう."
+		}),
+		makeGrammarOrderQuestion({
+			prompt: "Make: My cake was eaten by my younger brother.",
+			fragments: ["弟に", "ケーキを", "食べられて", "しまいました"],
+			explanation: "The suffering passive often uses に for the actor and carries annoyance."
+		}),
+		makeGrammarContextBlank({
+			prompt: "電車の中で足を踏ま＿＿＿＿。",
+			answer: "れました",
+			explanation: "踏む becomes 踏まれる in the passive."
+		})
+	],
+	causative: [
+		makeGrammarDiagnosisQuestion({
+			prompt: "母は弟を部屋を掃除させました。",
+			answer: "Use 弟に for the causee with a transitive action: 弟に部屋を掃除させました.",
+			options: ["掃除する cannot be causative.", "Causative always marks the causee with を.", "部屋 must become subject."],
+			explanation: "For transitive verbs, the causee is usually に because を already marks the object."
+		}),
+		makeGrammarOrderQuestion({
+			prompt: "Make: The teacher made the students read the text.",
+			fragments: ["先生は", "学生に", "本文を", "読ませました"],
+			explanation: "With transitive 読む, the causee is 学生に and the object is 本文を."
+		}),
+		makeGrammarContextBlank({
+			prompt: "すみません、少し休ま＿＿＿＿ください。",
+			answer: "せて",
+			explanation: "させてください asks permission to do something: let me rest."
+		})
+	]
+};
+
+const grammarReadingIntegrationPacks = {
+	comparison: [
+		makeGrammarReadingQuestion({
+			passage: "週末、兄は山へ行きました。私は海へ行きました。兄は『山のほうが静かだった』と言いましたが、私は海のほうが楽しかったです。",
+			prompt: "What comparison does the narrator make?",
+			answer: "The sea was more fun for the narrator.",
+			options: ["The mountain was more fun for the narrator.", "The mountain was not as quiet as the sea.", "The older brother did not go anywhere."],
+			explanation: "私は海のほうが楽しかったです means the narrator preferred the sea for 楽しい."
+		})
+	],
+	time: [
+		makeGrammarReadingQuestion({
+			passage: "レポートは金曜日までに出してください。金曜日まで図書館で調べてもいいですが、土曜日に出すことはできません。",
+			prompt: "What does までに tell you here?",
+			answer: "Friday is the deadline for submitting the report.",
+			options: ["The student must keep submitting reports until Friday.", "The library closes on Friday.", "The report starts on Friday."],
+			explanation: "までに marks the deadline for a completed action."
+		})
+	],
+	invitation: [
+		makeGrammarReadingQuestion({
+			passage: "サラさんは友だちに『日曜日、映画を見ませんか』と言いました。友だちは『いいですね。じゃ、駅で会いましょう』と答えました。",
+			prompt: "What is サラさん doing?",
+			answer: "She is inviting her friend to watch a movie together.",
+			options: ["She is offering to watch the movie for her friend.", "She is asking permission to watch alone.", "She is reporting what she watched."],
+			explanation: "ませんか is used here as an invitation to do something together."
+		})
+	],
+	ability: [
+		makeGrammarReadingQuestion({
+			passage: "新しい部屋は明るいです。窓から山がよく見えます。でも、となりの部屋の音はあまり聞こえません。",
+			prompt: "What kind of ability is described?",
+			answer: "Natural seeing and hearing from the situation.",
+			options: ["A learned skill.", "Permission from another person.", "A request to look and listen."],
+			explanation: "見えます and 聞こえます describe what naturally comes into view or earshot."
+		})
+	],
+	experience: [
+		makeGrammarReadingQuestion({
+			passage: "私は一度だけ北海道へ行ったことがあります。でも、冬に行ったことはありません。次は雪まつりを見たいです。",
+			prompt: "What has the speaker experienced?",
+			answer: "They have been to Hokkaido once, but not in winter.",
+			options: ["They go to Hokkaido every winter.", "They went to the snow festival yesterday.", "They have never been to Hokkaido."],
+			explanation: "たことがあります marks life experience, not a recent single event."
+		})
+	],
+	permission: [
+		makeGrammarReadingQuestion({
+			passage: "この部屋では飲み物を飲んでもいいです。でも、食べ物を食べてはいけません。ごみは持って帰らなければなりません。",
+			prompt: "Which action is required?",
+			answer: "Taking your trash home.",
+			options: ["Drinking something.", "Eating food.", "Leaving trash in the room."],
+			explanation: "なければなりません expresses obligation."
+		})
+	],
+	desire: [
+		makeGrammarReadingQuestion({
+			passage: "弟はゲームをしたがっています。でも、母は『宿題が終わるまで、ゲームをしてはいけません』と言いました。",
+			prompt: "What does したがっています show?",
+			answer: "The younger brother wants to play, observed from outside.",
+			options: ["The speaker wants to play.", "The mother wants to play.", "The homework wants to finish."],
+			explanation: "たがっています is natural for describing another person's desire."
+		})
+	],
+	appearance: [
+		makeGrammarReadingQuestion({
+			passage: "空が暗くなって、風も強くなりました。山田さんは『雨が降りそうですね』と言って、かさを出しました。",
+			prompt: "Why is そう used?",
+			answer: "The speaker judges from visible signs that rain is likely.",
+			options: ["The speaker read weather news.", "The rain already finished.", "Someone forced the speaker to bring an umbrella."],
+			explanation: "Verb stem + そうです can express an appearance-based prediction."
+		})
+	],
+	reason: [
+		makeGrammarReadingQuestion({
+			passage: "きのうは熱があったので、学校を休みました。先生には朝メールを送りました。",
+			prompt: "Why did the person miss school?",
+			answer: "Because they had a fever.",
+			options: ["Because they forgot to email.", "Because school was closed.", "Because the teacher was absent."],
+			explanation: "ので introduces the reason in a calm explanatory way."
+		})
+	],
+	purpose: [
+		makeGrammarReadingQuestion({
+			passage: "日本語のニュースが読めるように、毎日漢字を練習しています。来年、日本へ旅行に行くつもりです。",
+			prompt: "What is the goal of practicing kanji?",
+			answer: "To become able to read Japanese news.",
+			options: ["To go somewhere to practice kanji.", "To report news to someone.", "To make kanji easier for another person."],
+			explanation: "ように marks a desired outcome or ability."
+		})
+	],
+	listing: [
+		makeGrammarReadingQuestion({
+			passage: "この町は駅も近いし、店も多いし、とても住みやすいです。週末は公園で散歩したり、カフェで本を読んだりします。",
+			prompt: "Which pattern lists sample weekend actions?",
+			answer: "散歩したり、本を読んだりします",
+			options: ["駅も近いし、店も多いし", "とても住みやすいです", "この町は"],
+			explanation: "たり〜たりします lists representative actions."
+		})
+	],
+	certainty: [
+		makeGrammarReadingQuestion({
+			passage: "田中さんのかばんが教室にあります。ノートも机の上にあります。田中さんはまだ学校にいるはずです。",
+			prompt: "How certain is the speaker?",
+			answer: "Fairly confident based on evidence.",
+			options: ["Only making a weak maybe guess.", "Reporting something from the newspaper.", "Describing how Tanaka looks."],
+			explanation: "はずです expresses a confident expectation based on evidence."
+		})
+	],
+	advice: [
+		makeGrammarReadingQuestion({
+			passage: "明日は大事な試験です。今夜は早く寝たほうがいいですよ。朝、遅れないように気をつけてください。",
+			prompt: "What is the speaker doing with ほうがいい?",
+			answer: "Giving advice.",
+			options: ["Giving a teacher-style command.", "Reporting a rumor.", "Saying something is forbidden."],
+			explanation: "た形 + ほうがいいです gives advice."
+		})
+	],
+	conditionals: [
+		makeGrammarReadingQuestion({
+			passage: "このボタンを押すと、ドアが開きます。でも、部屋を出たら、電気を消してください。",
+			prompt: "Why are both と and たら used?",
+			answer: "と gives an automatic result; たら sets up a later request.",
+			options: ["Both mean the same thing here.", "と is more polite than たら.", "たら cannot be used for future situations."],
+			explanation: "と fits automatic results; たら can introduce requests after a condition."
+		})
+	],
+	"tara-nara": [
+		makeGrammarReadingQuestion({
+			passage: "A『京都に行きたいです。』B『京都に行くなら、春がいいですよ。桜がきれいですから。』",
+			prompt: "Why does B use なら?",
+			answer: "B is responding to A's topic and giving advice.",
+			options: ["B is saying the trip already happened.", "B is describing an automatic result.", "B is reporting a news source."],
+			explanation: "なら picks up a topic from the other person's words."
+		})
+	],
+	concession: [
+		makeGrammarReadingQuestion({
+			passage: "この店は高いのに、いつも人が多いです。料理がとてもおいしいからでしょう。",
+			prompt: "What feeling does のに add?",
+			answer: "The result is contrary to expectation.",
+			options: ["The speaker is giving a deadline.", "The speaker is inviting someone.", "The speaker is listing sample actions."],
+			explanation: "のに often marks an unexpected or emotionally colored contrast."
+		})
+	],
+	quotation: [
+		makeGrammarReadingQuestion({
+			passage: "先生は『明日テストがあります』と言いました。でも、何時に始まるかは言いませんでした。",
+			prompt: "What information is unknown?",
+			answer: "What time the test starts.",
+			options: ["Whether there is a test.", "Who said there is a test.", "Whether the teacher exists."],
+			explanation: "何時に始まるか embeds a question inside the sentence."
+		})
+	],
+	intention: [
+		makeGrammarReadingQuestion({
+			passage: "来年、日本で働こうと思っています。そのために、今はビジネス日本語を勉強しています。",
+			prompt: "What does 働こうと思っています express?",
+			answer: "An intention the speaker has been holding.",
+			options: ["A rumor the speaker heard.", "A forced action.", "A natural ability."],
+			explanation: "ようと思っています can show an intention that continues."
+		})
+	],
+	hearsay: [
+		makeGrammarReadingQuestion({
+			passage: "ニュースによると、明日は雪が降るそうです。学校からのメールでは、授業は普通にあるらしいです。",
+			prompt: "What is the speaker doing?",
+			answer: "Passing along outside information from sources.",
+			options: ["Judging from visual appearance.", "Making a personal plan.", "Giving a command."],
+			explanation: "そうです and らしいです can pass on information heard or read."
+		})
+	],
+	change: [
+		makeGrammarReadingQuestion({
+			passage: "毎日練習したので、前より漢字が読めるようになりました。最近は辞書をあまり使わなくなりました。",
+			prompt: "What changed?",
+			answer: "The person became able to read kanji and uses a dictionary less.",
+			options: ["The person forced someone to read kanji.", "The person only plans to read kanji.", "The dictionary became larger."],
+			explanation: "ようになりました marks acquired ability; なくなりました marks a change away from a habit/state."
+		})
+	],
+	decisions: [
+		makeGrammarReadingQuestion({
+			passage: "健康のために、今日から甘い飲み物を飲まないことにしました。会社の健康イベントは来月行われることになりました。",
+			prompt: "Which decision is personal?",
+			answer: "Not drinking sweet drinks from today.",
+			options: ["The company health event being held next month.", "The existence of health itself.", "The sweet drinks making the decision."],
+			explanation: "ことにしました is a personal decision; ことになりました reports an arrangement."
+		})
+	],
+	"te-auxiliary": [
+		makeGrammarReadingQuestion({
+			passage: "旅行の前に、ホテルの住所をメモしておきました。でも、駅で財布を落としてしまいました。",
+			prompt: "Which action was preparation?",
+			answer: "Writing down the hotel address.",
+			options: ["Dropping the wallet.", "Arriving at the station.", "Forgetting the trip."],
+			explanation: "ておきました marks preparation; てしまいました can show regret."
+		})
+	],
+	giving: [
+		makeGrammarReadingQuestion({
+			passage: "雨の日、友だちが駅まで車で送ってくれました。私はあとで友だちにコーヒーを買ってあげました。",
+			prompt: "Who benefited first?",
+			answer: "The speaker benefited from the friend's help.",
+			options: ["The friend benefited first.", "Nobody benefited.", "The station benefited."],
+			explanation: "てくれました describes someone doing a favor for the speaker."
+		})
+	],
+	passive: [
+		makeGrammarReadingQuestion({
+			passage: "電車の中で足を踏まれました。とても痛かったですが、相手はすぐに謝ってくれました。",
+			prompt: "What does the passive show here?",
+			answer: "The speaker was affected by someone stepping on their foot.",
+			options: ["The speaker stepped on someone else.", "The train stepped on the speaker.", "The action was a neutral historical fact."],
+			explanation: "The suffering passive often shows that the speaker was negatively affected."
+		})
+	],
+	causative: [
+		makeGrammarReadingQuestion({
+			passage: "店長は新人にレジの使い方を覚えさせました。忙しい日は、アルバイトを長く働かせることもあります。",
+			prompt: "What does the causative show?",
+			answer: "A person in authority makes or has someone do an action.",
+			options: ["The newcomer naturally became able to work.", "The manager received a favor.", "The register acted by itself."],
+			explanation: "Causative forms show making, letting, or causing someone to do something."
+		})
+	]
+};
+
+const grammarCorrectionData = [
+	["comparison", "紅茶のほうが飲みたいです。", "紅茶のほうを飲みたいです。", "With an action verb like 飲む, the chosen thing is usually marked with を."],
+	["time", "音楽を聞いているところで宿題をしました。", "音楽を聞きながら宿題をしました。", "ながら marks a side action happening at the same time as the main action."],
+	["invitation", "荷物が重そうですね。私も持ちませんか。", "荷物が重そうですね。私が持ちましょうか。", "ましょうか is used when the speaker offers to do something."],
+	["ability", "この部屋から海が見ることができます。", "この部屋から海が見えます。", "見えます is natural for something visible from the situation."],
+	["experience", "昨日、京都へ行ったことがあります。", "昨日、京都へ行きました。", "たことがあります is for life experience, not a single recent event like yesterday."],
+	["permission", "明日までにレポートを書かなくてもいいです。", "明日までにレポートを書かなければなりません。", "なければなりません expresses obligation; なくてもいいです removes necessity."],
+	["desire", "妹は新しい自転車がほしいです。", "妹は新しい自転車をほしがっています。", "Third-person desire is usually described with ほしがっています."],
+	["appearance", "この肉は古いそうです。変なにおいがします。", "この肉は古そうです。変なにおいがします。", "Appearance-based judgment uses adjective stem + そうです."],
+	["reason", "頭が痛いので、早く帰れ。", "頭が痛いから、早く帰れ。", "から fits direct commands better than the softer explanatory ので."],
+	["purpose", "漢字を覚えるに、毎日書いています。", "漢字を覚えるために、毎日書いています。", "ために marks the purpose of an intentional action."],
+	["listing", "休日は映画を見るし、本を読むし、します。", "休日は映画を見たり、本を読んだりします。", "たり〜たりします lists representative actions."],
+	["certainty", "山田さんは毎日練習していますから、試験に合格するかもしれません。", "山田さんは毎日練習していますから、試験に合格するはずです。", "はずです fits strong evidence and confident expectation."],
+	["advice", "先生は学生に『早く帰ったほうがいいです』と言いました。", "先生は学生に『早く帰りなさい』と言いました。", "なさい is natural for a direct instruction from a teacher."],
+	["conditionals", "駅に着くと、電話してください。", "駅に着いたら、電話してください。", "たら can lead into a request after a condition; と cannot."],
+	["tara-nara", "京都に行ったら、この地図が便利ですよ。", "京都に行くなら、この地図が便利ですよ。", "なら responds to a topic or plan raised in context."],
+	["concession", "まだ新しくても、もう壊れました。", "まだ新しいのに、もう壊れました。", "のに marks an unexpected result or emotional contrast."],
+	["quotation", "先生は明日テストがありますとと言いました。", "先生は明日テストがあると言いました。", "Use one quote marker と after the quoted plain-form content."],
+	["intention", "次の試験は受けないようと思います。", "次の試験は受けないつもりです。", "Negative plans are naturally expressed with ない形 + つもりです."],
+	["hearsay", "新聞によると、駅前で事故があったらしいです。", "新聞によると、駅前で事故があったそうです。", "そうです is the cleaner choice for passing on specific reported information from a source."],
+	["change", "日本語が読めるになりました。", "日本語が読めるようになりました。", "Potential verb + ようになりました marks acquired ability."],
+	["decisions", "会議は三時から始まることにしました。", "会議は三時から始まることになりました。", "ことになりました reports an arrangement or decision not presented as personal resolve."],
+	["te-auxiliary", "大切なメールを消しておきました。困りました。", "大切なメールを消してしまいました。困りました。", "てしまいました fits regret over an accidental or unwanted completion."],
+	["giving", "先生に宿題を見てくれました。", "先生が宿題を見てくださいました。", "くださる takes the giver as subject when a higher-status person helps the speaker."],
+	["passive", "私は友だちにプレゼントをあげられました。", "私は友だちにプレゼントをもらいました。", "Receiving a thing normally uses もらう, not passive あげられる."],
+	["causative", "母は弟を部屋を掃除させました。", "母は弟に部屋を掃除させました。", "With a transitive action, the causee is usually marked with に because the object already takes を."]
+];
+
+const grammarCorrectionPacks = Object.fromEntries(grammarCorrectionData.map(([id, wrong, correct, explanation]) => [id, [
+	makeGrammarCorrectionQuestion({
+		wrong,
+		correct,
+		explanation
+	})
+]]));
+
+const grammarSessionBossData = [
+	["comparison", "店で、サラさんは『赤いかばんと青いかばんと、どちらを買いたいですか』と聞かれました。サラさんは青いかばんを指して、『こちらのほうを買いたいです』と言いました。", "Why is ほうを used?", "Because 買いたい is an action verb and the chosen item is the object.", ["Because 青い is an adjective.", "Because ほしい always uses を.", "Because the red bag is cheaper."], "Boss check: separate adjective comparison のほうが from object-choice のほうを."],
+	["time", "会議は三時までです。資料は三時までに出してください。田中さんは資料を作りながら電話をしていました。", "Which sentence uses a deadline?", "資料は三時までに出してください。", ["会議は三時までです。", "資料を作りながら電話をしていました。", "All three sentences use deadlines."], "までに marks the deadline for a completed action."],
+	["invitation", "A『週末、いっしょに勉強しませんか。』B『いいですね。重い本は私が持ちましょうか。』", "Which statement is correct?", "ませんか invites; ましょうか offers help.", ["ませんか offers help; ましょうか reports hearsay.", "Both forms only invite.", "Both forms only ask permission."], "Boss check: invitation vs speaker's offer."],
+	["ability", "ホテルの部屋から海が見えます。ロビーでは無料でコーヒーを飲むことができます。", "What is the contrast?", "見えます is natural perception; 飲むことができます is available possibility.", ["Both are learned skills.", "Both are passive forms.", "見えます means permission from hotel staff."], "Boss check: natural perception vs enabled action."],
+	["experience", "私は一度、富士山に登ったことがあります。でも、雨の日は山道で転ぶことがあります。", "What do the two ことがあります forms mean?", "Past life experience, then occasional occurrence.", ["Occasional occurrence, then past life experience.", "Two recent events.", "Two obligations."], "Boss check: たことがあります vs dictionary/ない + ことがあります."],
+	["permission", "ここでは写真を撮ってもいいですが、フラッシュを使ってはいけません。チケットをなくした人は、受付に行かなければなりません。", "Which action is forbidden?", "Using flash.", ["Taking photos.", "Going to reception after losing a ticket.", "Having a ticket."], "Boss check: allowed, forbidden, and required actions."],
+	["desire", "私は新しい辞書がほしいです。妹はマンガを読みたがっています。父は仕事が早く終わるといいと言っています。", "Which pattern describes another person's visible desire?", "妹はマンガを読みたがっています。", ["私は新しい辞書がほしいです。", "仕事が早く終わるといい。", "All three are speaker desire."], "Boss check: speaker desire vs third-person desire vs hoped-for situation."],
+	["appearance", "空が暗くて雨が降りそうです。弟は犬をこわがっています。窓は開いたままです。", "Which pattern describes a state left unchanged?", "窓は開いたままです。", ["雨が降りそうです。", "弟は犬をこわがっています。", "空が暗いです。"], "Boss check: appearance, third-person emotion, and unchanged state."],
+	["reason", "電車が遅れたので、会議に遅れました。急いでいたので、友だちに『先に行って』と言いました。", "Why is ので acceptable in the first sentence but less ideal before a command?", "It calmly explains a reason; commands usually prefer から.", ["ので is never used for reasons.", "から cannot be used with commands.", "遅れる cannot take ので."], "Boss check: reason nuance and sentence ending."],
+	["purpose", "日本語の本を買いに行きました。漢字を覚えるために、毎日書いています。小さい子にも読めるように、ひらがなをつけました。", "Which pattern marks a desired outcome rather than direct purpose?", "読めるように", ["買いに", "覚えるために", "毎日書いています"], "Boss check: movement purpose, intentional purpose, and outcome goal."],
+	["listing", "このアパートは駅も近いし、家賃も安いし、便利です。休みの日は掃除したり、買い物に行ったりします。", "Which pattern lists representative actions?", "掃除したり、買い物に行ったりします。", ["駅も近いし、家賃も安いし", "便利です", "このアパートは"], "Boss check: し stacks reasons; たり lists sample actions."],
+	["certainty", "電気が消えています。机の上に先生のかばんもありません。先生はもう帰ったはずです。でも、もしかしたら会議室にいるかもしれません。", "Which phrase shows stronger confidence?", "帰ったはずです", ["いるかもしれません", "もしかしたら", "会議室にいる"], "Boss check: はずです vs かもしれません."],
+	["advice", "医者は『今夜は早く寝なさい』と言いました。友だちは『薬を飲んだほうがいいよ』と言いました。", "What is the role difference?", "なさい is an authority instruction; ほうがいい is advice.", ["Both are invitations.", "Both are reported news.", "ほうがいい is stronger than なさい."], "Boss check: instruction vs advice."],
+	["conditionals", "このボタンを押すと、電気がつきます。部屋を出たら、電気を消してください。", "Why is と not used for the second sentence?", "Because the result is a request, not an automatic result.", ["Because たら cannot be future.", "Because 電気 cannot take を.", "Because と is only past tense."], "Boss check: automatic result vs request after condition."],
+	["tara-nara", "A『大阪に行きたいです。』B『大阪に行くなら、新幹線が便利ですよ。着いたら、電話してください。』", "Which phrase responds to A's topic?", "大阪に行くなら", ["着いたら", "電話してください", "新幹線が便利です"], "Boss check: なら responds to a topic; たら marks after/when."],
+	["concession", "寒くても、サッカーの練習に行きます。でも、まだ三月なのに、とても暑いです。", "Which phrase includes surprise against expectation?", "まだ三月なのに、とても暑いです。", ["寒くても、行きます。", "サッカーの練習", "Both phrases are simple permission."], "Boss check: ても allows despite; のに adds unexpected contrast."],
+	["quotation", "先生は『作文を出してください』と言いました。私は何を書けばいいか分かりません。", "Which part is an embedded question?", "何を書けばいいか", ["作文を出してください", "先生は", "と言いました"], "Boss check: quote marker と vs embedded question か."],
+	["intention", "今年は毎日漢字を練習しようと思っています。来月の試験は受けるつもりですが、まだ申し込んでいません。", "Which phrase presents a concrete plan?", "受けるつもりです", ["練習しようと思っています", "申し込んでいません", "毎日漢字"], "Boss check: intention held now vs concrete plan."],
+	["hearsay", "ニュースによると、明日は雪が降るそうです。友だちの話では、駅前の店は安いらしいです。", "What do both sentences do?", "They pass along outside information.", ["They describe visual appearance.", "They give commands.", "They express personal desire."], "Boss check: hearsay/reporting, not appearance そう."],
+	["change", "毎日練習して、漢字が読めるようになりました。最近は辞書を使わなくなりました。", "Which phrase marks acquired ability?", "読めるようになりました", ["使わなくなりました", "毎日練習して", "最近は"], "Boss check: ようになる for ability/habit change; なくなる for disappearance of a state/habit."],
+	["decisions", "私は来月から朝走ることにしました。会社の会議は月曜日に行われることになりました。", "Which phrase is the speaker's personal decision?", "朝走ることにしました", ["会議が行われることになりました", "月曜日に", "会社の会議"], "Boss check: ことにしました vs ことになりました."],
+	["te-auxiliary", "旅行の前に地図を印刷しておきました。でも、空港でパスポートを忘れてしまいました。", "Which phrase shows regret?", "忘れてしまいました", ["印刷しておきました", "旅行の前に", "地図を"], "Boss check: ておく preparation vs てしまう regret/completion."],
+	["giving", "田中さんが私に駅まで送ってくれました。私は田中さんにお礼のメールを書いてあげました。", "Who benefits from 送ってくれました?", "The speaker benefits.", ["Tanaka benefits.", "The station benefits.", "Nobody benefits."], "Boss check: てくれる points benefit toward the speaker/in-group."],
+	["passive", "弟にケーキを食べられてしまいました。でも、この寺は三百年前に建てられました。", "Which passive is emotionally negative for the speaker?", "弟にケーキを食べられてしまいました。", ["この寺は三百年前に建てられました。", "Both are neutral event passive.", "Neither is passive."], "Boss check: suffering passive vs neutral event passive."],
+	["causative", "先生は学生に本文を読ませました。子どもは母にゲームをやらせてもらいました。", "What is the contrast?", "The first is making someone do something; the second is receiving permission to do something.", ["Both mean being forced unwillingly.", "Both are passive only.", "The child made the mother play a game."], "Boss check: causative control vs させてもらう permission/benefit."]
+];
+
+const grammarSessionBossPacks = Object.fromEntries(grammarSessionBossData.map(([id, passage, prompt, answer, options, explanation]) => [id, [
+	makeGrammarReadingQuestion({
+		kind: "session boss",
+		passage,
+		prompt,
+		answer,
+		options,
+		explanation
+	})
+]]));
+
+const mixedBossRoundQuestions = [
+	makeGrammarReadingQuestion({
+		kind: "mixed boss · viewpoint",
+		passage: "田中さんは先生に作文を直していただきました。でも、弟に大切なノートを使われてしまって、少し困っていました。",
+		prompt: "Which reading is best?",
+		answer: "Tanaka received help from the teacher, but was negatively affected by the younger brother.",
+		options: ["Tanaka forced the teacher to correct the essay.", "The younger brother received a favor from Tanaka.", "Both actions are simple personal decisions."],
+		explanation: "いただく marks receiving a favor respectfully; passive + しまう shows being affected with regret."
+	}),
+	makeGrammarReadingQuestion({
+		kind: "mixed boss · evidence",
+		passage: "机に山田さんの本があります。教室の電気もついています。山田さんはまだ学校にいるはずです。でも、友だちの話では、もう帰ったらしいです。",
+		prompt: "What is being contrasted?",
+		answer: "The speaker's evidence-based expectation and indirect outside information.",
+		options: ["Two commands from the same person.", "Two personal desires.", "Two examples of natural ability."],
+		explanation: "はずです is the speaker's evidence-based confidence; らしいです passes along less direct information."
+	}),
+	makeGrammarReadingQuestion({
+		kind: "mixed boss · condition",
+		passage: "大阪に行くなら、新幹線を予約したほうがいいです。予約したら、メールを送ってください。駅に着くと、右に大きな店が見えます。",
+		prompt: "Which description is accurate?",
+		answer: "なら responds to the topic, たら introduces a later request, and と gives an automatic result.",
+		options: ["All three conditionals are interchangeable.", "たら cannot be used with requests.", "と is used because the speaker is making a personal decision."],
+		explanation: "This boss mixes the main conditional jobs in one passage."
+	}),
+	makeGrammarReadingQuestion({
+		kind: "mixed boss · purpose",
+		passage: "ニュースが読めるように、漢字を勉強しています。日本語の辞書を買いに本屋へ行きました。試験のために、毎朝単語を覚えています。",
+		prompt: "Which pattern marks a desired ability outcome?",
+		answer: "読めるように",
+		options: ["買いに", "試験のために", "毎朝単語を覚えています"],
+		explanation: "ように marks the intended outcome of becoming able to read news."
+	}),
+	makeGrammarReadingQuestion({
+		kind: "mixed boss · emotion and report",
+		passage: "弟は新しいゲームをほしがっています。友だちによると、そのゲームはとても人気があるそうです。高くても、買いたいと言っています。",
+		prompt: "Which grammar reads another person's visible desire?",
+		answer: "ほしがっています",
+		options: ["そうです", "高くても", "と言っています"],
+		explanation: "ほしがっています describes a third person's desire from outside."
+	}),
+	makeGrammarReadingQuestion({
+		kind: "mixed boss · outcome",
+		passage: "朝早く起きることにしました。寝る前に服を出しておきます。でも、昨日はアラームを消してしまって、遅刻しました。",
+		prompt: "What sequence is described?",
+		answer: "A personal decision, preparation, then regret over an accidental action.",
+		options: ["A passive event, hearsay, then permission.", "Three reported facts from a newspaper.", "A natural result with と only."],
+		explanation: "ことにしました, ておきます, and てしまう each mark a different outcome job."
+	})
+];
+
+function buildMixedBossGrammarPracticeBank() {
+	const familyBosses = Object.values(grammarPracticeFamilyConfigs).flatMap((config) => config.boss || []);
+	const sessionBosses = Object.values(grammarSessionBossPacks).flat();
+	return [...mixedBossRoundQuestions, ...familyBosses, ...shuffled(sessionBosses)];
+}
+
+const grammarPracticeFamilyConfigs = {
+	"family-core": {
+		title: "Mixed Review · Core N4 control",
+		label: "MIXED · CORE",
+		sessions: ["comparison", "time", "invitation", "ability", "experience", "permission"],
+		description: "Comparisons, time limits, invitations, ability, experience, permission, and obligation.",
+		boss: [
+			makeGrammarReadingQuestion({
+				kind: "family boss · core control",
+				passage: "旅行の前に、金曜日までにホテルを予約しなければなりません。友だちは『一緒に調べませんか』と言いました。",
+				prompt: "Which statement best matches the passage?",
+				answer: "The hotel reservation has a deadline, and the friend is inviting the speaker to research together.",
+				options: ["The friend is offering to reserve the hotel alone.", "The hotel can be reserved after Friday.", "The speaker has already stayed at the hotel before."],
+				explanation: "までに marks a deadline, なければなりません marks obligation, and ませんか invites joint action."
+			})
+		]
+	},
+	"family-feelings": {
+		title: "Mixed Review · Desire and appearance",
+		label: "MIXED · FEELINGS",
+		sessions: ["desire", "appearance", "certainty", "advice"],
+		description: "Speaker desire, third-person desire, visual judgment, confidence, and advice.",
+		boss: [
+			makeGrammarReadingQuestion({
+				kind: "family boss · feelings",
+				passage: "妹は新しい本を読みたがっています。表紙を見ると、おもしろそうです。でも、試験前なので、先に勉強したほうがいいです。",
+				prompt: "Which grammar jobs appear?",
+				answer: "Third-person desire, appearance judgment, and advice.",
+				options: ["Reported news, passive, and causative.", "Deadline, permission, and quotation.", "Personal decision, receiving favor, and obligation."],
+				explanation: "たがっています, そうです, and ほうがいいです each do a different job."
+			})
+		]
+	},
+	"family-connectors": {
+		title: "Mixed Review · Reasons and conditions",
+		label: "MIXED · CONNECTORS",
+		sessions: ["reason", "purpose", "listing", "conditionals", "tara-nara", "concession"],
+		description: "Reasons, purpose, listing, conditionals, topic-based advice, and contrast.",
+		boss: [
+			makeGrammarReadingQuestion({
+				kind: "family boss · connectors",
+				passage: "雨が降っているのに、サラさんは出かけました。友だちに会うために駅へ行ったそうです。駅に着いたら、電話するつもりです。",
+				prompt: "Which reading is correct?",
+				answer: "Despite the rain, Sara went out for the purpose of meeting a friend and plans to call after arriving.",
+				options: ["Because it rained, Sara stayed home.", "Sara went out only if her friend called first.", "Sara was forced to go by her friend."],
+				explanation: "のに, ために, and たら connect contrast, purpose, and after/when."
+			})
+		]
+	},
+	"family-reporting": {
+		title: "Mixed Review · Reporting and intention",
+		label: "MIXED · REPORTING",
+		sessions: ["quotation", "intention", "hearsay"],
+		description: "Quotes, embedded questions, plans, intentions, hearsay, and indirect reports.",
+		boss: [
+			makeGrammarReadingQuestion({
+				kind: "family boss · reporting",
+				passage: "先生は『明日までに作文を出してください』と言っていました。山田さんは何を書こうかまだ決めていないそうです。",
+				prompt: "What information is being reported?",
+				answer: "The teacher's instruction and Yamada's undecided topic are both being passed along.",
+				options: ["The speaker personally commands the reader.", "Yamada already submitted the essay.", "The teacher is guessing from appearance."],
+				explanation: "と言っていました reports speech, and そうです passes on information."
+			})
+		]
+	},
+	"family-change": {
+		title: "Mixed Review · Change and outcomes",
+		label: "MIXED · CHANGE",
+		sessions: ["change", "decisions", "te-auxiliary"],
+		description: "Making, becoming, decisions, arrangements, preparation, trying, and regret.",
+		boss: [
+			makeGrammarReadingQuestion({
+				kind: "family boss · outcomes",
+				passage: "来月から朝早く起きることにしました。寝る前に服を準備しておくと、朝の時間を短くできます。",
+				prompt: "What is the speaker doing?",
+				answer: "Making a personal decision and preparing in advance to change the morning routine.",
+				options: ["Reporting someone else's decision only.", "Complaining about an accidental mistake.", "Describing a passive event."],
+				explanation: "ことにしました is personal decision; ておく is preparation; 短くできます expresses making something shorter."
+			})
+		]
+	},
+	"family-agency": {
+		title: "Mixed Review · Agency and viewpoint",
+		label: "MIXED · AGENCY",
+		sessions: ["giving", "passive", "causative"],
+		description: "Giving/receiving favors, passive viewpoint, causative control, and who is affected.",
+		boss: [
+			makeGrammarReadingQuestion({
+				kind: "family boss · agency",
+				passage: "母は弟に部屋を掃除させました。弟はいやがっていましたが、あとで母にケーキを作ってもらいました。",
+				prompt: "What agency shift happens?",
+				answer: "The younger brother is first made to clean, then receives a favor from his mother.",
+				options: ["The mother is forced to clean by the younger brother.", "The cake passively eats the younger brother.", "The younger brother gives the mother a favor first."],
+				explanation: "させました marks causative control; てもらいました marks receiving a favor."
+			})
+		]
+	}
+};
+
+const grammarMissedStorageKey = "kotoba-grammar-missed-v1";
+
+function getStoredGrammarMisses() {
+	try {
+		const parsed = JSON.parse(localStorage.getItem(grammarMissedStorageKey) || "[]");
+		return Array.isArray(parsed) ? parsed : [];
+	} catch {
+		return [];
+	}
+}
+
+function storeGrammarMisses(misses) {
+	try {
+		localStorage.setItem(grammarMissedStorageKey, JSON.stringify(misses.slice(0, 100)));
+	} catch {
+		// Practice still works if storage is unavailable.
+	}
+}
+
+function serializableGrammarQuestion(question, sessionId) {
+	return {
+		sessionId,
+		kind: question.kind,
+		mode: question.mode,
+		prompt: question.prompt,
+		subprompt: question.subprompt,
+		band: question.band,
+		options: question.options,
+		answer: question.answer,
+		accepted: question.accepted,
+		explanation: question.explanation,
+		placeholder: question.placeholder
+	};
+}
+
+function recordGrammarPracticeMisses(sessionId, questions) {
+	if (!questions.length || sessionId === "adaptive-review") return;
+	const stored = getStoredGrammarMisses();
+	const next = [...questions.map((question) => serializableGrammarQuestion(question, sessionId)), ...stored];
+	const seen = new Set();
+	storeGrammarMisses(next.filter((question) => {
+		const key = `${question.sessionId}|${question.prompt}|${question.answer}`;
+		if (seen.has(key)) return false;
+		seen.add(key);
+		return true;
+	}));
+}
+
+function getAdaptiveGrammarPracticeQuestions(sessionId, limit = 6) {
+	const stored = getStoredGrammarMisses();
+	const family = Object.values(grammarPracticeFamilyConfigs).find((config) => config.sessions.includes(sessionId));
+	const priority = stored.filter((question) => question.sessionId === sessionId);
+	const related = family ? stored.filter((question) => family.sessions.includes(question.sessionId) && question.sessionId !== sessionId) : [];
+	return [...priority, ...related]
+		.slice(0, limit)
+		.map((question) => ({ ...question, kind: `adaptive review · ${question.kind}` }));
+}
+
+function buildAdaptiveGrammarPracticeBank() {
+	const stored = getStoredGrammarMisses();
+	if (stored.length) {
+		return stored.slice(0, 60).map((question) => ({ ...question, kind: `adaptive review · ${question.kind}` }));
+	}
+	return buildGrammarFamilyPracticeBank("family-core");
+}
+
+function buildGrammarFamilyPracticeBank(familyId) {
+	const config = grammarPracticeFamilyConfigs[familyId] || grammarPracticeFamilyConfigs["family-core"];
+	const mixed = config.sessions.flatMap((sessionId) => {
+		const session = grammarPracticeSessions[sessionId];
+		if (!session) return [];
+		return buildAdvancedGrammarPracticeBank(sessionId, session.buildBank()).map((question) => ({
+			...question,
+			kind: `${config.label} · ${question.kind}`
+		}));
+	});
+	const seen = new Set();
+	return [...(config.boss || []), ...shuffled(mixed)].filter((question) => {
+		const key = `${question.kind}|${question.prompt}|${question.answer}`;
+		if (seen.has(key)) return false;
+		seen.add(key);
+		return true;
+	});
+}
+
+function buildGenericAdvancedGrammarQuestions(sessionId, baseBank) {
+	const choices = baseBank.filter((question) => question.mode === "choice" && question.options?.length > 2).slice(0, 4);
+	return choices.map((question) => {
+		const wrong = question.options.find((option) => option !== question.answer);
+		return makeGrammarDiagnosisQuestion({
+			kind: "wrong-answer trap",
+			prompt: `${wrong} / Context: ${question.prompt}`,
+			answer: "It does not match the grammar job or context cue.",
+			options: [
+				"It is always more polite than the correct answer.",
+				"It is the plain form of the correct answer.",
+				"It changes only the tense, not the meaning."
+			],
+			explanation: question.explanation || "Review the context cue first, then choose the pattern that matches that grammar job."
+		});
+	});
+}
+
+function buildAdvancedGrammarPracticeBank(sessionId, baseBank) {
+	const advanced = [
+		...(advancedGrammarPracticePacks[sessionId] || []),
+		...(grammarCorrectionPacks[sessionId] || []),
+		...(grammarSessionBossPacks[sessionId] || []),
+		...(grammarReadingIntegrationPacks[sessionId] || []),
+		...buildGenericAdvancedGrammarQuestions(sessionId, baseBank)
+	];
+	const seen = new Set();
+	return [...baseBank, ...advanced].filter((question) => {
+		const key = `${question.kind}|${question.mode}|${question.prompt}|${question.answer}`;
+		if (seen.has(key)) return false;
+		seen.add(key);
+		return true;
+	});
 }
 
 const grammarPracticeSessions = {
@@ -2952,11 +5030,32 @@ const grammarPracticeSessions = {
 		title: "Session 10 · Purpose and intended outcomes",
 		label: "SESSION 10 · PURPOSE",
 		buildBank: buildPurposePracticeBank
+	},
+	...Object.fromEntries(extensionGrammarPracticeConfigs.map((config) => [config.id, {
+		title: `Session ${config.number} · ${config.title}`,
+		label: `SESSION ${config.number} · ${config.label}`,
+		buildBank: () => buildExtensionGrammarPracticeBank(config)
+	}])),
+	...Object.fromEntries(Object.entries(grammarPracticeFamilyConfigs).map(([id, config]) => [id, {
+		title: config.title,
+		label: config.label,
+		buildBank: () => buildGrammarFamilyPracticeBank(id)
+	}])),
+	"adaptive-review": {
+		title: "Adaptive Review · Missed grammar",
+		label: "ADAPTIVE · MISSED",
+		buildBank: buildAdaptiveGrammarPracticeBank
+	},
+	"mixed-boss": {
+		title: "Mixed Boss · Cross-family challenge",
+		label: "MIXED · BOSS",
+		buildBank: buildMixedBossGrammarPracticeBank
 	}
 };
 
 function buildGrammarPracticeBank(sessionId = gpState.sessionId || "comparison") {
-	return (grammarPracticeSessions[sessionId] || grammarPracticeSessions.comparison).buildBank();
+	const session = grammarPracticeSessions[sessionId] || grammarPracticeSessions.comparison;
+	return buildAdvancedGrammarPracticeBank(sessionId, session.buildBank());
 }
 
 function startGrammarPractice(sessionId = "comparison", questionCount = Number(gpEls.count.value)) {
@@ -2964,12 +5063,16 @@ function startGrammarPractice(sessionId = "comparison", questionCount = Number(g
 	gpState.sessionId = sessionId;
 	gpState.sessionTitle = session.title;
 	gpState.sessionLabel = session.label;
-	gpState.bank = session.buildBank();
-	gpState.queue = shuffled(gpState.bank).slice(0, Math.min(questionCount, gpState.bank.length));
+	gpState.bank = buildAdvancedGrammarPracticeBank(sessionId, session.buildBank());
+	const adaptiveReview = sessionId.startsWith("family-") || sessionId === "adaptive-review" || sessionId === "mixed-boss" ? [] : getAdaptiveGrammarPracticeQuestions(sessionId);
+	const adaptiveKeys = new Set(adaptiveReview.map((question) => `${question.prompt}|${question.answer}`));
+	const baseQueue = shuffled(gpState.bank.filter((question) => !adaptiveKeys.has(`${question.prompt}|${question.answer}`)));
+	gpState.queue = [...adaptiveReview, ...baseQueue].slice(0, Math.min(questionCount, gpState.bank.length + adaptiveReview.length));
 	gpState.index = 0;
 	gpState.correct = 0;
 	gpState.missed = [];
 	gpState.answered = false;
+	gpState.recorded = false;
 	gpEls["session-notes"].dataset.gpNotes = sessionId;
 	gpEls["session-notes"].setAttribute("aria-expanded", "false");
 	gpEls["session-note-panel"].innerHTML = renderGrammarPracticeRuleNotes(sessionId);
@@ -3065,6 +5168,10 @@ function finishGrammarPractice() {
 	const answered = gpState.index + (gpState.answered ? 1 : 0);
 	const total = Math.max(answered, gpState.queue.length);
 	const accuracy = total ? Math.round((gpState.correct / total) * 100) : 0;
+	if (!gpState.recorded) {
+		recordGrammarPracticeMisses(gpState.sessionId, gpState.missed);
+		gpState.recorded = true;
+	}
 	gpEls.session.hidden = true;
 	gpEls.complete.hidden = false;
 	gpEls.result.textContent = `${gpState.sessionTitle || "Grammar session"} · ${gpState.correct} of ${total} correct`;
