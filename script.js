@@ -5262,19 +5262,83 @@ function buildGrammarFamilyPracticeBank(familyId) {
 	});
 }
 
+const genericGrammarTrapDiagnosisDistractors = [
+	"It uses the right-looking grammar in the wrong sentence role.",
+	"It changes the speaker's intention rather than the grammar form.",
+	"It answers a different question from the one in the prompt.",
+	"It uses a nearby pattern with a different nuance.",
+	"It fixes the form but loses the context meaning.",
+	"It changes the agency or direction of the action."
+];
+
+function chooseGrammarTrapDistractors(answer, preferred = []) {
+	return [...new Set([...preferred, ...genericGrammarTrapDiagnosisDistractors].filter((option) => option && option !== answer))].slice(0, 3);
+}
+
+function diagnoseComparisonTrap(question, wrong) {
+	const wrongText = String(wrong || "");
+	const answerText = String(question.answer || "");
+	const preferred = [
+		"It uses ほど without the negative predicate needed for “not as...as.”",
+		"It treats より as the stronger item instead of the comparison base.",
+		"It marks the weaker or wrong option with のほうが.",
+		"It chooses のほうを even though this is adjective comparison, not object choice.",
+		"It answers with a correct comparison pattern but the opposite meaning."
+	];
+	let answer = "It answers with a correct comparison pattern but the opposite meaning.";
+	if (/ほど/.test(wrongText) && /(ありません|ない|ません)/.test(wrongText) && !/ほど/.test(answerText)) {
+		answer = "It answers with a correct comparison pattern but the opposite meaning.";
+	} else if (/ほど/.test(wrongText) && !/(ありません|ない|ません)/.test(wrongText)) {
+		answer = "It uses ほど without the negative predicate needed for “not as...as.”";
+	} else if (/より/.test(wrongText)) {
+		answer = "It treats より as the stronger item instead of the comparison base.";
+	} else if (/ほうを/.test(wrongText)) {
+		answer = "It chooses のほうを even though this is adjective comparison, not object choice.";
+	} else if (/ほうが/.test(wrongText)) {
+		answer = "It marks the weaker or wrong option with のほうが.";
+	}
+	return { answer, options: chooseGrammarTrapDistractors(answer, preferred) };
+}
+
+function diagnoseGenericGrammarTrap(question, wrong, sessionId) {
+	const metadata = getGrammarPracticeSessionMetadata(sessionId);
+	const pattern = inferGrammarPracticePattern(question, metadata);
+	const pitfall = inferGrammarPracticePitfall(question, metadata);
+	const text = `${question.kind || ""} ${question.prompt || ""} ${question.subprompt || ""} ${wrong || ""} ${question.explanation || ""}`.toLowerCase();
+	let answer = `It misses the ${pattern} cue: ${pitfall}.`;
+	const preferred = [
+		`It uses ${pattern}, but in the wrong sentence role.`,
+		`It confuses this item with ${metadata.patterns.find((item) => item !== pattern) || "a nearby pattern"}.`,
+		`It ignores the context clue for ${pitfall}.`,
+		"It is grammatically possible, but it answers a different meaning.",
+		"It changes the nuance while keeping a similar-looking form."
+	];
+	if (/request|command|invitation|please|ください|ませんか|ましょう/.test(text)) {
+		answer = "It uses a request, command, or invitation where this pattern does not allow one.";
+		preferred.unshift("It is too casual, but the grammar meaning is correct.", "It only changes the tense of the correct answer.");
+	} else if (/particle|を|が|に|で/.test(text)) {
+		answer = "It chooses the wrong particle for the grammar relationship.";
+		preferred.unshift("It has the right particle but the wrong tense.", "It is missing a negative ending.");
+	} else if (/negative|not|ない|ません|ありません|なければ|なくても/.test(text)) {
+		answer = "It uses the wrong positive-negative logic for the pattern.";
+		preferred.unshift("It has the right polarity but the wrong politeness.", "It only changes word order.");
+	} else if (/plain|dictionary|stem|form|た-form|ない-form/.test(text)) {
+		answer = "It uses the wrong form before the grammar pattern.";
+		preferred.unshift("It uses the right form but reverses the meaning.", "It only changes the subject.");
+	}
+	return { answer, options: chooseGrammarTrapDistractors(answer, preferred) };
+}
+
 function buildGenericAdvancedGrammarQuestions(sessionId, baseBank) {
 	const choices = baseBank.filter((question) => question.mode === "choice" && question.options?.length > 2).slice(0, 4);
 	return choices.map((question) => {
 		const wrong = question.options.find((option) => option !== question.answer);
+		const diagnosis = sessionId === "comparison" ? diagnoseComparisonTrap(question, wrong) : diagnoseGenericGrammarTrap(question, wrong, sessionId);
 		return makeGrammarDiagnosisQuestion({
 			kind: "wrong-answer trap",
 			prompt: `${wrong} / Context: ${question.prompt}`,
-			answer: "It does not match the grammar job or context cue.",
-			options: [
-				"It is always more polite than the correct answer.",
-				"It is the plain form of the correct answer.",
-				"It changes only the tense, not the meaning."
-			],
+			answer: diagnosis.answer,
+			options: diagnosis.options,
 			explanation: question.explanation || "Review the context cue first, then choose the pattern that matches that grammar job."
 		});
 	});
