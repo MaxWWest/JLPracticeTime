@@ -1088,7 +1088,7 @@ function normalizeJapaneseAnswer(value) {
 	return String(value).trim().replace(/[。、，,.!！？\s　]/g, "").replace(/[ァ-ヶ]/g, (character) => String.fromCharCode(character.charCodeAt(0) - 0x60));
 }
 
-const comparisonScenarios = [
+const comparisonCuratedScenarios = [
 	{ lesser: "バス", greater: "電車", lesserEn: "the bus", greaterEn: "the train", adj: "速い", neg: "速く", base: "fast", comparative: "faster" },
 	{ lesser: "自転車", greater: "車", lesserEn: "the bicycle", greaterEn: "the car", adj: "速い", neg: "速く", base: "fast", comparative: "faster" },
 	{ lesser: "普通電車", greater: "新幹線", lesserEn: "the local train", greaterEn: "the bullet train", adj: "速い", neg: "速く", base: "fast", comparative: "faster" },
@@ -1206,6 +1206,211 @@ const comparisonScenarios = [
 	{ lesser: "山への道", greater: "海への道", lesserEn: "the road to the mountain", greaterEn: "the road to the sea", adj: "狭い", neg: "狭く", base: "narrow", comparative: "narrower" }
 ];
 
+const comparisonNounPools = {
+	buildings: [
+		{ ja: "銀行", en: "the bank" },
+		{ ja: "郵便局", en: "the post office" },
+		{ ja: "学校", en: "the school" },
+		{ ja: "病院", en: "the hospital" },
+		{ ja: "図書館", en: "the library" },
+		{ ja: "駅", en: "the station" },
+		{ ja: "ホテル", en: "the hotel" },
+		{ ja: "レストラン", en: "the restaurant" },
+		{ ja: "スーパー", en: "the supermarket" },
+		{ ja: "デパート", en: "the department store" }
+	],
+	places: [
+		{ ja: "公園", en: "the park" },
+		{ ja: "駅", en: "the station" },
+		{ ja: "コンビニ", en: "the convenience store" },
+		{ ja: "銀行", en: "the bank" },
+		{ ja: "郵便局", en: "the post office" },
+		{ ja: "病院", en: "the hospital" },
+		{ ja: "図書館", en: "the library" },
+		{ ja: "学校", en: "the school" },
+		{ ja: "喫茶店", en: "the cafe" },
+		{ ja: "映画館", en: "the movie theater" }
+	],
+	rooms: [
+		{ ja: "教室", en: "the classroom" },
+		{ ja: "体育館", en: "the gym" },
+		{ ja: "台所", en: "the kitchen" },
+		{ ja: "居間", en: "the living room" },
+		{ ja: "寝室", en: "the bedroom" },
+		{ ja: "私の部屋", en: "my room" },
+		{ ja: "兄の部屋", en: "my older brother's room" },
+		{ ja: "会議室", en: "the meeting room" },
+		{ ja: "事務所", en: "the office" },
+		{ ja: "入口", en: "the entrance" }
+	],
+	transport: [
+		{ ja: "バス", en: "the bus" },
+		{ ja: "電車", en: "the train" },
+		{ ja: "自転車", en: "the bicycle" },
+		{ ja: "車", en: "the car" },
+		{ ja: "地下鉄", en: "the subway" },
+		{ ja: "タクシー", en: "the taxi" },
+		{ ja: "新幹線", en: "the bullet train" },
+		{ ja: "普通電車", en: "the local train" },
+		{ ja: "飛行機", en: "the airplane" },
+		{ ja: "船", en: "the boat" }
+	],
+	food: [
+		{ ja: "お茶", en: "tea" },
+		{ ja: "コーヒー", en: "coffee" },
+		{ ja: "ジュース", en: "juice" },
+		{ ja: "水", en: "water" },
+		{ ja: "牛乳", en: "milk" },
+		{ ja: "カレー", en: "curry" },
+		{ ja: "スープ", en: "soup" },
+		{ ja: "りんご", en: "the apple" },
+		{ ja: "みかん", en: "the mandarin orange" },
+		{ ja: "昼ご飯", en: "lunch" }
+	],
+	school: [
+		{ ja: "ノート", en: "the notebook" },
+		{ ja: "辞書", en: "the dictionary" },
+		{ ja: "教科書", en: "the textbook" },
+		{ ja: "雑誌", en: "the magazine" },
+		{ ja: "宿題", en: "the homework" },
+		{ ja: "作文", en: "the essay" },
+		{ ja: "漢字", en: "kanji" },
+		{ ja: "文法", en: "grammar" },
+		{ ja: "テスト", en: "the test" },
+		{ ja: "授業", en: "the class" }
+	],
+	objects: [
+		{ ja: "ノート", en: "the notebook" },
+		{ ja: "辞書", en: "the dictionary" },
+		{ ja: "教科書", en: "the textbook" },
+		{ ja: "雑誌", en: "the magazine" },
+		{ ja: "財布", en: "the wallet" },
+		{ ja: "かばん", en: "the bag" },
+		{ ja: "リュック", en: "the backpack" },
+		{ ja: "紙の本", en: "the paper book" },
+		{ ja: "電子書籍", en: "the ebook" },
+		{ ja: "スマホ", en: "the phone" }
+	],
+	study: [
+		{ ja: "漢字", en: "kanji" },
+		{ ja: "文法", en: "grammar" },
+		{ ja: "テスト", en: "the test" },
+		{ ja: "宿題", en: "the homework" },
+		{ ja: "作文", en: "the essay" },
+		{ ja: "日本語の授業", en: "Japanese class" },
+		{ ja: "数学の授業", en: "math class" },
+		{ ja: "先生の説明", en: "the teacher's explanation" },
+		{ ja: "教科書の説明", en: "the textbook explanation" },
+		{ ja: "会話の練習", en: "conversation practice" }
+	],
+	clothing: [
+		{ ja: "シャツ", en: "the shirt" },
+		{ ja: "くつ", en: "the shoes" },
+		{ ja: "かばん", en: "the bag" },
+		{ ja: "財布", en: "the wallet" },
+		{ ja: "コート", en: "the coat" },
+		{ ja: "帽子", en: "the hat" },
+		{ ja: "ズボン", en: "the pants" },
+		{ ja: "冬の服", en: "winter clothes" },
+		{ ja: "夏の服", en: "summer clothes" },
+		{ ja: "リュック", en: "the backpack" }
+	],
+	nature: [
+		{ ja: "山", en: "the mountain" },
+		{ ja: "海", en: "the sea" },
+		{ ja: "川", en: "the river" },
+		{ ja: "橋", en: "the bridge" },
+		{ ja: "道", en: "the road" },
+		{ ja: "町", en: "the town" },
+		{ ja: "公園", en: "the park" },
+		{ ja: "空港", en: "the airport" },
+		{ ja: "港", en: "the harbor" },
+		{ ja: "島", en: "the island" }
+	],
+	schedule: [
+		{ ja: "昨日の授業", en: "yesterday's class" },
+		{ ja: "今日の授業", en: "today's class" },
+		{ ja: "先週の授業", en: "last week's class" },
+		{ ja: "朝のクラス", en: "the morning class" },
+		{ ja: "午後のクラス", en: "the afternoon class" },
+		{ ja: "月曜日の朝", en: "Monday morning" },
+		{ ja: "金曜日の夜", en: "Friday night" },
+		{ ja: "説明会", en: "the information session" },
+		{ ja: "会議", en: "the meeting" },
+		{ ja: "映画", en: "the movie" }
+	]
+};
+
+const comparisonAdjectivePool = [
+	{ adj: "大きい", neg: "大きく", base: "large", comparative: "larger", tags: ["buildings", "rooms", "transport", "clothing", "objects"] },
+	{ adj: "小さい", neg: "小さく", base: "small", comparative: "smaller", tags: ["buildings", "rooms", "transport", "clothing", "objects"] },
+	{ adj: "広い", neg: "広く", base: "wide", comparative: "wider", tags: ["buildings", "rooms", "nature"] },
+	{ adj: "狭い", neg: "狭く", base: "narrow", comparative: "narrower", tags: ["buildings", "rooms", "nature"] },
+	{ adj: "近い", neg: "近く", base: "near", comparative: "nearer", tags: ["buildings", "places", "nature"] },
+	{ adj: "遠い", neg: "遠く", base: "far away", comparative: "farther away", tags: ["buildings", "places", "nature"] },
+	{ adj: "古い", neg: "古く", base: "old", comparative: "older", tags: ["buildings", "places", "transport", "clothing", "objects"] },
+	{ adj: "新しい", neg: "新しく", base: "new", comparative: "newer", tags: ["buildings", "places", "transport", "clothing", "objects"] },
+	{ adj: "きれい", neg: "きれいでは", base: "clean", comparative: "cleaner", tags: ["buildings", "places", "rooms", "clothing", "nature"] },
+	{ adj: "静か", neg: "静かでは", base: "quiet", comparative: "quieter", tags: ["buildings", "places", "rooms", "nature"] },
+	{ adj: "にぎやか", neg: "にぎやかでは", base: "lively", comparative: "livelier", tags: ["buildings", "places"] },
+	{ adj: "便利", neg: "便利では", base: "convenient", comparative: "more convenient", tags: ["buildings", "places", "transport", "objects"] },
+	{ adj: "高い", neg: "高く", base: "expensive", comparative: "more expensive", tags: ["transport", "food", "clothing", "objects"] },
+	{ adj: "安い", neg: "安く", base: "cheap", comparative: "cheaper", tags: ["transport", "food", "clothing", "objects"] },
+	{ adj: "重い", neg: "重く", base: "heavy", comparative: "heavier", tags: ["objects", "clothing", "transport"] },
+	{ adj: "軽い", neg: "軽く", base: "light", comparative: "lighter", tags: ["objects", "clothing", "transport"] },
+	{ adj: "速い", neg: "速く", base: "fast", comparative: "faster", tags: ["transport"] },
+	{ adj: "早い", neg: "早く", base: "early", comparative: "earlier", tags: ["transport", "schedule"] },
+	{ adj: "遅い", neg: "遅く", base: "late", comparative: "later", tags: ["transport", "schedule"] },
+	{ adj: "長い", neg: "長く", base: "long", comparative: "longer", tags: ["nature", "study", "schedule"] },
+	{ adj: "短い", neg: "短く", base: "short", comparative: "shorter", tags: ["nature", "study", "schedule"] },
+	{ adj: "難しい", neg: "難しく", base: "difficult", comparative: "more difficult", tags: ["study", "schedule"] },
+	{ adj: "易しい", neg: "易しく", base: "easy", comparative: "easier", tags: ["study", "schedule"] },
+	{ adj: "楽しい", neg: "楽しく", base: "fun", comparative: "more fun", tags: ["places", "study", "schedule"] },
+	{ adj: "甘い", neg: "甘く", base: "sweet", comparative: "sweeter", tags: ["food"] },
+	{ adj: "苦い", neg: "苦く", base: "bitter", comparative: "more bitter", tags: ["food"] },
+	{ adj: "辛い", neg: "辛く", base: "spicy", comparative: "spicier", tags: ["food"] },
+	{ adj: "明るい", neg: "明るく", base: "bright", comparative: "brighter", tags: ["buildings", "places", "rooms"] },
+	{ adj: "暗い", neg: "暗く", base: "dark", comparative: "darker", tags: ["buildings", "places", "rooms"] }
+];
+
+function buildComparisonPoolScenarios() {
+	const scenarios = [];
+	comparisonAdjectivePool.forEach((adjective, adjectiveIndex) => {
+		adjective.tags.forEach((tag, tagIndex) => {
+			const nouns = comparisonNounPools[tag] || [];
+			if (nouns.length < 2) return;
+			const pairCount = Math.min(3, Math.floor(nouns.length / 2));
+			for (let pairIndex = 0; pairIndex < pairCount; pairIndex += 1) {
+				const lesserIndex = (adjectiveIndex + tagIndex + pairIndex * 2) % nouns.length;
+				const greaterIndex = (lesserIndex + 3 + adjectiveIndex + pairIndex) % nouns.length;
+				if (lesserIndex === greaterIndex) continue;
+				const lesser = nouns[lesserIndex];
+				const greater = nouns[greaterIndex];
+				scenarios.push({
+					lesser: lesser.ja,
+					greater: greater.ja,
+					lesserEn: lesser.en,
+					greaterEn: greater.en,
+					adj: adjective.adj,
+					neg: adjective.neg,
+					base: adjective.base,
+					comparative: adjective.comparative,
+					tags: [tag]
+				});
+			}
+		});
+	});
+	return scenarios;
+}
+
+const comparisonScenarios = [...comparisonCuratedScenarios, ...buildComparisonPoolScenarios()];
+
+function findComparisonScenario(match) {
+	const found = comparisonScenarios.find((item) => Object.entries(match).every(([key, value]) => item[key] === value));
+	if (!found) throw new Error(`Missing comparison scenario: ${JSON.stringify(match)}`);
+	return found;
+}
+
 function comparisonTerm(item, side) {
 	return `${item[`${side}Demonstrative`] || ""}${item[side]}`;
 }
@@ -1307,6 +1512,19 @@ const comparisonKanaAnswerAliases = [
 	["八月", "はちがつ"],
 	["十二月", "じゅうにがつ"],
 	["空港", "くうこう"],
+	["飛行機", "ひこうき"],
+	["船", "ふね"],
+	["会議室", "かいぎしつ"],
+	["事務所", "じむしょ"],
+	["帽子", "ぼうし"],
+	["港", "みなと"],
+	["島", "しま"],
+	["説明会", "せつめいかい"],
+	["映画", "えいが"],
+	["先生", "せんせい"],
+	["会話", "かいわ"],
+	["練習", "れんしゅう"],
+	["日本語", "にほんご"],
 	["難しい", "むずかしい"],
 	["難しく", "むずかしく"],
 	["易しい", "やさしい"],
@@ -1372,6 +1590,8 @@ const comparisonKanaAnswerAliases = [
 	["古く", "ふるく"],
 	["新しい", "あたらしい"],
 	["新しく", "あたらしく"],
+	["小さい", "ちいさい"],
+	["小さく", "ちいさく"],
 	["忙しい", "いそがしい"],
 	["忙しく", "いそがしく"]
 ];
@@ -4331,13 +4551,13 @@ function makeComparisonErrorChoice(item) {
 }
 
 function buildComparisonHardPracticeBank() {
-	const timeItem = comparisonScenarios[42];
-	const kanjiItem = comparisonScenarios[12];
-	const testItem = comparisonScenarios[38];
-	const roadItem = comparisonScenarios[24];
-	const dictionaryItem = comparisonScenarios[17];
-	const townItem = comparisonScenarios[7];
-	const entranceItem = comparisonScenarios[26];
+	const timeItem = findComparisonScenario({ lesser: "バスの時間", greater: "電車の時間", adj: "早い" });
+	const kanjiItem = findComparisonScenario({ lesser: "ひらがな", greater: "漢字", adj: "難しい" });
+	const testItem = findComparisonScenario({ lesser: "前のテスト", greater: "テスト", adj: "難しい" });
+	const roadItem = findComparisonScenario({ lesser: "道", greater: "道", adj: "狭い", lesserDemonstrative: "この" });
+	const dictionaryItem = findComparisonScenario({ lesser: "辞書", greater: "ノート", adj: "軽い" });
+	const townItem = findComparisonScenario({ lesser: "新しい町", greater: "古い町", adj: "静か" });
+	const entranceItem = findComparisonScenario({ lesser: "駅の入口", greater: "学校の入口", adj: "狭い" });
 	return [
 		makeComparisonRewriteQuestion({ item: timeItem, from: "hodo", to: "hou" }),
 		makeComparisonRewriteQuestion({ item: timeItem, from: "yori", to: "hodo" }),
