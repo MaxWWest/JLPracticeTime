@@ -6,7 +6,7 @@ const vm = require("vm");
 
 const root = __dirname;
 const scriptPath = path.join(root, "script.js");
-const grammarStopMarker = "function buildFocusedGrammarQueue";
+const grammarStopMarker = "function startGrammarPractice";
 const severityRank = { high: 0, medium: 1, low: 2 };
 const coreSessionLimit = 25;
 
@@ -47,6 +47,7 @@ function loadGrammarRuntime() {
 globalThis.__grammarAuditApi = {
 	grammarPracticeSessions,
 	buildAdvancedGrammarPracticeBank,
+	buildFocusedGrammarQueue,
 	renderJapaneseTextWithFurigana
 };`;
 	const document = {
@@ -203,7 +204,7 @@ function auditQuestion(sessionId, question, index, findings) {
 			addFinding(findings, "medium", "text-answer-not-accepted", sessionId, index, question, "Text answer is not included in accepted answers.", "Add the canonical answer to the accepted list.");
 		}
 		const textKind = `${question.kind || ""} ${question.band || ""}`;
-		if (!/production|correction/i.test(textKind) && !/[＿_]/.test(`${question.prompt || ""}${question.blankPrompt || ""}`) && /blank|type|missing|complete/i.test(textKind)) {
+		if (!/production|correction|rewrite|transformation/i.test(textKind) && !/[＿_]/.test(`${question.prompt || ""}${question.blankPrompt || ""}`) && /blank|type|missing|complete/i.test(textKind)) {
 			addFinding(findings, "low", "missing-blank-marker", sessionId, index, question, "Text completion item does not visibly show a blank.", "Add ＿＿＿＿ to the prompt if this is a fill-in question.");
 		}
 	}
@@ -271,6 +272,37 @@ function auditFurigana(api, findings) {
 	}
 }
 
+function auditHardPracticeQueues(api, sessionBanks, findings) {
+	for (const { sessionId, bank } of sessionBanks) {
+		const hardQueue = api.buildFocusedGrammarQueue(sessionId, bank, "boss", 25) || [];
+		if (hardQueue.length < 25) {
+			addFinding(
+				findings,
+				"high",
+				"hard-queue-too-small",
+				`${sessionId}:hard`,
+				0,
+				hardQueue[0] || { kind: "hard practice", prompt: sessionId, answer: `${hardQueue.length}` },
+				`Hard practice only has ${hardQueue.length} eligible question${hardQueue.length === 1 ? "" : "s"}.`,
+				"Add hard-mode questions instead of falling back to easy practice material."
+			);
+		}
+		if (sessionId !== "comparison") continue;
+		hardQueue.forEach((question, index) => {
+			const text = questionText(question);
+			if (/赤いかばん|青いかばん|The sea was more fun for the narrator/.test(text)) {
+				addFinding(findings, "high", "stale-comparison-hard-item", "comparison:hard", index, question, "Comparison hard practice contains an old shallow prompt.", "Replace it with a direction/equivalence/context question using より, ほど, or のほう.");
+			}
+			if (/sentence ordering/i.test(question.kind || "")) {
+				addFinding(findings, "high", "trivial-hard-ordering", "comparison:hard", index, question, "Comparison hard practice should not use generic sentence ordering.", "Use rewrite, correction, or diagnosis tasks where the comparison meaning can be reversed.");
+			}
+			if (question.mode === "text" && /^(より|ほど|のほうが|のほうを|が|を)$/.test(normalize(question.answer))) {
+				addFinding(findings, "high", "single-token-hard-blank", "comparison:hard", index, question, "Hard comparison practice has a single-token blank.", "Ask for a full rewrite or a two-blank transformation instead.");
+			}
+		});
+	}
+}
+
 function buildSessionBanks(api, requestedSessionIds) {
 	const allSessionIds = Object.keys(api.grammarPracticeSessions)
 		.filter((id) => !id.startsWith("family-") && !["adaptive-review", "mixed-boss", "mock-test"].includes(id))
@@ -314,6 +346,7 @@ function main() {
 		totalQuestions += bank.length;
 		bank.forEach((question, index) => auditQuestion(sessionId, question, index, findings));
 	}
+	auditHardPracticeQueues(api, sessionBanks, findings);
 	auditFurigana(api, findings);
 	findings.sort((a, b) => severityRank[a.severity] - severityRank[b.severity] || a.sessionId.localeCompare(b.sessionId) || a.index - b.index);
 	const counts = findings.reduce((acc, finding) => {

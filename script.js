@@ -3960,6 +3960,99 @@ function makeGrammarContextBlank({ kind = "context blank", prompt, answer, accep
 	});
 }
 
+function makeComparisonRewriteQuestion({ item, from, to }) {
+	const forms = comparisonSentences(item);
+	const prompt = from === "hodo" ? forms.hodo : forms.yori;
+	const answer = to === "hodo" ? forms.hodo : forms.hou;
+	const targetLabel = to === "hodo" ? "ほど...ありません" : "より...のほう";
+	return makeTextQuestion({
+		kind: `rewrite · ${from} to ${to}`,
+		prompt,
+		subprompt: `Rewrite with ${targetLabel} without changing the meaning.`,
+		band: "Type the full rewritten Japanese sentence.",
+		answer,
+		accepted: [answer, answer.replace(/。$/, "")],
+		explanation: `${forms.hodo} and ${forms.hou} express the same comparison: ${item.greaterEn} is ${item.comparative} than ${item.lesserEn}.`,
+		placeholder: answer
+	});
+}
+
+function makeComparisonTwoBlankQuestion(item) {
+	const forms = comparisonSentences(item);
+	return makeTextQuestion({
+		kind: "two-blank transformation",
+		prompt: `${item.greater}は${item.lesser}より${item.adj}です。 → ${item.lesser}＿＿${item.greater}＿＿${item.adj}です。`,
+		subprompt: "Fill both blanks so the meaning stays the same.",
+		band: "Type both missing parts in order.",
+		answer: "より / のほうが",
+		accepted: ["より / のほうが", "より/のほうが", "より のほうが", "より、のほうが"],
+		explanation: `The base stays before より, and the stronger side takes のほうが: ${forms.hou}`,
+		placeholder: "より / のほうが"
+	});
+}
+
+function makeComparisonDialogueQuestion(item) {
+	const forms = comparisonSentences(item);
+	const wrongBase = `${item.lesser}のほうが${item.adj}です。`;
+	const wrongHodo = `${item.greater}は${item.lesser}ほど${item.neg}ありません。`;
+	const wrongParticle = `${item.greater}のほうを${item.adj}です。`;
+	return makeChoiceQuestion({
+		kind: "dialogue response",
+		prompt: `A: ${forms.question}\nB: ${forms.response}`,
+		subprompt: `B chooses ${item.greaterEn}. Which diagnosis is correct?`,
+		band: "Read A, then B. Choose the grammar reading.",
+		answer: `B uses のほうが because ${item.greater} has more of the quality.`,
+		options: [
+			`B uses のほうが because ${item.greater} has more of the quality.`,
+			`${wrongBase} would answer the opposite side.`,
+			`${wrongHodo} says ${item.greaterEn} is not as ${item.base} as ${item.lesserEn}.`,
+			`${wrongParticle} is wrong because ${item.adj} is not an action verb.`
+		],
+		explanation: `In a どちらが question, B can answer with the chosen side plus のほうが: ${forms.response}`
+	});
+}
+
+function makeComparisonErrorChoice(item) {
+	const forms = comparisonSentences(item);
+	const wrong = `${item.greater}は${item.lesser}ほど${item.adj}です。`;
+	return makeChoiceQuestion({
+		kind: "error diagnosis",
+		prompt: `${forms.yori} → ${wrong}`,
+		subprompt: "The rewrite is trying to use ほど. What is the problem?",
+		band: "Pick the best diagnosis.",
+		answer: "ほど for “not as...as” needs the benchmark after ほど and a negative predicate.",
+		options: [
+			"ほど for “not as...as” needs the benchmark after ほど and a negative predicate.",
+			"より must stay in every comparison sentence.",
+			"のほうが is required because the sentence has an adjective.",
+			"The sentence is correct because ほど can replace より without any other change."
+		],
+		explanation: `The correct ほど rewrite is ${forms.hodo}`
+	});
+}
+
+function buildComparisonHardPracticeBank() {
+	const selected = [
+		comparisonScenarios[2],
+		comparisonScenarios[7],
+		comparisonScenarios[12],
+		comparisonScenarios[17],
+		comparisonScenarios[20],
+		comparisonScenarios[24],
+		comparisonScenarios[27],
+		comparisonScenarios[31],
+		comparisonScenarios[34],
+		comparisonScenarios[38],
+		comparisonScenarios[42]
+	].filter(Boolean);
+	return selected.flatMap((item, index) => [
+		makeComparisonRewriteQuestion({ item, from: "yori", to: "hodo" }),
+		makeComparisonRewriteQuestion({ item, from: "hodo", to: "hou" }),
+		makeComparisonTwoBlankQuestion(item),
+		index % 2 === 0 ? makeComparisonDialogueQuestion(item) : makeComparisonErrorChoice(item)
+	]);
+}
+
 function makeGrammarReadingQuestion({ kind = "grammar in reading", passage, prompt, answer, options, explanation }) {
 	return makeChoiceQuestion({
 		kind,
@@ -3987,22 +4080,7 @@ function makeGrammarCorrectionQuestion({ kind = "wrong sentence correction", wro
 
 const advancedGrammarPracticePacks = {
 	comparison: [
-		makeGrammarDiagnosisQuestion({
-			prompt: "コーヒーと紅茶と、どちらを飲みたいですか。→ 紅茶のほうが飲みたいです。",
-			answer: "With 飲みたい, のほうを is usually better because tea is the thing chosen or drunk.",
-			options: ["より is always required after 紅茶.", "どちら cannot be used with たい.", "ほう cannot be used with drinks."],
-			explanation: "Adjective comparisons use のほうが, but object-choice verbs like 選ぶ, 飲む, 食べる, and 買う often use のほうを."
-		}),
-		makeGrammarOrderQuestion({
-			prompt: "Make: I want to buy the cheaper one.",
-			fragments: ["安い", "ほうを", "買いたい", "です"],
-			explanation: "For wanting to buy one option, the preferred item is the object: ほうを買いたいです."
-		}),
-		makeGrammarContextBlank({
-			prompt: "新幹線はバス＿＿速いです。",
-			answer: "より",
-			explanation: "より marks the thing being compared against."
-		})
+		...buildComparisonHardPracticeBank()
 	],
 	time: [
 		makeGrammarDiagnosisQuestion({
@@ -4446,11 +4524,11 @@ const advancedGrammarPracticePacks = {
 const grammarReadingIntegrationPacks = {
 	comparison: [
 		makeGrammarReadingQuestion({
-			passage: "週末、兄は山へ行きました。私は海へ行きました。兄は『山のほうが静かだった』と言いましたが、私は海のほうが楽しかったです。",
-			prompt: "What comparison does the narrator make?",
-			answer: "The sea was more fun for the narrator.",
-			options: ["The mountain was more fun for the narrator.", "The mountain was not as quiet as the sea.", "The older brother did not go anywhere."],
-			explanation: "私は海のほうが楽しかったです means the narrator preferred the sea for 楽しい."
+			passage: "旅行のあとで、兄は『山のほうが静かだった』と言いました。私は『海は山ほど静かではなかったけれど、海のほうが楽しかった』と日記に書きました。",
+			prompt: "Which reading keeps both comparisons straight?",
+			answer: "The mountain was quieter, but the sea was more fun for the narrator.",
+			options: ["The sea was quieter and more fun.", "The mountain was not as quiet as the sea, but it was more fun.", "The narrator says quiet and fun mean the same thing."],
+			explanation: "山のほうが静かだった makes the mountain quieter; 海のほうが楽しかった makes the sea more fun."
 		})
 	],
 	time: [
@@ -4672,7 +4750,7 @@ const grammarReadingIntegrationPacks = {
 };
 
 const grammarCorrectionData = [
-	["comparison", "紅茶のほうが飲みたいです。", "紅茶のほうを飲みたいです。", "With an action verb like 飲む, the chosen thing is usually marked with を."],
+	["comparison", "電車はバスほど速くありません。", "バスは電車ほど速くありません。", "The ほど benchmark must be the stronger side. If the bus is not as fast as the train, use バスは電車ほど速くありません。"],
 	["time", "音楽を聞いているところで宿題をしました。", "音楽を聞きながら宿題をしました。", "ながら marks a side action happening at the same time as the main action."],
 	["invitation", "荷物が重そうですね。私も持ちませんか。", "荷物が重そうですね。私が持ちましょうか。", "ましょうか is used when the speaker offers to do something."],
 	["ability", "この部屋から海が見ることができます。", "この部屋から海が見えます。", "見えます is natural for something visible from the situation."],
@@ -4708,7 +4786,7 @@ const grammarCorrectionPacks = Object.fromEntries(grammarCorrectionData.map(([id
 ]]));
 
 const grammarSessionBossData = [
-	["comparison", "店で、サラさんは『赤いかばんと青いかばんと、どちらを買いたいですか』と聞かれました。サラさんは青いかばんを指して、『こちらのほうを買いたいです』と言いました。", "Why is ほうを used?", "Because 買いたい is an action verb and the chosen item is the object.", ["Because 青い is an adjective.", "Because ほしい always uses を.", "Because the red bag is cheaper."], "Boss check: separate adjective comparison のほうが from object-choice のほうを."],
+	["comparison", "A『バスと電車と、どちらが速いですか。』B『電車のほうが速いです。でも、バスは電車ほど高くありません。』", "Which pair correctly reads B's two comparisons?", "The train is faster; the bus is not as expensive as the train.", ["The bus is faster; the train is not as expensive as the bus.", "The train is faster; the train is not as expensive as the bus.", "The bus and train are equally fast and equally expensive."], "Boss check: のほうが marks the stronger side for 速い; ほど...ありません says the subject is below the benchmark for 高い."],
 	["time", "会議は三時までです。資料は三時までに出してください。田中さんは資料を作りながら電話をしていました。", "Which sentence uses a deadline?", "資料は三時までに出してください。", ["会議は三時までです。", "資料を作りながら電話をしていました。", "三つとも締め切りを表します。"], "までに marks the deadline for a completed action."],
 	["invitation", "A『週末、いっしょに勉強しませんか。』B『いいですね。重い本は私が持ちましょうか。』", "Which statement is correct?", "ませんか invites; ましょうか offers help.", ["ませんか offers help; ましょうか reports hearsay.", "Both forms only invite.", "Both forms only ask permission."], "Boss check: invitation vs speaker's offer."],
 	["ability", "ホテルの部屋から海が見えます。ロビーでは無料でコーヒーを飲むことができます。", "What is the contrast?", "見えます is natural perception; 飲むことができます is available possibility.", ["Both are learned skills.", "Both are passive forms.", "見えます means permission from hotel staff."], "Boss check: natural perception vs enabled action."],
@@ -5435,7 +5513,7 @@ function buildAdvancedGrammarPracticeBank(sessionId, baseBank) {
 		...(grammarCorrectionPacks[sessionId] || []),
 		...(grammarSessionBossPacks[sessionId] || []),
 		...(grammarReadingIntegrationPacks[sessionId] || []),
-		...buildGenericAdvancedGrammarQuestions(sessionId, baseBank)
+		...(sessionId === "comparison" ? [] : buildGenericAdvancedGrammarQuestions(sessionId, baseBank))
 	];
 	const seen = new Set();
 	return [...baseBank, ...advanced].filter((question) => {
@@ -5553,18 +5631,13 @@ function buildFocusedGrammarQueue(sessionId, bank, focus, questionCount) {
 			["reading", "diagnosis", "correction", "production"].includes(question.meta?.format)
 		));
 		const seen = new Set();
-		const hardQueue = [...directBoss, ...shuffled(hardBank)].filter((question) => {
+		const hardQueue = shuffled([...directBoss, ...hardBank]).filter((question) => {
 			const key = `${question.kind}|${question.prompt}|${question.answer}`;
 			if (seen.has(key)) return false;
 			seen.add(key);
 			return true;
 		});
-		if (hardQueue.length >= questionCount) return hardQueue;
-		const fallback = shuffled(bank.filter((question) => {
-			const key = `${question.kind}|${question.prompt}|${question.answer}`;
-			return !seen.has(key);
-		}));
-		return [...hardQueue, ...fallback];
+		return hardQueue;
 	}
 	return null;
 }
@@ -5670,10 +5743,6 @@ function isFinalGrammarPracticeQuestion() {
 
 function renderGrammarAnswerCoaching(question, value, isCorrect) {
 	const selected = String(value || "").trim();
-	const pattern = question.meta?.pattern || "this pattern";
-	const pitfall = question.meta?.pitfall || "the grammar job";
-	const format = question.meta?.format || "question";
-	const cue = question.subprompt || question.band || "Read the sentence role before choosing the form.";
 	const retryAvailable = !isCorrect && Boolean(findGrammarRetryCandidate(question));
 	const selectedBlock = isCorrect ? "" : `
 		<p class="is-wrong">
@@ -5681,10 +5750,7 @@ function renderGrammarAnswerCoaching(question, value, isCorrect) {
 			<strong${jpLangAttribute(selected)}>${renderJapaneseTextWithFurigana(selected || "No answer")}</strong>
 		</p>
 	`;
-	const trapCopy = question.mode === "choice"
-		? "It was probably tempting because it is a real-looking option in the same grammar neighborhood."
-		: "It was probably tempting because it is close to the target form or meaning.";
-	const failCopy = question.explanation || `The cue points to ${pattern}, not the selected form.`;
+	const explanation = question.explanation || "The correct answer matches the grammar cue in the prompt.";
 	const nextLabel = isFinalGrammarPracticeQuestion() ? "Finish & see stats" : "Next";
 	return `
 		<div class="gp-coaching">
@@ -5696,29 +5762,9 @@ function renderGrammarAnswerCoaching(question, value, isCorrect) {
 				${selectedBlock}
 			</div>
 			<div class="gp-coaching-card">
-				<h5>${isCorrect ? "Cue you caught" : "Cue to notice next time"}</h5>
-				<p>${renderJapaneseTextWithFurigana(cue)}</p>
+				<h5>Why it works</h5>
+				<p>${renderJapaneseTextWithFurigana(explanation)}</p>
 			</div>
-			${isCorrect ? `
-				<div class="gp-coaching-card">
-					<h5>Why it works</h5>
-					<p>${renderJapaneseTextWithFurigana(failCopy)}</p>
-				</div>
-			` : `
-				<div class="gp-coaching-card is-trap">
-					<h5>Why the trap is tempting</h5>
-					<p>${escapeHtml(trapCopy)} This item is testing <strong>${escapeHtml(pattern)}</strong> through <strong>${escapeHtml(pitfall)}</strong>.</p>
-				</div>
-				<div class="gp-coaching-card">
-					<h5>Why it fails here</h5>
-					<p>${renderJapaneseTextWithFurigana(failCopy)}</p>
-				</div>
-				<div class="gp-coaching-card">
-					<h5>Minimal pair</h5>
-					<p><span>Correct ${escapeHtml(format)}</span><strong${jpLangAttribute(question.answer)}>${renderJapaneseTextWithFurigana(question.answer)}</strong></p>
-					<p><span>Trap answer</span><strong${jpLangAttribute(selected)}>${renderJapaneseTextWithFurigana(selected || "No answer")}</strong></p>
-				</div>
-			`}
 			<div class="gp-coaching-actions">
 				${retryAvailable ? `<button class="gp-card-action" type="button" id="gp-retry-pattern">Retry this point</button>` : ""}
 				<button class="practice-start rh-next" type="button" id="gp-next">${escapeHtml(nextLabel)} <span aria-hidden="true">→</span></button>
