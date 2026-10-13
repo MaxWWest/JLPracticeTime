@@ -5455,6 +5455,7 @@ function showGrammarPracticeQuestion() {
 	}
 	gpState.answered = false;
 	gpEls.hero.className = "gp-hero";
+	gpEls.hero.classList.toggle("is-ordering", question.kind === "sentence ordering");
 	gpEls.type.textContent = `${gpState.sessionLabel || "GRAMMAR PRACTICE"} · ${question.kind}`;
 	gpEls.prompt.innerHTML = renderJapaneseTextWithFurigana(question.prompt);
 	gpEls.subprompt.innerHTML = renderJapaneseTextWithFurigana(question.subprompt);
