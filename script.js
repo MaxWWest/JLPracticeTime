@@ -5016,6 +5016,49 @@ function storeGrammarMisses(misses) {
 	}
 }
 
+function normalizeGrammarMemorySessionId(sessionId) {
+	const normalized = String(sessionId || "").trim().toLowerCase();
+	if (["1", "01", "session-1", "session-01", "grammar-1", "grammar-01"].includes(normalized)) return "comparison";
+	return normalized;
+}
+
+function resetStoredGrammarMissesForSession(sessionId) {
+	const targetSessionId = normalizeGrammarMemorySessionId(sessionId);
+	if (!targetSessionId) return 0;
+	const stored = getStoredGrammarMisses();
+	const kept = stored.filter((question) => {
+		const primarySessionId = normalizeGrammarMemorySessionId(question.sessionId);
+		const sourceSessionId = normalizeGrammarMemorySessionId(question.meta?.sourceSessionId);
+		return primarySessionId !== targetSessionId && sourceSessionId !== targetSessionId;
+	});
+	storeGrammarMisses(kept);
+	return stored.length - kept.length;
+}
+
+function applyGrammarMemoryResetFromUrl() {
+	const SearchParams = window.URLSearchParams || (typeof URLSearchParams === "function" ? URLSearchParams : null);
+	if (!SearchParams || !window.location?.search) return;
+	const params = new SearchParams(window.location.search);
+	const requestedSessionId = params.get("resetGrammarMemory") || params.get("resetGrammarSession");
+	if (!requestedSessionId) return;
+	const removed = resetStoredGrammarMissesForSession(requestedSessionId);
+	try {
+		sessionStorage.setItem("kotoba-grammar-reset-result", JSON.stringify({
+			sessionId: normalizeGrammarMemorySessionId(requestedSessionId),
+			removed
+		}));
+	} catch {
+		// The reset itself already ran; storing the confirmation is optional.
+	}
+	params.delete("resetGrammarMemory");
+	params.delete("resetGrammarSession");
+	const query = params.toString();
+	window.history?.replaceState?.(null, "", `${window.location.pathname}${query ? `?${query}` : ""}${window.location.hash}`);
+}
+
+window.resetGrammarMemoryForSession = resetStoredGrammarMissesForSession;
+applyGrammarMemoryResetFromUrl();
+
 function serializableGrammarQuestion(question, sessionId) {
 	const enriched = withGrammarPracticeMetadata(question, sessionId);
 	return {
