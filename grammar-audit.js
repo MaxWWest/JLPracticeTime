@@ -239,11 +239,23 @@ function auditQuestion(sessionId, question, index, findings) {
 function auditFurigana(api, findings) {
 	const checks = [
 		{ text: "タクシーは地下鉄より高いです。", mustContain: "<ruby>地下鉄<rt>ちかてつ</rt></ruby>", mustNotContain: "<ruby>下<rt>した</rt></ruby>鉄", label: "地下鉄" },
-		{ text: "辞書はノートほど軽くありません。", mustContain: "<ruby>軽く<rt>かるく</rt></ruby>", mustNotContain: "軽くありません", label: "軽く" }
+		{ text: "辞書はノートほど軽くありません。", mustContain: "<ruby>軽く<rt>かるく</rt></ruby>", mustNotContain: "軽くありません", label: "軽く" },
+		{
+			text: "週末、兄は山へ行きました。私は海へ行きました。兄は『山のほうが静かだった』と言いましたが、私は海のほうが楽しかったです。",
+			mustContain: [
+				"<ruby>週末<rt>しゅうまつ</rt></ruby>",
+				"<ruby>山<rt>やま</rt></ruby>",
+				"<ruby>私<rt>わたし</rt></ruby>",
+				"<ruby>楽しかった<rt>たのしかった</rt></ruby>"
+			],
+			mustNotContain: "山へ",
+			label: "boss reading passage"
+		}
 	];
 	for (const check of checks) {
 		const rendered = api.renderJapaneseTextWithFurigana(check.text);
-		if (!rendered.includes(check.mustContain) || rendered.includes(check.mustNotContain)) {
+		const required = Array.isArray(check.mustContain) ? check.mustContain : [check.mustContain];
+		if (!required.every((snippet) => rendered.includes(snippet)) || rendered.includes(check.mustNotContain)) {
 			findings.push({
 				severity: "high",
 				code: "furigana-regression",
