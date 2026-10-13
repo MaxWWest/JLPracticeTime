@@ -4417,6 +4417,143 @@ function buildComparisonHardPracticeBank() {
 			explanation: "漢字の問題は文法の問題ほど難しくありません means grammar questions were harder."
 		}),
 		makeChoiceQuestion({
+			kind: "table reading · distance",
+			prompt: "家からの時間: コンビニ 5分 / 銀行 12分 / 駅 20分",
+			subprompt: "Which sentence matches the table?",
+			band: "Turn the numbers into a comparison.",
+			answer: "銀行は駅ほど遠くありません。",
+			options: [
+				"銀行は駅ほど遠くありません。",
+				"駅は銀行ほど遠くありません。",
+				"コンビニより駅のほうが近いです。",
+				"銀行はコンビニほど近いです。"
+			],
+			explanation: "The station takes longer to reach than the bank, so the bank is not as far as the station."
+		}),
+		makeChoiceQuestion({
+			kind: "table reading · schedule",
+			prompt: "開く時間: 図書館 9:00 / 喫茶店 8:30 / 映画館 10:00",
+			subprompt: "Which sentence is true?",
+			band: "早い means earlier in time here.",
+			answer: "喫茶店は図書館より早く開きます。",
+			options: [
+				"喫茶店は図書館より早く開きます。",
+				"映画館は図書館ほど遅く開きません。",
+				"図書館より映画館のほうが早く開きます。",
+				"喫茶店は映画館ほど早く開きません。"
+			],
+			explanation: "8:30 is earlier than 9:00 and 10:00."
+		}),
+		makeChoiceQuestion({
+			kind: "unsupported inference · commute",
+			prompt: "会社へ行く時、地下鉄はバスより速いです。タクシーは地下鉄ほど安くありません。",
+			subprompt: "Which sentence cannot be known from this note?",
+			band: "Separate speed from price.",
+			answer: "タクシーはバスより速いです。",
+			options: [
+				"タクシーはバスより速いです。",
+				"地下鉄はバスより速いです。",
+				"タクシーは地下鉄より高いです。",
+				"地下鉄はタクシーほど高くありません。"
+			],
+			explanation: "The note compares subway vs bus speed and taxi vs subway price; it never compares taxi vs bus speed."
+		}),
+		makeChoiceQuestion({
+			kind: "sentence pair · same meaning",
+			prompt: "Pick the pair where the two Japanese sentences say the same thing.",
+			subprompt: "Only one pair preserves both direction and adjective.",
+			band: "Compare the whole pair.",
+			answer: "先生の説明は教科書の説明より分かりやすいです。 / 教科書の説明は先生の説明ほど分かりやすくありません。",
+			options: [
+				"先生の説明は教科書の説明より分かりやすいです。 / 教科書の説明は先生の説明ほど分かりやすくありません。",
+				"先生の説明は教科書の説明より分かりやすいです。 / 先生の説明は教科書の説明ほど分かりやすくありません。",
+				"教科書の説明は先生の説明より分かりやすいです。 / 教科書の説明は先生の説明ほど分かりやすくありません。",
+				"先生の説明は教科書の説明より分かりやすいです。 / 教科書の説明より先生の説明のほうが分かりにくいです。"
+			],
+			explanation: "If the teacher's explanation is easier, the textbook explanation is not as easy as the teacher's."
+		}),
+		makeTextQuestion({
+			kind: "line edit · hodo polarity",
+			prompt: "Wrong rewrite: バスの時間は電車の時間ほど早いです。\nCorrect ending: バスの時間は電車の時間＿＿＿＿",
+			subprompt: "Replace only the final comparison phrase after 電車の時間.",
+			band: "Type the corrected ending.",
+			answer: "ほど早くありません",
+			accepted: comparisonAnswerVariants("ほど早くありません", "ほどはやくありません"),
+			explanation: "ほど for “not as early as” needs the negative predicate 早くありません.",
+			placeholder: "ほど早くありません"
+		}),
+		makeTextQuestion({
+			kind: "english production · commute",
+			prompt: "Say in Japanese: The train time is earlier than the bus time.",
+			subprompt: "Use より...のほうが.",
+			band: "Type one natural Japanese sentence.",
+			answer: "バスの時間より電車の時間のほうが早いです。",
+			accepted: comparisonHouAnswers(timeItem),
+			explanation: "The bus time is the comparison base after より; the train time is the earlier side.",
+			placeholder: "バスの時間より電車の時間のほうが早いです。"
+		}),
+		makeChoiceQuestion({
+			kind: "missing reply · crowding",
+			prompt: "A: 駅前の店とデパートのレストランと、どちらが混んでいますか。\nB: ＿＿＿＿",
+			subprompt: "B means the department-store restaurant is more crowded.",
+			band: "Choose the most natural reply.",
+			answer: "デパートのレストランのほうが混んでいます。",
+			options: [
+				"デパートのレストランのほうが混んでいます。",
+				"駅前の店のほうが混んでいます。",
+				"デパートのレストランほど混んでいません。",
+				"駅前の店より混んでいません。"
+			],
+			explanation: "The chosen side with more of the adjective takes のほうが."
+		}),
+		makeChoiceQuestion({
+			kind: "minimal pair · marker role",
+			prompt: "A: ホテルは空港より近いです。\nB: 空港はホテルほど近くありません。",
+			subprompt: "What do A and B have in common?",
+			band: "Read the role of より and ほど.",
+			answer: "Both say the hotel is nearer than the airport.",
+			options: [
+				"Both say the hotel is nearer than the airport.",
+				"Both say the airport is nearer than the hotel.",
+				"A is about distance, but B is about price.",
+				"B is wrong because ほど cannot be used with 近い."
+			],
+			explanation: "A says hotel > airport for nearness; B says the airport is not as near as the hotel."
+		}),
+		makeTextQuestion({
+			kind: "two-sentence synthesis · errands",
+			prompt: "銀行は駅より近いです。コンビニは銀行より近いです。\n→ ＿＿＿＿",
+			subprompt: "Use ほど...ありません to compare the station with the convenience store.",
+			band: "Type the full Japanese sentence.",
+			answer: "駅はコンビニほど近くありません。",
+			accepted: comparisonAnswerVariants("駅はコンビニほど近くありません。", "コンビニほど駅は近くありません。"),
+			explanation: "コンビニ is nearer than 銀行, and 銀行 is nearer than 駅, so the station is not as near as the convenience store.",
+			placeholder: "駅はコンビニほど近くありません。"
+		}),
+		makeChoiceQuestion({
+			kind: "wrong-answer triage · object vs adjective",
+			prompt: "A: コーヒーと紅茶と、どちらが苦いですか。\nB: コーヒーのほうを苦いです。",
+			subprompt: "What should be fixed?",
+			band: "Identify the exact particle problem.",
+			answer: "Change のほうを to のほうが because 苦い describes a quality.",
+			options: [
+				"Change のほうを to のほうが because 苦い describes a quality.",
+				"Change 苦い to 飲みたい because every どちら question uses を.",
+				"Add より after コーヒー because short answers cannot use のほう.",
+				"Use ほど because bitter is an adjective."
+			],
+			explanation: "のほうを fits object choice with verbs like 飲みたい; adjective comparison uses のほうが."
+		}),
+		makeChoiceQuestion({
+			kind: "negative comparison · choose base",
+			prompt: "友だちは『ホテルは空港より近い』と言いました。あなたは同じ意味を ほど で言いたいです。",
+			subprompt: "Which noun should come after ほど?",
+			band: "The stronger benchmark follows ほど.",
+			answer: "ホテル",
+			options: ["ホテル", "空港", "近い", "友だち"],
+			explanation: "空港はホテルほど近くありません keeps ホテル as the nearer benchmark."
+		}),
+		makeChoiceQuestion({
 			kind: "dialogue diagnosis · object choice",
 			prompt: "A: コーヒーと紅茶と、どちらを飲みたいですか。\nB: 紅茶のほうを飲みたいです。",
 			subprompt: "Why is B's answer natural?",
