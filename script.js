@@ -5553,12 +5553,18 @@ function buildFocusedGrammarQueue(sessionId, bank, focus, questionCount) {
 			["reading", "diagnosis", "correction", "production"].includes(question.meta?.format)
 		));
 		const seen = new Set();
-		return [...directBoss, ...shuffled(hardBank)].filter((question) => {
+		const hardQueue = [...directBoss, ...shuffled(hardBank)].filter((question) => {
 			const key = `${question.kind}|${question.prompt}|${question.answer}`;
 			if (seen.has(key)) return false;
 			seen.add(key);
 			return true;
 		});
+		if (hardQueue.length >= questionCount) return hardQueue;
+		const fallback = shuffled(bank.filter((question) => {
+			const key = `${question.kind}|${question.prompt}|${question.answer}`;
+			return !seen.has(key);
+		}));
+		return [...hardQueue, ...fallback];
 	}
 	return null;
 }
