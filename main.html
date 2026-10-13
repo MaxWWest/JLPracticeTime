@@ -9,9 +9,9 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=20261010-boss-rounds">
-    <script src="script.js?v=20261010-boss-rounds" defer></script>
-    <script src="reading.js?v=20261010-boss-rounds" defer></script>
+    <link rel="stylesheet" href="styles.css?v=20261013-grammar-card-actions">
+    <script src="script.js?v=20261013-grammar-card-actions" defer></script>
+    <script src="reading.js?v=20261013-grammar-card-actions" defer></script>
 </head>
 <body>
     <div class="page-shell">
@@ -187,10 +187,16 @@
                 <div class="nominal-conjugation-heading">
                     <p class="eyebrow section-eyebrow">N4 GRAMMAR GAMES</p>
                     <h3>Grammar practice sessions</h3>
-                    <p>Interactive drills for the N4 patterns that need fast recognition and sentence control. Sessions 01 through 25 are ready.</p>
+                    <p>Interactive drills for N4 control: learn the patterns, review weak spots, then take on boss-style mixed questions.</p>
                 </div>
-                <div class="gp-layout" id="gp-setup">
-                    <article class="gp-session-card is-ready" data-gp-session-card="comparison">
+                <div class="gp-layout" id="gp-setup" data-gp-mode="practice">
+                    <div class="gp-mode-tabs" role="tablist" aria-label="Grammar practice modes">
+                        <button class="is-active" type="button" role="tab" aria-selected="true" data-gp-filter="practice">Practice</button>
+                        <button type="button" role="tab" aria-selected="false" data-gp-filter="review">Review</button>
+                        <button type="button" role="tab" aria-selected="false" data-gp-filter="boss">Boss</button>
+                    </div>
+                    <div class="gp-review-summary" id="gp-review-summary" data-gp-category="review"></div>
+                    <article class="gp-session-card is-ready" data-gp-session-card="comparison" data-gp-category="practice">
                         <span class="gp-session-number">01</span>
                         <div>
                             <h4>Comparison patterns</h4>
@@ -210,7 +216,7 @@
                         </div>
                         <div class="gp-note-tip" id="gp-note-comparison" data-gp-note-tip="comparison" role="tooltip" hidden></div>
                     </article>
-                    <article class="gp-session-card is-ready" data-gp-session-card="time">
+                    <article class="gp-session-card is-ready" data-gp-session-card="time" data-gp-category="practice">
                         <span class="gp-session-number">02</span>
                         <div>
                             <h4>Time and simultaneous actions</h4>
@@ -230,7 +236,7 @@
                         </div>
                         <div class="gp-note-tip" id="gp-note-time" data-gp-note-tip="time" role="tooltip" hidden></div>
                     </article>
-                    <article class="gp-session-card is-ready" data-gp-session-card="invitation">
+                    <article class="gp-session-card is-ready" data-gp-session-card="invitation" data-gp-category="practice">
                         <span class="gp-session-number">03</span>
                         <div>
                             <h4>Invitations and offers</h4>
@@ -250,7 +256,7 @@
                         </div>
                         <div class="gp-note-tip" id="gp-note-invitation" data-gp-note-tip="invitation" role="tooltip" hidden></div>
                     </article>
-                    <article class="gp-session-card is-ready" data-gp-session-card="ability">
+                    <article class="gp-session-card is-ready" data-gp-session-card="ability" data-gp-category="practice">
                         <span class="gp-session-number">04</span>
                         <div>
                             <h4>Ability and perception</h4>
@@ -270,7 +276,7 @@
                         </div>
                         <div class="gp-note-tip" id="gp-note-ability" data-gp-note-tip="ability" role="tooltip" hidden></div>
                     </article>
-                    <article class="gp-session-card is-ready" data-gp-session-card="experience">
+                    <article class="gp-session-card is-ready" data-gp-session-card="experience" data-gp-category="practice">
                         <span class="gp-session-number">05</span>
                         <div>
                             <h4>Experience and occasional events</h4>
@@ -290,7 +296,7 @@
                         </div>
                         <div class="gp-note-tip" id="gp-note-experience" data-gp-note-tip="experience" role="tooltip" hidden></div>
                     </article>
-                    <article class="gp-session-card is-ready" data-gp-session-card="permission">
+                    <article class="gp-session-card is-ready" data-gp-session-card="permission" data-gp-category="practice">
                         <span class="gp-session-number">06</span>
                         <div>
                             <h4>Permission and obligation</h4>
@@ -310,7 +316,7 @@
                         </div>
                         <div class="gp-note-tip" id="gp-note-permission" data-gp-note-tip="permission" role="tooltip" hidden></div>
                     </article>
-                    <article class="gp-session-card is-ready" data-gp-session-card="desire">
+                    <article class="gp-session-card is-ready" data-gp-session-card="desire" data-gp-category="practice">
                         <span class="gp-session-number">07</span>
                         <div>
                             <h4>Desires and hopes</h4>
@@ -330,7 +336,7 @@
                         </div>
                         <div class="gp-note-tip" id="gp-note-desire" data-gp-note-tip="desire" role="tooltip" hidden></div>
                     </article>
-                    <article class="gp-session-card is-ready" data-gp-session-card="appearance">
+                    <article class="gp-session-card is-ready" data-gp-session-card="appearance" data-gp-category="practice">
                         <span class="gp-session-number">08</span>
                         <div>
                             <h4>Appearance, visible emotion, and unchanged state</h4>
@@ -350,7 +356,7 @@
                         </div>
                         <div class="gp-note-tip" id="gp-note-appearance" data-gp-note-tip="appearance" role="tooltip" hidden></div>
                     </article>
-                    <article class="gp-session-card is-ready" data-gp-session-card="reason">
+                    <article class="gp-session-card is-ready" data-gp-session-card="reason" data-gp-category="practice">
                         <span class="gp-session-number">09</span>
                         <div>
                             <h4>Reasons and causes</h4>
@@ -370,7 +376,7 @@
                         </div>
                         <div class="gp-note-tip" id="gp-note-reason" data-gp-note-tip="reason" role="tooltip" hidden></div>
                     </article>
-                    <article class="gp-session-card is-ready" data-gp-session-card="purpose">
+                    <article class="gp-session-card is-ready" data-gp-session-card="purpose" data-gp-category="practice">
                         <span class="gp-session-number">10</span>
                         <div>
                             <h4>Purpose and intended outcomes</h4>
@@ -390,7 +396,7 @@
                         </div>
                         <div class="gp-note-tip" id="gp-note-purpose" data-gp-note-tip="purpose" role="tooltip" hidden></div>
                     </article>
-                    <article class="gp-session-card is-ready" data-gp-session-card="listing">
+                    <article class="gp-session-card is-ready" data-gp-session-card="listing" data-gp-category="practice">
                         <span class="gp-session-number">11</span>
                         <div>
                             <h4>Listing reasons and actions</h4>
@@ -406,7 +412,7 @@
                         </div>
                         <div class="gp-note-tip" id="gp-note-listing" data-gp-note-tip="listing" role="tooltip" hidden></div>
                     </article>
-                    <article class="gp-session-card is-ready" data-gp-session-card="certainty">
+                    <article class="gp-session-card is-ready" data-gp-session-card="certainty" data-gp-category="practice">
                         <span class="gp-session-number">12</span>
                         <div>
                             <h4>Possibility and evidence</h4>
@@ -422,7 +428,7 @@
                         </div>
                         <div class="gp-note-tip" id="gp-note-certainty" data-gp-note-tip="certainty" role="tooltip" hidden></div>
                     </article>
-                    <article class="gp-session-card is-ready" data-gp-session-card="advice">
+                    <article class="gp-session-card is-ready" data-gp-session-card="advice" data-gp-category="practice">
                         <span class="gp-session-number">13</span>
                         <div>
                             <h4>Instructions and warnings</h4>
@@ -438,7 +444,7 @@
                         </div>
                         <div class="gp-note-tip" id="gp-note-advice" data-gp-note-tip="advice" role="tooltip" hidden></div>
                     </article>
-                    <article class="gp-session-card is-ready" data-gp-session-card="conditionals">
+                    <article class="gp-session-card is-ready" data-gp-session-card="conditionals" data-gp-category="practice">
                         <span class="gp-session-number">14</span>
                         <div>
                             <h4>Conditionals</h4>
@@ -454,7 +460,7 @@
                         </div>
                         <div class="gp-note-tip" id="gp-note-conditionals" data-gp-note-tip="conditionals" role="tooltip" hidden></div>
                     </article>
-                    <article class="gp-session-card is-ready" data-gp-session-card="tara-nara">
+                    <article class="gp-session-card is-ready" data-gp-session-card="tara-nara" data-gp-category="practice">
                         <span class="gp-session-number">15</span>
                         <div>
                             <h4>After it happens vs if that topic</h4>
@@ -470,7 +476,7 @@
                         </div>
                         <div class="gp-note-tip" id="gp-note-tara-nara" data-gp-note-tip="tara-nara" role="tooltip" hidden></div>
                     </article>
-                    <article class="gp-session-card is-ready" data-gp-session-card="concession">
+                    <article class="gp-session-card is-ready" data-gp-session-card="concession" data-gp-category="practice">
                         <span class="gp-session-number">16</span>
                         <div>
                             <h4>Even if and although</h4>
@@ -486,7 +492,7 @@
                         </div>
                         <div class="gp-note-tip" id="gp-note-concession" data-gp-note-tip="concession" role="tooltip" hidden></div>
                     </article>
-                    <article class="gp-session-card is-ready" data-gp-session-card="quotation">
+                    <article class="gp-session-card is-ready" data-gp-session-card="quotation" data-gp-category="practice">
                         <span class="gp-session-number">17</span>
                         <div>
                             <h4>Quoting and embedded questions</h4>
@@ -502,7 +508,7 @@
                         </div>
                         <div class="gp-note-tip" id="gp-note-quotation" data-gp-note-tip="quotation" role="tooltip" hidden></div>
                     </article>
-                    <article class="gp-session-card is-ready" data-gp-session-card="intention">
+                    <article class="gp-session-card is-ready" data-gp-session-card="intention" data-gp-category="practice">
                         <span class="gp-session-number">18</span>
                         <div>
                             <h4>Intentions and plans</h4>
@@ -518,7 +524,7 @@
                         </div>
                         <div class="gp-note-tip" id="gp-note-intention" data-gp-note-tip="intention" role="tooltip" hidden></div>
                     </article>
-                    <article class="gp-session-card is-ready" data-gp-session-card="hearsay">
+                    <article class="gp-session-card is-ready" data-gp-session-card="hearsay" data-gp-category="practice">
                         <span class="gp-session-number">19</span>
                         <div>
                             <h4>Reported speech and hearsay</h4>
@@ -534,7 +540,7 @@
                         </div>
                         <div class="gp-note-tip" id="gp-note-hearsay" data-gp-note-tip="hearsay" role="tooltip" hidden></div>
                     </article>
-                    <article class="gp-session-card is-ready" data-gp-session-card="change">
+                    <article class="gp-session-card is-ready" data-gp-session-card="change" data-gp-category="practice">
                         <span class="gp-session-number">20</span>
                         <div>
                             <h4>Making and becoming</h4>
@@ -550,7 +556,7 @@
                         </div>
                         <div class="gp-note-tip" id="gp-note-change" data-gp-note-tip="change" role="tooltip" hidden></div>
                     </article>
-                    <article class="gp-session-card is-ready" data-gp-session-card="decisions">
+                    <article class="gp-session-card is-ready" data-gp-session-card="decisions" data-gp-category="practice">
                         <span class="gp-session-number">21</span>
                         <div>
                             <h4>Decisions and arrangements</h4>
@@ -566,7 +572,7 @@
                         </div>
                         <div class="gp-note-tip" id="gp-note-decisions" data-gp-note-tip="decisions" role="tooltip" hidden></div>
                     </article>
-                    <article class="gp-session-card is-ready" data-gp-session-card="te-auxiliary">
+                    <article class="gp-session-card is-ready" data-gp-session-card="te-auxiliary" data-gp-category="practice">
                         <span class="gp-session-number">22</span>
                         <div>
                             <h4>Trying, preparing, and finishing</h4>
@@ -582,7 +588,7 @@
                         </div>
                         <div class="gp-note-tip" id="gp-note-te-auxiliary" data-gp-note-tip="te-auxiliary" role="tooltip" hidden></div>
                     </article>
-                    <article class="gp-session-card is-ready" data-gp-session-card="giving">
+                    <article class="gp-session-card is-ready" data-gp-session-card="giving" data-gp-category="practice">
                         <span class="gp-session-number">23</span>
                         <div>
                             <h4>Giving and receiving favors</h4>
@@ -598,7 +604,7 @@
                         </div>
                         <div class="gp-note-tip" id="gp-note-giving" data-gp-note-tip="giving" role="tooltip" hidden></div>
                     </article>
-                    <article class="gp-session-card is-ready" data-gp-session-card="passive">
+                    <article class="gp-session-card is-ready" data-gp-session-card="passive" data-gp-category="practice">
                         <span class="gp-session-number">24</span>
                         <div>
                             <h4>Passive sentences</h4>
@@ -614,7 +620,7 @@
                         </div>
                         <div class="gp-note-tip" id="gp-note-passive" data-gp-note-tip="passive" role="tooltip" hidden></div>
                     </article>
-                    <article class="gp-session-card is-ready" data-gp-session-card="causative">
+                    <article class="gp-session-card is-ready" data-gp-session-card="causative" data-gp-category="practice">
                         <span class="gp-session-number">25</span>
                         <div>
                             <h4>Causative and causative-passive</h4>
@@ -630,7 +636,7 @@
                         </div>
                         <div class="gp-note-tip" id="gp-note-causative" data-gp-note-tip="causative" role="tooltip" hidden></div>
                     </article>
-                    <article class="gp-session-card is-ready" data-gp-session-card="adaptive-review">
+                    <article class="gp-session-card is-ready" data-gp-session-card="adaptive-review" data-gp-category="review">
                         <span class="gp-session-number">AD</span>
                         <div>
                             <h4>Adaptive missed-pattern review</h4>
@@ -643,7 +649,7 @@
                             <button class="practice-start" data-gp-start="adaptive-review" type="button">Start review <span aria-hidden="true">→</span></button>
                         </div>
                     </article>
-                    <article class="gp-session-card is-ready" data-gp-session-card="mixed-boss">
+                    <article class="gp-session-card is-ready" data-gp-session-card="mixed-boss" data-gp-category="boss">
                         <span class="gp-session-number">MB</span>
                         <div>
                             <h4>Mixed boss challenge</h4>
@@ -656,7 +662,20 @@
                             <button class="practice-start" data-gp-start="mixed-boss" type="button">Start boss <span aria-hidden="true">→</span></button>
                         </div>
                     </article>
-                    <article class="gp-session-card is-ready" data-gp-session-card="family-core">
+                    <article class="gp-session-card is-ready" data-gp-session-card="mock-test" data-gp-category="boss">
+                        <span class="gp-session-number">MT</span>
+                        <div>
+                            <h4>Mock Test</h4>
+                            <p>No instant feedback. Take a timed-feeling mixed round, then review your score by grammar family at the end.</p>
+                        </div>
+                        <div class="gp-session-controls">
+                            <label>Questions
+                                <select id="gp-count-mock-test"><option value="10">10</option><option value="25" selected>25</option><option value="40">40</option></select>
+                            </label>
+                            <button class="practice-start" data-gp-start="mock-test" type="button">Start mock test <span aria-hidden="true">→</span></button>
+                        </div>
+                    </article>
+                    <article class="gp-session-card is-ready" data-gp-session-card="family-core" data-gp-category="review">
                         <span class="gp-session-number">M1</span>
                         <div>
                             <h4>Mixed core control</h4>
@@ -669,7 +688,7 @@
                             <button class="practice-start" data-gp-start="family-core" type="button">Start mix <span aria-hidden="true">→</span></button>
                         </div>
                     </article>
-                    <article class="gp-session-card is-ready" data-gp-session-card="family-feelings">
+                    <article class="gp-session-card is-ready" data-gp-session-card="family-feelings" data-gp-category="review">
                         <span class="gp-session-number">M2</span>
                         <div>
                             <h4>Mixed desire and appearance</h4>
@@ -682,7 +701,7 @@
                             <button class="practice-start" data-gp-start="family-feelings" type="button">Start mix <span aria-hidden="true">→</span></button>
                         </div>
                     </article>
-                    <article class="gp-session-card is-ready" data-gp-session-card="family-connectors">
+                    <article class="gp-session-card is-ready" data-gp-session-card="family-connectors" data-gp-category="review">
                         <span class="gp-session-number">M3</span>
                         <div>
                             <h4>Mixed reasons and conditions</h4>
@@ -695,7 +714,7 @@
                             <button class="practice-start" data-gp-start="family-connectors" type="button">Start mix <span aria-hidden="true">→</span></button>
                         </div>
                     </article>
-                    <article class="gp-session-card is-ready" data-gp-session-card="family-reporting">
+                    <article class="gp-session-card is-ready" data-gp-session-card="family-reporting" data-gp-category="review">
                         <span class="gp-session-number">M4</span>
                         <div>
                             <h4>Mixed reporting and intention</h4>
@@ -708,7 +727,7 @@
                             <button class="practice-start" data-gp-start="family-reporting" type="button">Start mix <span aria-hidden="true">→</span></button>
                         </div>
                     </article>
-                    <article class="gp-session-card is-ready" data-gp-session-card="family-change">
+                    <article class="gp-session-card is-ready" data-gp-session-card="family-change" data-gp-category="review">
                         <span class="gp-session-number">M5</span>
                         <div>
                             <h4>Mixed change and outcomes</h4>
@@ -721,7 +740,7 @@
                             <button class="practice-start" data-gp-start="family-change" type="button">Start mix <span aria-hidden="true">→</span></button>
                         </div>
                     </article>
-                    <article class="gp-session-card is-ready" data-gp-session-card="family-agency">
+                    <article class="gp-session-card is-ready" data-gp-session-card="family-agency" data-gp-category="review">
                         <span class="gp-session-number">M6</span>
                         <div>
                             <h4>Mixed agency and viewpoint</h4>
@@ -734,7 +753,7 @@
                             <button class="practice-start" data-gp-start="family-agency" type="button">Start mix <span aria-hidden="true">→</span></button>
                         </div>
                     </article>
-                    <div class="gp-roadmap" aria-label="Planned grammar sessions">
+                    <div class="gp-roadmap" data-gp-category="practice" aria-label="Planned grammar sessions">
                         <span class="is-active">01</span><span class="is-active">02</span><span class="is-active">03</span><span class="is-active">04</span><span class="is-active">05</span>
                         <span class="is-active">06</span><span class="is-active">07</span><span class="is-active">08</span><span class="is-active">09</span><span class="is-active">10</span>
                         <span class="is-active">11</span><span class="is-active">12</span><span class="is-active">13</span><span class="is-active">14</span><span class="is-active">15</span>
