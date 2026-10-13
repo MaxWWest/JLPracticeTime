@@ -187,8 +187,8 @@ let conjugationAnswered = false;
 let conjugationQuestionNumber = 1;
 let conjugationStats = null;
 let activeConjugationConfig = null;
-const gpEls = Object.fromEntries(["setup", "count", "start", "status", "session", "session-notes", "session-note-panel", "home", "correct", "progress", "hero", "type", "prompt", "subprompt", "band", "body", "complete", "result", "final-accuracy", "final-correct", "final-bank", "missed", "again", "review-summary"].map((id) => [id, document.querySelector(`#gp-${id}`)]));
-const gpState = { bank: [], queue: [], index: 0, correct: 0, missed: [], answered: false, responses: [], isMockTest: false };
+const gpEls = Object.fromEntries(["setup", "count", "start", "status", "session", "session-notes", "session-note-panel", "home", "correct", "progress", "hero", "type", "prompt", "subprompt", "band", "body", "complete", "complete-title", "result", "final-accuracy", "final-correct", "final-bank", "missed", "again", "review-summary"].map((id) => [id, document.querySelector(`#gp-${id}`)]));
+const gpState = { bank: [], queue: [], index: 0, correct: 0, missed: [], answered: false, responses: [], isMockTest: false, roundKind: "easy" };
 const furiganaStorageKey = "kotoba-show-furigana";
 let showFurigana = localStorage.getItem(furiganaStorageKey) !== "false";
 
@@ -5565,11 +5565,14 @@ function buildFocusedGrammarQueue(sessionId, bank, focus, questionCount) {
 
 function startGrammarPractice(sessionId = "comparison", questionCount = Number(gpEls.count.value), options = {}) {
 	const session = grammarPracticeSessions[sessionId] || grammarPracticeSessions.comparison;
+	const isReviewRound = options.focus === "review" || sessionId === "adaptive-review" || sessionId.startsWith("family-");
+	const isHardRound = options.focus === "boss" || sessionId === "mixed-boss" || sessionId === "mock-test";
 	gpState.sessionId = sessionId;
 	gpState.sessionTitle = options.focus === "review" ? `${session.title} · Targeted review` : options.focus === "boss" ? `${session.title} · Boss round` : session.title;
 	gpState.sessionLabel = options.focus === "review" ? `REVIEW · ${session.label.replace(/^SESSION \d+ ·\s*/, "")}` : options.focus === "boss" ? `BOSS · ${session.label.replace(/^SESSION \d+ ·\s*/, "")}` : session.label;
 	gpState.bank = buildAdvancedGrammarPracticeBank(sessionId, session.buildBank());
 	gpState.isMockTest = sessionId === "mock-test";
+	gpState.roundKind = gpState.isMockTest ? "mock" : isHardRound ? "hard" : isReviewRound ? "review" : "easy";
 	const focusedQueue = buildFocusedGrammarQueue(sessionId, gpState.bank, options.focus, questionCount);
 	if (focusedQueue) {
 		gpState.queue = focusedQueue.slice(0, Math.min(questionCount, focusedQueue.length));
@@ -5655,6 +5658,10 @@ function queueGrammarRetryQuestion(question) {
 	return true;
 }
 
+function isFinalGrammarPracticeQuestion() {
+	return gpState.index + 1 >= gpState.queue.length;
+}
+
 function renderGrammarAnswerCoaching(question, value, isCorrect) {
 	const selected = String(value || "").trim();
 	const pattern = question.meta?.pattern || "this pattern";
@@ -5672,6 +5679,7 @@ function renderGrammarAnswerCoaching(question, value, isCorrect) {
 		? "It was probably tempting because it is a real-looking option in the same grammar neighborhood."
 		: "It was probably tempting because it is close to the target form or meaning.";
 	const failCopy = question.explanation || `The cue points to ${pattern}, not the selected form.`;
+	const nextLabel = isFinalGrammarPracticeQuestion() ? "Finish & see stats" : "Next";
 	return `
 		<div class="gp-coaching">
 			<div class="gp-coaching-answer">
@@ -5707,7 +5715,7 @@ function renderGrammarAnswerCoaching(question, value, isCorrect) {
 			`}
 			<div class="gp-coaching-actions">
 				${retryAvailable ? `<button class="gp-card-action" type="button" id="gp-retry-pattern">Retry this point</button>` : ""}
-				<button class="practice-start rh-next" type="button" id="gp-next">Next <span aria-hidden="true">→</span></button>
+				<button class="practice-start rh-next" type="button" id="gp-next">${escapeHtml(nextLabel)} <span aria-hidden="true">→</span></button>
 			</div>
 		</div>
 	`;
@@ -5732,7 +5740,7 @@ function answerGrammarPractice(value) {
 		feedback.textContent = "Answer saved.";
 		feedback.className = "rh-feedback";
 		explanation.hidden = false;
-		explanation.innerHTML = `<button class="practice-start rh-next" type="button" id="gp-next">${gpState.index + 1 >= gpState.queue.length ? "Finish" : "Next"} <span aria-hidden="true">→</span></button>`;
+		explanation.innerHTML = `<button class="practice-start rh-next" type="button" id="gp-next">${isFinalGrammarPracticeQuestion() ? "Finish & see stats" : "Next"} <span aria-hidden="true">→</span></button>`;
 		if (question.mode === "choice") {
 			gpEls.body.querySelectorAll("[data-gp-choice]").forEach((button) => {
 				button.disabled = true;
@@ -5766,6 +5774,10 @@ function answerGrammarPractice(value) {
 }
 
 function nextGrammarPracticeQuestion() {
+	if (isFinalGrammarPracticeQuestion()) {
+		finishGrammarPractice();
+		return;
+	}
 	gpState.index += 1;
 	showGrammarPracticeQuestion();
 }
@@ -5866,6 +5878,8 @@ function finishGrammarPractice() {
 	renderGrammarReviewSummary();
 	gpEls.session.hidden = true;
 	gpEls.complete.hidden = false;
+	const resultTitle = gpState.roundKind === "mock" ? "Mock test stats" : gpState.roundKind === "hard" ? "Hard practice stats" : gpState.roundKind === "review" ? "Review stats" : "Easy practice stats";
+	if (gpEls["complete-title"]) gpEls["complete-title"].textContent = resultTitle;
 	gpEls.result.textContent = `${gpState.sessionTitle || "Grammar session"} · ${gpState.correct} of ${total} correct${gpState.isMockTest ? " · feedback held until completion" : ""}`;
 	gpEls["final-accuracy"].textContent = `${accuracy}%`;
 	gpEls["final-correct"].textContent = `${gpState.correct}/${total}`;
