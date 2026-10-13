@@ -228,7 +228,7 @@ function auditQuestion(sessionId, question, index, findings) {
 			);
 		}
 	}
-	if (/ほど/.test(question.answer || "") && !/(ません|ない|ありません|ではない|じゃない)/.test(question.answer) && /ほど/.test(`${question.kind || ""} ${question.prompt || ""}`)) {
+	if (/[。！？]$/.test(question.answer || "") && /ほど/.test(question.answer || "") && !/(ません|ない|ありません|ではない|じゃない)/.test(question.answer) && /ほど/.test(`${question.kind || ""} ${question.prompt || ""}`)) {
 		addFinding(findings, "medium", "hodo-positive-predicate", sessionId, index, question, "A ほど comparison answer may be missing the expected negative predicate.", "For N4 comparison, AはBほど... usually needs a negative ending.");
 	}
 	if (/(which|choose).{0,28}より.{0,18}sentence|equivalent.{0,18}より.{0,18}sentence/i.test(text) && hasJapanese(question.answer) && !/より/.test(question.answer)) {

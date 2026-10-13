@@ -5373,20 +5373,51 @@ function refreshGrammarTrapDiagnosisQuestion(question, sessionId) {
 	};
 }
 
-function buildGenericAdvancedGrammarQuestions(sessionId, baseBank) {
-	const choices = baseBank.filter((question) => question.mode === "choice" && question.options?.length > 2).slice(0, 4);
-	return choices.map((question) => {
-		const wrong = question.options.find((option) => option !== question.answer && hasJapanese(option)) || question.options.find((option) => option !== question.answer);
-		const diagnosis = sessionId === "comparison" ? diagnoseComparisonTrap(question, wrong) : diagnoseGenericGrammarTrap(question, wrong, sessionId);
-		return makeGrammarDiagnosisQuestion({
+function makeGrammarTrapDiagnosisQuestion(sessionId, question, wrong) {
+	const diagnosis = sessionId === "comparison" ? diagnoseComparisonTrap(question, wrong) : diagnoseGenericGrammarTrap(question, wrong, sessionId);
+	return {
+		diagnosis,
+		item: makeGrammarDiagnosisQuestion({
 			kind: "wrong-answer trap",
 			prompt: wrong,
 			subprompt: cleanGrammarTrapCue(question),
 			answer: diagnosis.answer,
 			options: diagnosis.options,
 			explanation: question.explanation || "Review the context cue first, then choose the pattern that matches that grammar job."
+		})
+	};
+}
+
+function buildGenericAdvancedGrammarQuestions(sessionId, baseBank) {
+	const candidates = baseBank
+		.filter((question) => question.mode === "choice" && question.options?.length > 2)
+		.slice(0, 24)
+		.flatMap((question) => {
+			const wrongOptions = question.options.filter((option) => option !== question.answer);
+			const orderedWrongs = [...wrongOptions.filter(hasJapanese), ...wrongOptions.filter((option) => !hasJapanese(option))];
+			return orderedWrongs.slice(0, 3).map((wrong) => makeGrammarTrapDiagnosisQuestion(sessionId, question, wrong));
 		});
-	});
+	const selected = [];
+	const usedAnswers = new Set();
+	const usedPrompts = new Set();
+	const usedKeys = new Set();
+	for (const candidate of candidates) {
+		const key = `${candidate.item.prompt}|${candidate.item.subprompt}|${candidate.item.answer}`;
+		if (usedAnswers.has(candidate.diagnosis.answer) || usedPrompts.has(candidate.item.prompt)) continue;
+		selected.push(candidate.item);
+		usedAnswers.add(candidate.diagnosis.answer);
+		usedPrompts.add(candidate.item.prompt);
+		usedKeys.add(key);
+		if (selected.length >= 4) return selected;
+	}
+	for (const candidate of candidates) {
+		const key = `${candidate.item.prompt}|${candidate.item.subprompt}|${candidate.item.answer}`;
+		if (usedKeys.has(key)) continue;
+		selected.push(candidate.item);
+		usedKeys.add(key);
+		if (selected.length >= 4) break;
+	}
+	return selected;
 }
 
 function buildAdvancedGrammarPracticeBank(sessionId, baseBank) {
