@@ -3901,7 +3901,7 @@ function toggleGrammarPracticeNotes(button) {
 }
 
 function setGrammarPracticeMode(mode = "practice") {
-	const nextMode = ["practice", "review", "boss"].includes(mode) ? mode : "practice";
+	const nextMode = ["practice", "boss"].includes(mode) ? mode : "practice";
 	gpEls.setup.dataset.gpMode = nextMode;
 	gpEls.setup.querySelectorAll("[data-gp-filter]").forEach((button) => {
 		const selected = button.dataset.gpFilter === nextMode;
@@ -3909,7 +3909,8 @@ function setGrammarPracticeMode(mode = "practice") {
 		button.setAttribute("aria-selected", String(selected));
 		button.tabIndex = selected ? 0 : -1;
 	});
-	if (nextMode === "review") renderGrammarReviewSummary();
+	updateGrammarPracticeCardActions();
+	if (nextMode === "practice") renderGrammarReviewSummary();
 }
 
 function makeGrammarOrderQuestion({ kind = "sentence ordering", prompt, fragments, answer, explanation }) {
@@ -5143,6 +5144,24 @@ function getGrammarSessionMissCount(sessionId, stored = getStoredGrammarMisses()
 	return stored.filter((question) => question.sessionId === sessionId || question.meta?.sourceSessionId === sessionId).length;
 }
 
+function updateGrammarPracticeCardActions() {
+	const mode = gpEls.setup?.dataset.gpMode || "practice";
+	document.querySelectorAll("[data-gp-session-card]").forEach((card) => {
+		const startButton = card.querySelector("[data-gp-start]");
+		if (!startButton) return;
+		const category = card.dataset.gpCategory;
+		if (category === "practice") {
+			startButton.innerHTML = mode === "boss" ? "Hard practice <span aria-hidden=\"true\">→</span>" : "Easy practice <span aria-hidden=\"true\">→</span>";
+		} else if (card.dataset.gpSessionCard === "mock-test") {
+			startButton.innerHTML = "Mock test <span aria-hidden=\"true\">→</span>";
+		} else if (category === "boss") {
+			startButton.innerHTML = "Hard round <span aria-hidden=\"true\">→</span>";
+		} else {
+			startButton.innerHTML = "Easy review <span aria-hidden=\"true\">→</span>";
+		}
+	});
+}
+
 function hydrateGrammarPracticeCards() {
 	const stored = getStoredGrammarMisses().map(hydrateStoredGrammarQuestion).filter(Boolean);
 	document.querySelectorAll("[data-gp-session-card]").forEach((card) => {
@@ -5159,7 +5178,7 @@ function hydrateGrammarPracticeCards() {
 			chips.className = "gp-session-meta";
 			const familyLabel = metadata.familyLabel.replace(/^MIXED ·\s*/, "");
 			const patternCount = metadata.patterns.length;
-			const cardType = card.dataset.gpCategory === "review" ? "Review" : card.dataset.gpCategory === "boss" ? "Challenge" : "Practice";
+			const cardType = card.dataset.gpSessionCard === "mock-test" ? "Mock test" : card.dataset.gpCategory === "review" ? "Easy review" : card.dataset.gpCategory === "boss" ? "Hard challenge" : "Pattern";
 			chips.innerHTML = [
 				`<span>${escapeHtml(cardType)}</span>`,
 				`<span>${escapeHtml(familyLabel)}</span>`,
@@ -5174,19 +5193,8 @@ function hydrateGrammarPracticeCards() {
 		const noteButton = controls.querySelector("[data-gp-notes]");
 		startButton.classList.add("gp-card-action", "is-primary");
 		if (card.dataset.gpCategory === "practice") {
-			startButton.innerHTML = "Practice <span aria-hidden=\"true\">→</span>";
-			const reviewButton = document.createElement("button");
-			reviewButton.className = "gp-card-action";
-			reviewButton.type = "button";
-			reviewButton.dataset.gpReviewStart = sessionId;
-			reviewButton.textContent = "Review";
-			const bossButton = document.createElement("button");
-			bossButton.className = "gp-card-action is-boss";
-			bossButton.type = "button";
-			bossButton.dataset.gpBossStart = sessionId;
-			bossButton.textContent = "Boss";
 			if (noteButton) actionRow.append(noteButton);
-			actionRow.append(startButton, reviewButton, bossButton);
+			actionRow.append(startButton);
 		} else {
 			if (card.dataset.gpSessionCard === "mock-test") startButton.innerHTML = "Mock test <span aria-hidden=\"true\">→</span>";
 			else if (card.dataset.gpCategory === "boss") startButton.innerHTML = "Start <span aria-hidden=\"true\">→</span>";
@@ -5196,6 +5204,7 @@ function hydrateGrammarPracticeCards() {
 		}
 		controls.append(actionRow);
 	});
+	updateGrammarPracticeCardActions();
 }
 
 function recordGrammarPracticeMisses(sessionId, questions) {
@@ -7028,25 +7037,13 @@ gpEls.setup.addEventListener("click", (event) => {
 		toggleGrammarPracticeNotes(noteButton);
 		return;
 	}
-	const reviewStartButton = event.target.closest("[data-gp-review-start]");
-	if (reviewStartButton) {
-		const card = reviewStartButton.closest("[data-gp-session-card]");
-		const count = Number(card?.querySelector("select")?.value || gpEls.count.value);
-		startGrammarPractice(reviewStartButton.dataset.gpReviewStart, count, { focus: "review" });
-		return;
-	}
-	const bossStartButton = event.target.closest("[data-gp-boss-start]");
-	if (bossStartButton) {
-		const card = bossStartButton.closest("[data-gp-session-card]");
-		const count = Number(card?.querySelector("select")?.value || gpEls.count.value);
-		startGrammarPractice(bossStartButton.dataset.gpBossStart, Math.min(count, 25), { focus: "boss" });
-		return;
-	}
 	const startButton = event.target.closest("[data-gp-start]");
 	if (!startButton) return;
 	const card = startButton.closest("[data-gp-session-card]");
 	const count = Number(card?.querySelector("select")?.value || gpEls.count.value);
-	startGrammarPractice(startButton.dataset.gpStart, count);
+	const mode = gpEls.setup.dataset.gpMode || "practice";
+	const hardPatternCard = mode === "boss" && card?.dataset.gpCategory === "practice";
+	startGrammarPractice(startButton.dataset.gpStart, hardPatternCard ? Math.min(count, 25) : count, hardPatternCard ? { focus: "boss" } : {});
 });
 document.addEventListener("click", (event) => {
 	if (event.target.closest("[data-gp-notes], [data-gp-note-tip], #gp-session-note-panel")) return;
