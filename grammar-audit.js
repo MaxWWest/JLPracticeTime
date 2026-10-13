@@ -288,10 +288,32 @@ function auditHardPracticeQueues(api, sessionBanks, findings) {
 			);
 		}
 		if (sessionId !== "comparison") continue;
+		const kindCounts = hardQueue.reduce((counts, question) => {
+			const kind = question.kind || "unknown";
+			counts[kind] = (counts[kind] || 0) + 1;
+			return counts;
+		}, {});
+		const mostRepeatedKind = Object.entries(kindCounts).sort((a, b) => b[1] - a[1])[0];
+		if (mostRepeatedKind && mostRepeatedKind[1] > Math.max(8, Math.ceil(hardQueue.length * 0.28))) {
+			addFinding(
+				findings,
+				"high",
+				"repetitive-comparison-hard-kind",
+				"comparison:hard",
+				0,
+				hardQueue.find((question) => question.kind === mostRepeatedKind[0]) || hardQueue[0],
+				`Comparison hard practice repeats “${mostRepeatedKind[0]}” ${mostRepeatedKind[1]} times in a ${hardQueue.length}-item hard queue.`,
+				"Mix context inference, rewrite, repair, dialogue, and multi-step comparison tasks instead of leaning on one template."
+			);
+		}
 		hardQueue.forEach((question, index) => {
 			const text = questionText(question);
+			const options = optionText(question);
 			if (/赤いかばん|青いかばん|The sea was more fun for the narrator/.test(text)) {
 				addFinding(findings, "high", "stale-comparison-hard-item", "comparison:hard", index, question, "Comparison hard practice contains an old shallow prompt.", "Replace it with a direction/equivalence/context question using より, ほど, or のほう.");
+			}
+			if (/より must stay in every comparison sentence|のほうが is required because the sentence has an adjective|not an action verb|ほど cannot compare roads|より must appear in every answer/i.test(options)) {
+				addFinding(findings, "high", "irrelevant-comparison-distractor", "comparison:hard", index, question, "Comparison hard practice contains a distractor that is too obviously unrelated or generic.", "Use plausible direction, benchmark, polarity, or object-choice distractors tied to the same sentence.");
 			}
 			if (/sentence ordering/i.test(question.kind || "")) {
 				addFinding(findings, "high", "trivial-hard-ordering", "comparison:hard", index, question, "Comparison hard practice should not use generic sentence ordering.", "Use rewrite, correction, or diagnosis tasks where the comparison meaning can be reversed.");
