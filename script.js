@@ -1570,6 +1570,19 @@ const comparisonKanaAnswerAliases = [
 	["会話", "かいわ"],
 	["練習", "れんしゅう"],
 	["日本語", "にほんご"],
+	["家", "いえ"],
+	["車", "くるま"],
+	["荷物", "にもつ"],
+	["全部", "ぜんぶ"],
+	["安全", "あんぜん"],
+	["楽", "らく"],
+	["歩く", "あるく"],
+	["乗る", "のる"],
+	["覚える", "おぼえる"],
+	["読む", "よむ"],
+	["聞く", "きく"],
+	["行く", "いく"],
+	["見る", "みる"],
 	["難しい", "むずかしい"],
 	["難しく", "むずかしく"],
 	["易しい", "やさしい"],
@@ -1672,6 +1685,21 @@ function comparisonCompactPairAnswers(first, second) {
 		`${first}、${second}`,
 		`${first}　${second}`
 	);
+}
+
+function comparisonActionPreferenceForms(item) {
+	return {
+		yoriHou: `${item.baseAction}より${item.preferredAction}ほうが${item.adjective}です。`,
+		houYori: `${item.preferredAction}ほうが${item.baseAction}より${item.adjective}です。`,
+		hodo: `${item.baseAction}のは${item.preferredAction}ほど${item.neg}ありません。`,
+		hodoFronted: `${item.preferredAction}ほど${item.baseAction}のは${item.neg}ありません。`
+	};
+}
+
+function comparisonActionPreferenceAnswers(item, pattern) {
+	const forms = comparisonActionPreferenceForms(item);
+	if (pattern === "hodo") return comparisonAnswerVariants(forms.hodo, forms.hodoFronted);
+	return comparisonAnswerVariants(forms.yoriHou, forms.houYori);
 }
 
 function comparisonBareTimeItem(item) {
@@ -4595,6 +4623,108 @@ function makeComparisonErrorChoice(item) {
 	});
 }
 
+const comparisonActionPreferenceScenarios = [
+	{
+		reason: "雨が強い",
+		baseAction: "駅まで歩く",
+		preferredAction: "バスに乗る",
+		adjective: "安全",
+		neg: "安全では",
+		meaning: "Because it is raining hard, riding the bus is safer than walking to the station.",
+		baseVerb: "歩く",
+		preferredVerb: "乗る",
+		tags: ["places", "transport"]
+	},
+	{
+		reason: "荷物が重い",
+		baseAction: "家まで歩く",
+		preferredAction: "タクシーに乗る",
+		adjective: "楽",
+		neg: "楽では",
+		meaning: "Because the luggage is heavy, taking a taxi is easier than walking home.",
+		baseVerb: "歩く",
+		preferredVerb: "乗る",
+		tags: ["places", "transport"]
+	},
+	{
+		reason: "明日テストがある",
+		baseAction: "映画を見る",
+		preferredAction: "漢字を覚える",
+		adjective: "大切",
+		neg: "大切では",
+		meaning: "Because there is a test tomorrow, memorizing kanji is more important than watching a movie.",
+		baseVerb: "見る",
+		preferredVerb: "覚える",
+		tags: ["schedule", "study"]
+	},
+	{
+		reason: "説明が長い",
+		baseAction: "全部を読む",
+		preferredAction: "先生に聞く",
+		adjective: "早い",
+		neg: "早く",
+		meaning: "Because the explanation is long, asking the teacher is quicker than reading everything.",
+		baseVerb: "読む",
+		preferredVerb: "聞く",
+		tags: ["study", "communication"]
+	},
+	{
+		reason: "朝は道が混む",
+		baseAction: "車で行く",
+		preferredAction: "電車に乗る",
+		adjective: "速い",
+		neg: "速く",
+		meaning: "Because roads are crowded in the morning, taking the train is faster than going by car.",
+		baseVerb: "行く",
+		preferredVerb: "乗る",
+		tags: ["transport"]
+	}
+];
+
+const comparisonActionPreferencePatterns = [
+	{
+		id: "yori-hou",
+		kind: "action preference · reason · より to ほうが",
+		band: "Use より and ほうが. Either natural order is accepted.",
+		answerKey: "yoriHou"
+	},
+	{
+		id: "hou-yori",
+		kind: "action preference · reason · ほうが to より",
+		band: "Use ほうが and より. Either natural order is accepted.",
+		answerKey: "houYori"
+	},
+	{
+		id: "hodo",
+		kind: "action preference · reason · ほど",
+		band: "Use ほど...ありません.",
+		answerKey: "hodo"
+	}
+];
+
+function makeComparisonActionPreferenceQuestion(item, pattern = comparisonActionPreferencePatterns[0]) {
+	const forms = comparisonActionPreferenceForms(item);
+	const answer = forms[pattern.answerKey];
+	const hodoExplanation = `${forms.hodo} keeps the same meaning: the base action is not as ${item.adjective} as the preferred action.`;
+	const houExplanation = `${forms.yoriHou} and the same sentence with ほうが first keep the preferred action as the stronger side.`;
+	return makeTextQuestion({
+		kind: pattern.kind,
+		prompt: `${item.reason}ので、＿＿＿＿。`,
+		subprompt: item.meaning,
+		band: pattern.band,
+		answer,
+		accepted: comparisonActionPreferenceAnswers(item, pattern.id),
+		explanation: pattern.id === "hodo" ? hodoExplanation : houExplanation,
+		placeholder: answer
+	});
+}
+
+function buildComparisonActionPreferenceQuestions() {
+	return comparisonActionPreferenceScenarios.map((item, index) => (
+		makeComparisonActionPreferenceQuestion(item, comparisonActionPreferencePatterns[index % comparisonActionPreferencePatterns.length])
+	));
+}
+
 function buildComparisonHardPracticeBank() {
 	const timeItem = findComparisonScenario({ lesser: "バスの時間", greater: "電車の時間", adj: "早い" });
 	const kanjiItem = findComparisonScenario({ lesser: "ひらがな", greater: "漢字", adj: "難しい" });
@@ -4610,6 +4740,7 @@ function buildComparisonHardPracticeBank() {
 		makeComparisonRewriteQuestion({ item: kanjiItem, from: "hodo", to: "hou" }),
 		makeComparisonRewriteQuestion({ item: testItem, from: "yori", to: "hodo" }),
 		makeComparisonRewriteQuestion({ item: roadItem, from: "hodo", to: "hou" }),
+		...buildComparisonActionPreferenceQuestions(),
 		makeTextQuestion({
 			kind: "chain inference · class length",
 			prompt: "昨日の授業は今日の授業より短いです。今日の授業は先週の授業より短いです。\n→ ＿＿＿＿、＿＿＿＿長いです。",
