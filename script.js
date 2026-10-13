@@ -1394,6 +1394,7 @@ const grammarVerbPool = [
 	{ ja: "見る", en: "watch", group: "ichidan", transitivity: "transitive", particle: "を", objectRole: "object", tags: ["objects", "places", "schedule"], forms: { dictionary: "見る", masuStem: "見", masu: "見ます", te: "見て", ta: "見た", nai: "見ない", potential: "見られる", volitional: "見よう" } },
 	{ ja: "覚える", en: "memorize", group: "ichidan", transitivity: "transitive", particle: "を", objectRole: "object", tags: ["study", "school"], forms: { dictionary: "覚える", masuStem: "覚え", masu: "覚えます", te: "覚えて", ta: "覚えた", nai: "覚えない", potential: "覚えられる", volitional: "覚えよう" } },
 	{ ja: "忘れる", en: "forget", group: "ichidan", transitivity: "transitive", particle: "を", objectRole: "object", tags: ["study", "school", "objects", "schedule"], forms: { dictionary: "忘れる", masuStem: "忘れ", masu: "忘れます", te: "忘れて", ta: "忘れた", nai: "忘れない", potential: "忘れられる", volitional: "忘れよう" } },
+	{ ja: "する", en: "do", group: "suru", transitivity: "transitive", particle: "を", objectRole: "object", tags: ["study", "school", "schedule"], forms: { dictionary: "する", masuStem: "し", masu: "します", te: "して", ta: "した", nai: "しない", potential: "できる", volitional: "しよう" } },
 	{ ja: "勉強する", en: "study", group: "suru", transitivity: "transitive", particle: "を", objectRole: "object", tags: ["study", "school"], forms: { dictionary: "勉強する", masuStem: "勉強し", masu: "勉強します", te: "勉強して", ta: "勉強した", nai: "勉強しない", potential: "勉強できる", volitional: "勉強しよう" } },
 	{ ja: "練習する", en: "practice", group: "suru", transitivity: "transitive", particle: "を", objectRole: "object", tags: ["study", "school", "schedule"], forms: { dictionary: "練習する", masuStem: "練習し", masu: "練習します", te: "練習して", ta: "練習した", nai: "練習しない", potential: "練習できる", volitional: "練習しよう" } },
 	{ ja: "電話する", en: "call", group: "suru", transitivity: "intransitive", particle: "に", objectRole: "person", tags: ["people", "communication"], forms: { dictionary: "電話する", masuStem: "電話し", masu: "電話します", te: "電話して", ta: "電話した", nai: "電話しない", potential: "電話できる", volitional: "電話しよう" } },
@@ -4623,63 +4624,176 @@ function makeComparisonErrorChoice(item) {
 	});
 }
 
-const comparisonActionPreferenceScenarios = [
+const comparisonActionPreferenceRules = [
 	{
+		id: "rain-local-transport",
 		reason: "雨が強い",
-		baseAction: "駅まで歩く",
-		preferredAction: "バスに乗る",
-		adjective: "安全",
-		neg: "安全では",
-		meaning: "Because it is raining hard, riding the bus is safer than walking to the station.",
-		baseVerb: "歩く",
-		preferredVerb: "乗る",
+		reasonEn: "it is raining hard",
+		base: {
+			nounTag: "places",
+			verbTag: "places",
+			verbRoles: ["destination", "path"],
+			allowedVerbs: ["歩く", "走る", "行く"],
+			particle: "まで"
+		},
+		preferred: {
+			nounTag: "transport",
+			allowedNouns: ["バス", "電車", "車", "地下鉄", "タクシー"],
+			allowedVerbs: ["乗る"]
+		},
+		adjective: { adj: "安全", neg: "安全では", base: "safe", comparative: "safer" },
 		tags: ["places", "transport"]
 	},
 	{
+		id: "heavy-bag-local-transport",
 		reason: "荷物が重い",
-		baseAction: "家まで歩く",
-		preferredAction: "タクシーに乗る",
-		adjective: "楽",
-		neg: "楽では",
-		meaning: "Because the luggage is heavy, taking a taxi is easier than walking home.",
-		baseVerb: "歩く",
-		preferredVerb: "乗る",
+		reasonEn: "the luggage is heavy",
+		base: {
+			nounTag: "places",
+			verbTag: "places",
+			verbRoles: ["destination", "path"],
+			allowedVerbs: ["歩く", "走る", "行く"],
+			particle: "まで"
+		},
+		preferred: {
+			nounTag: "transport",
+			allowedNouns: ["バス", "車", "地下鉄", "タクシー"],
+			allowedVerbs: ["乗る", "使う"]
+		},
+		adjective: { adj: "楽", neg: "楽では", base: "easy", comparative: "easier" },
 		tags: ["places", "transport"]
 	},
 	{
+		id: "test-study-choice",
 		reason: "明日テストがある",
-		baseAction: "映画を見る",
-		preferredAction: "漢字を覚える",
-		adjective: "大切",
-		neg: "大切では",
-		meaning: "Because there is a test tomorrow, memorizing kanji is more important than watching a movie.",
-		baseVerb: "見る",
-		preferredVerb: "覚える",
+		reasonEn: "there is a test tomorrow",
+		base: {
+			choices: [
+				{ nounTag: "schedule", allowedNouns: ["映画"], allowedVerbs: ["見る"] },
+				{ nounTag: "schedule", allowedNouns: ["会議", "説明会"], allowedVerbs: ["行く"], particle: "に" }
+			]
+		},
+		preferred: {
+			choices: [
+				{ nounTag: "study", allowedNouns: ["漢字"], allowedVerbs: ["覚える"] },
+				{ nounTag: "study", allowedNouns: ["文法"], allowedVerbs: ["勉強する"] },
+				{ nounTag: "study", allowedNouns: ["宿題"], allowedVerbs: ["する"] },
+				{ nounTag: "study", allowedNouns: ["作文"], allowedVerbs: ["書く"] },
+				{ nounTag: "study", allowedNouns: ["教科書の説明"], allowedVerbs: ["読む"] }
+			]
+		},
+		adjective: { adj: "大切", neg: "大切では", base: "important", comparative: "more important" },
 		tags: ["schedule", "study"]
 	},
 	{
+		id: "long-explanation-help",
 		reason: "説明が長い",
-		baseAction: "全部を読む",
-		preferredAction: "先生に聞く",
-		adjective: "早い",
-		neg: "早く",
-		meaning: "Because the explanation is long, asking the teacher is quicker than reading everything.",
-		baseVerb: "読む",
-		preferredVerb: "聞く",
+		reasonEn: "the explanation is long",
+		base: {
+			choices: [
+				{ nounTag: "study", allowedNouns: ["教科書の説明", "作文"], allowedVerbs: ["読む"] },
+				{ nounTag: "study", allowedNouns: ["文法"], allowedVerbs: ["勉強する"] }
+			]
+		},
+		preferred: {
+			choices: [
+				{ nounTag: "study", allowedNouns: ["先生の説明"], allowedVerbs: ["聞く"] },
+				{ nounTag: "study", allowedNouns: ["会話の練習"], allowedVerbs: ["する"] }
+			]
+		},
+		adjective: { adj: "早い", neg: "早く", base: "quick", comparative: "quicker" },
 		tags: ["study", "communication"]
 	},
 	{
+		id: "crowded-road-transport",
 		reason: "朝は道が混む",
-		baseAction: "車で行く",
-		preferredAction: "電車に乗る",
-		adjective: "速い",
-		neg: "速く",
-		meaning: "Because roads are crowded in the morning, taking the train is faster than going by car.",
-		baseVerb: "行く",
-		preferredVerb: "乗る",
+		reasonEn: "roads are crowded in the morning",
+		base: {
+			nounTag: "transport",
+			allowedNouns: ["車", "バス", "タクシー"],
+			allowedVerbs: ["使う", "乗る"]
+		},
+		preferred: {
+			nounTag: "transport",
+			allowedNouns: ["電車", "地下鉄", "自転車"],
+			allowedVerbs: ["乗る", "使う"]
+		},
+		adjective: { adj: "速い", neg: "速く", base: "fast", comparative: "faster" },
 		tags: ["transport"]
 	}
 ];
+
+function comparisonPickFromPool(list, seed, offset = 0) {
+	if (!list.length) return null;
+	return list[(seed + offset) % list.length];
+}
+
+function comparisonNounsForActionSlot(slot) {
+	const nouns = comparisonNounPools[slot.nounTag] || [];
+	return slot.allowedNouns ? nouns.filter((noun) => slot.allowedNouns.includes(noun.ja)) : nouns;
+}
+
+function comparisonVerbsForActionSlot(slot) {
+	const verbs = grammarVerbsForTag(slot.verbTag || slot.nounTag);
+	const roleFiltered = slot.verbRoles ? verbs.filter((verb) => slot.verbRoles.includes(verb.objectRole)) : verbs;
+	return slot.allowedVerbs ? roleFiltered.filter((verb) => slot.allowedVerbs.includes(verb.ja)) : roleFiltered;
+}
+
+function comparisonActionSlotOptions(slot) {
+	const choices = slot.choices || [slot];
+	return choices.flatMap((choice) => {
+		const merged = { ...slot, ...choice, choices: undefined };
+		const nouns = comparisonNounsForActionSlot(merged);
+		const verbs = comparisonVerbsForActionSlot(merged);
+		return nouns.flatMap((noun) => verbs.map((verb) => ({ noun, verb, slot: merged })));
+	});
+}
+
+function comparisonActionPhrase(noun, verb, slot) {
+	const particle = slot.particle || verb.particle;
+	if (verb.objectRole === "path" && particle === "まで") return `${noun.ja}${particle}${verb.ja}`;
+	return `${noun.ja}${particle}${verb.ja}`;
+}
+
+function comparisonActionEnglishPhrase(noun, verb, slot) {
+	if (slot.particle === "まで" || verb.objectRole === "destination" || verb.objectRole === "path") {
+		return `${verb.en} to ${noun.en}`;
+	}
+	return `${verb.en} ${noun.en}`;
+}
+
+function buildComparisonActionPreferenceSentenceScenarios(limit = 18) {
+	const scenarios = [];
+	comparisonActionPreferenceRules.forEach((rule, ruleIndex) => {
+		const baseOptions = comparisonActionSlotOptions(rule.base);
+		const preferredOptions = comparisonActionSlotOptions(rule.preferred);
+		const comboCount = Math.min(4, baseOptions.length, preferredOptions.length);
+		for (let comboIndex = 0; comboIndex < comboCount; comboIndex += 1) {
+			const baseOption = comparisonPickFromPool(baseOptions, comboIndex, ruleIndex);
+			const preferredOption = comparisonPickFromPool(preferredOptions, comboIndex, ruleIndex + 1);
+			if (!baseOption || !preferredOption) continue;
+			const baseAction = comparisonActionPhrase(baseOption.noun, baseOption.verb, baseOption.slot);
+			const preferredAction = comparisonActionPhrase(preferredOption.noun, preferredOption.verb, preferredOption.slot);
+			const baseActionEn = comparisonActionEnglishPhrase(baseOption.noun, baseOption.verb, baseOption.slot);
+			const preferredActionEn = comparisonActionEnglishPhrase(preferredOption.noun, preferredOption.verb, preferredOption.slot);
+			scenarios.push({
+				reason: rule.reason,
+				baseAction,
+				preferredAction,
+				adjective: rule.adjective.adj,
+				neg: rule.adjective.neg,
+				meaning: `Because ${rule.reasonEn}, ${preferredActionEn} is ${rule.adjective.comparative} than ${baseActionEn}.`,
+				baseVerb: baseOption.verb.ja,
+				preferredVerb: preferredOption.verb.ja,
+				baseNoun: baseOption.noun.ja,
+				preferredNoun: preferredOption.noun.ja,
+				tags: rule.tags,
+				sourceRule: rule.id
+			});
+		}
+	});
+	return scenarios.slice(0, limit);
+}
 
 const comparisonActionPreferencePatterns = [
 	{
@@ -4702,29 +4816,6 @@ const comparisonActionPreferencePatterns = [
 	}
 ];
 
-function makeComparisonActionPreferenceQuestion(item, pattern = comparisonActionPreferencePatterns[0]) {
-	const forms = comparisonActionPreferenceForms(item);
-	const answer = forms[pattern.answerKey];
-	const hodoExplanation = `${forms.hodo} keeps the same meaning: the base action is not as ${item.adjective} as the preferred action.`;
-	const houExplanation = `${forms.yoriHou} and the same sentence with ほうが first keep the preferred action as the stronger side.`;
-	return makeTextQuestion({
-		kind: pattern.kind,
-		prompt: `${item.reason}ので、＿＿＿＿。`,
-		subprompt: item.meaning,
-		band: pattern.band,
-		answer,
-		accepted: comparisonActionPreferenceAnswers(item, pattern.id),
-		explanation: pattern.id === "hodo" ? hodoExplanation : houExplanation,
-		placeholder: answer
-	});
-}
-
-function buildComparisonActionPreferenceQuestions() {
-	return comparisonActionPreferenceScenarios.map((item, index) => (
-		makeComparisonActionPreferenceQuestion(item, comparisonActionPreferencePatterns[index % comparisonActionPreferencePatterns.length])
-	));
-}
-
 function buildComparisonHardPracticeBank() {
 	const timeItem = findComparisonScenario({ lesser: "バスの時間", greater: "電車の時間", adj: "早い" });
 	const kanjiItem = findComparisonScenario({ lesser: "ひらがな", greater: "漢字", adj: "難しい" });
@@ -4740,7 +4831,6 @@ function buildComparisonHardPracticeBank() {
 		makeComparisonRewriteQuestion({ item: kanjiItem, from: "hodo", to: "hou" }),
 		makeComparisonRewriteQuestion({ item: testItem, from: "yori", to: "hodo" }),
 		makeComparisonRewriteQuestion({ item: roadItem, from: "hodo", to: "hou" }),
-		...buildComparisonActionPreferenceQuestions(),
 		makeTextQuestion({
 			kind: "chain inference · class length",
 			prompt: "昨日の授業は今日の授業より短いです。今日の授業は先週の授業より短いです。\n→ ＿＿＿＿、＿＿＿＿長いです。",
