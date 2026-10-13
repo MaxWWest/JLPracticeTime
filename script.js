@@ -1104,7 +1104,7 @@ const comparisonScenarios = [
 	{ lesser: "ひらがな", greater: "漢字", lesserEn: "hiragana", greaterEn: "kanji", adj: "難しい", neg: "難しく", base: "difficult", comparative: "more difficult" },
 	{ lesser: "漢字", greater: "ひらがな", lesserEn: "kanji", greaterEn: "hiragana", adj: "易しい", neg: "易しく", base: "easy", comparative: "easier" },
 	{ lesser: "短い作文", greater: "長い作文", lesserEn: "the short essay", greaterEn: "the long essay", adj: "難しい", neg: "難しく", base: "difficult", comparative: "more difficult" },
-	{ lesser: "この文法", greater: "あの文法", lesserEn: "this grammar point", greaterEn: "that grammar point", adj: "易しい", neg: "易しく", base: "easy", comparative: "easier" },
+	{ lesser: "文法", greater: "文法", lesserDemonstrative: "この", greaterDemonstrative: "あの", lesserEn: "this grammar point", greaterEn: "that grammar point", adj: "易しい", neg: "易しく", base: "easy", comparative: "easier" },
 	{ lesser: "ノート", greater: "辞書", lesserEn: "the notebook", greaterEn: "the dictionary", adj: "重い", neg: "重く", base: "heavy", comparative: "heavier" },
 	{ lesser: "辞書", greater: "ノート", lesserEn: "the dictionary", greaterEn: "the notebook", adj: "軽い", neg: "軽く", base: "light", comparative: "lighter" },
 	{ lesser: "財布", greater: "かばん", lesserEn: "the wallet", greaterEn: "the bag", adj: "重い", neg: "重く", base: "heavy", comparative: "heavier" },
@@ -1113,40 +1113,136 @@ const comparisonScenarios = [
 	{ lesser: "タクシー", greater: "地下鉄", lesserEn: "the taxi", greaterEn: "the subway", adj: "安い", neg: "安く", base: "cheap", comparative: "cheaper" },
 	{ lesser: "水", greater: "ジュース", lesserEn: "water", greaterEn: "juice", adj: "高い", neg: "高く", base: "expensive", comparative: "more expensive" },
 	{ lesser: "新しい服", greater: "古い服", lesserEn: "new clothes", greaterEn: "old clothes", adj: "安い", neg: "安く", base: "cheap", comparative: "cheaper" },
-	{ lesser: "この道", greater: "あの道", lesserEn: "this road", greaterEn: "that road", adj: "狭い", neg: "狭く", base: "narrow", comparative: "narrower" },
-	{ lesser: "あの道", greater: "この道", lesserEn: "that road", greaterEn: "this road", adj: "広い", neg: "広く", base: "wide", comparative: "wider" },
+	{ lesser: "道", greater: "道", lesserDemonstrative: "この", greaterDemonstrative: "あの", lesserEn: "this road", greaterEn: "that road", adj: "狭い", neg: "狭く", base: "narrow", comparative: "narrower" },
+	{ lesser: "道", greater: "道", lesserDemonstrative: "あの", greaterDemonstrative: "この", lesserEn: "that road", greaterEn: "this road", adj: "広い", neg: "広く", base: "wide", comparative: "wider" },
 	{ lesser: "駅の入口", greater: "学校の入口", lesserEn: "the station entrance", greaterEn: "the school entrance", adj: "狭い", neg: "狭く", base: "narrow", comparative: "narrower" },
 	{ lesser: "私の部屋", greater: "兄の部屋", lesserEn: "my room", greaterEn: "my older brother's room", adj: "広い", neg: "広く", base: "wide", comparative: "wider" },
 	{ lesser: "昨日", greater: "今日", lesserEn: "yesterday", greaterEn: "today", adj: "忙しい", neg: "忙しく", base: "busy", comparative: "busier" },
 	{ lesser: "日曜日", greater: "月曜日", lesserEn: "Sunday", greaterEn: "Monday", adj: "忙しい", neg: "忙しく", base: "busy", comparative: "busier" },
 	{ lesser: "古いスマホ", greater: "新しいスマホ", lesserEn: "the old phone", greaterEn: "the new phone", adj: "新しい", neg: "新しく", base: "new", comparative: "newer" },
-	{ lesser: "この川", greater: "あの川", lesserEn: "this river", greaterEn: "that river", adj: "長い", neg: "長く", base: "long", comparative: "longer" },
-	{ lesser: "あの橋", greater: "この橋", lesserEn: "that bridge", greaterEn: "this bridge", adj: "短い", neg: "短く", base: "short", comparative: "shorter" },
+	{ lesser: "川", greater: "川", lesserDemonstrative: "この", greaterDemonstrative: "あの", lesserEn: "this river", greaterEn: "that river", adj: "長い", neg: "長く", base: "long", comparative: "longer" },
+	{ lesser: "橋", greater: "橋", lesserDemonstrative: "あの", greaterDemonstrative: "この", lesserEn: "that bridge", greaterEn: "this bridge", adj: "短い", neg: "短く", base: "short", comparative: "shorter" },
 	{ lesser: "青いえんぴつ", greater: "赤いえんぴつ", lesserEn: "the blue pencil", greaterEn: "the red pencil", adj: "長い", neg: "長く", base: "long", comparative: "longer" },
 	{ lesser: "今日の授業", greater: "昨日の授業", lesserEn: "today's class", greaterEn: "yesterday's class", adj: "短い", neg: "短く", base: "short", comparative: "shorter" },
 	{ lesser: "駅", greater: "学校", lesserEn: "the station", greaterEn: "the school", adj: "遠い", neg: "遠く", base: "far away", comparative: "farther away" },
 	{ lesser: "コンビニ", greater: "銀行", lesserEn: "the convenience store", greaterEn: "the bank", adj: "近い", neg: "近く", base: "near", comparative: "nearer" },
 	{ lesser: "図書館", greater: "公園", lesserEn: "the library", greaterEn: "the park", adj: "遠い", neg: "遠く", base: "far away", comparative: "farther away" },
-	{ lesser: "前のテスト", greater: "このテスト", lesserEn: "the previous test", greaterEn: "this test", adj: "難しい", neg: "難しく", base: "difficult", comparative: "more difficult" },
-	{ lesser: "このテスト", greater: "前のテスト", lesserEn: "this test", greaterEn: "the previous test", adj: "易しい", neg: "易しく", base: "easy", comparative: "easier" },
+	{ lesser: "前のテスト", greater: "テスト", greaterDemonstrative: "この", lesserEn: "the previous test", greaterEn: "this test", adj: "難しい", neg: "難しく", base: "difficult", comparative: "more difficult" },
+	{ lesser: "テスト", greater: "前のテスト", lesserDemonstrative: "この", lesserEn: "this test", greaterEn: "the previous test", adj: "易しい", neg: "易しく", base: "easy", comparative: "easier" },
 	{ lesser: "昼", greater: "朝", lesserEn: "noon", greaterEn: "morning", adj: "早い", neg: "早く", base: "early", comparative: "earlier" },
 	{ lesser: "朝", greater: "夜", lesserEn: "morning", greaterEn: "night", adj: "遅い", neg: "遅く", base: "late", comparative: "later" },
 	{ lesser: "バスの時間", greater: "電車の時間", lesserEn: "the bus time", greaterEn: "the train time", adj: "早い", neg: "早く", base: "early", comparative: "earlier" },
-	{ lesser: "朝ご飯", greater: "晩ご飯", lesserEn: "breakfast", greaterEn: "dinner", adj: "遅い", neg: "遅く", base: "late", comparative: "later" }
+	{ lesser: "朝ご飯", greater: "晩ご飯", lesserEn: "breakfast", greaterEn: "dinner", adj: "遅い", neg: "遅く", base: "late", comparative: "later" },
+	{ lesser: "お茶", greater: "コーヒー", lesserEn: "tea", greaterEn: "coffee", adj: "苦い", neg: "苦く", base: "bitter", comparative: "more bitter" },
+	{ lesser: "コーヒー", greater: "ジュース", lesserEn: "coffee", greaterEn: "juice", adj: "甘い", neg: "甘く", base: "sweet", comparative: "sweeter" },
+	{ lesser: "水", greater: "牛乳", lesserEn: "water", greaterEn: "milk", adj: "白い", neg: "白く", base: "white", comparative: "whiter" },
+	{ lesser: "魚料理", greater: "肉料理", lesserEn: "the fish dish", greaterEn: "the meat dish", adj: "高い", neg: "高く", base: "expensive", comparative: "more expensive" },
+	{ lesser: "肉料理", greater: "野菜料理", lesserEn: "the meat dish", greaterEn: "the vegetable dish", adj: "軽い", neg: "軽く", base: "light", comparative: "lighter" },
+	{ lesser: "スープ", greater: "カレー", lesserDemonstrative: "この", greaterDemonstrative: "あの", lesserEn: "this soup", greaterEn: "that curry", adj: "辛い", neg: "辛く", base: "spicy", comparative: "spicier" },
+	{ lesser: "りんご", greater: "みかん", lesserEn: "the apple", greaterEn: "the mandarin orange", adj: "甘い", neg: "甘く", base: "sweet", comparative: "sweeter" },
+	{ lesser: "昼ご飯", greater: "晩ご飯", lesserEn: "lunch", greaterEn: "dinner", adj: "多い", neg: "多く", base: "much", comparative: "larger in amount" },
+	{ lesser: "食堂", greater: "レストラン", lesserEn: "the cafeteria", greaterEn: "the restaurant", adj: "高い", neg: "高く", base: "expensive", comparative: "more expensive" },
+	{ lesser: "レストラン", greater: "食堂", lesserEn: "the restaurant", greaterEn: "the cafeteria", adj: "安い", neg: "安く", base: "cheap", comparative: "cheaper" },
+	{ lesser: "喫茶店", greater: "図書館", lesserEn: "the cafe", greaterEn: "the library", adj: "静か", neg: "静かでは", base: "quiet", comparative: "quieter" },
+	{ lesser: "図書館", greater: "駅前のカフェ", lesserEn: "the library", greaterEn: "the cafe by the station", adj: "にぎやか", neg: "にぎやかでは", base: "lively", comparative: "livelier" },
+	{ lesser: "古いホテル", greater: "新しいホテル", lesserEn: "the old hotel", greaterEn: "the new hotel", adj: "きれい", neg: "きれいでは", base: "clean", comparative: "cleaner" },
+	{ lesser: "新しいホテル", greater: "古いホテル", lesserEn: "the new hotel", greaterEn: "the old hotel", adj: "安い", neg: "安く", base: "cheap", comparative: "cheaper" },
+	{ lesser: "映画館", greater: "美術館", lesserEn: "the movie theater", greaterEn: "the art museum", adj: "静か", neg: "静かでは", base: "quiet", comparative: "quieter" },
+	{ lesser: "美術館", greater: "映画館", lesserEn: "the art museum", greaterEn: "the movie theater", adj: "楽しい", neg: "楽しく", base: "fun", comparative: "more fun" },
+	{ lesser: "公園", greater: "駅", lesserEn: "the park", greaterEn: "the station", adj: "にぎやか", neg: "にぎやかでは", base: "lively", comparative: "livelier" },
+	{ lesser: "銀行", greater: "郵便局", lesserEn: "the bank", greaterEn: "the post office", adj: "近い", neg: "近く", base: "near", comparative: "nearer" },
+	{ lesser: "郵便局", greater: "病院", lesserEn: "the post office", greaterEn: "the hospital", adj: "遠い", neg: "遠く", base: "far away", comparative: "farther away" },
+	{ lesser: "小さいスーパー", greater: "大きいスーパー", lesserEn: "the small supermarket", greaterEn: "the big supermarket", adj: "便利", neg: "便利では", base: "convenient", comparative: "more convenient" },
+	{ lesser: "大きいスーパー", greater: "小さいスーパー", lesserEn: "the big supermarket", greaterEn: "the small supermarket", adj: "静か", neg: "静かでは", base: "quiet", comparative: "quieter" },
+	{ lesser: "ペン", greater: "えんぴつ", lesserEn: "the pen", greaterEn: "the pencil", adj: "長い", neg: "長く", base: "long", comparative: "longer" },
+	{ lesser: "えんぴつ", greater: "消しゴム", lesserEn: "the pencil", greaterEn: "the eraser", adj: "短い", neg: "短く", base: "short", comparative: "shorter" },
+	{ lesser: "雑誌", greater: "教科書", lesserEn: "the magazine", greaterEn: "the textbook", adj: "厚い", neg: "厚く", base: "thick", comparative: "thicker" },
+	{ lesser: "教科書", greater: "雑誌", lesserEn: "the textbook", greaterEn: "the magazine", adj: "薄い", neg: "薄く", base: "thin", comparative: "thinner" },
+	{ lesser: "紙の本", greater: "電子書籍", lesserEn: "the paper book", greaterEn: "the ebook", adj: "軽い", neg: "軽く", base: "light", comparative: "lighter" },
+	{ lesser: "電子書籍", greater: "紙の本", lesserEn: "the ebook", greaterEn: "the paper book", adj: "読みやすい", neg: "読みやすく", base: "easy to read", comparative: "easier to read" },
+	{ lesser: "古いパソコン", greater: "新しいパソコン", lesserEn: "the old computer", greaterEn: "the new computer", adj: "速い", neg: "速く", base: "fast", comparative: "faster" },
+	{ lesser: "新しいパソコン", greater: "古いパソコン", lesserEn: "the new computer", greaterEn: "the old computer", adj: "重い", neg: "重く", base: "heavy", comparative: "heavier" },
+	{ lesser: "小さいテレビ", greater: "大きいテレビ", lesserEn: "the small TV", greaterEn: "the big TV", adj: "見やすい", neg: "見やすく", base: "easy to watch", comparative: "easier to watch" },
+	{ lesser: "白いシャツ", greater: "黒いシャツ", lesserEn: "the white shirt", greaterEn: "the black shirt", adj: "新しい", neg: "新しく", base: "new", comparative: "newer" },
+	{ lesser: "黒いシャツ", greater: "白いシャツ", lesserEn: "the black shirt", greaterEn: "the white shirt", adj: "安い", neg: "安く", base: "cheap", comparative: "cheaper" },
+	{ lesser: "くつ", greater: "くつ", lesserDemonstrative: "この", greaterDemonstrative: "あの", lesserEn: "these shoes", greaterEn: "those shoes", adj: "歩きやすい", neg: "歩きやすく", base: "easy to walk in", comparative: "easier to walk in" },
+	{ lesser: "くつ", greater: "くつ", lesserDemonstrative: "あの", greaterDemonstrative: "この", lesserEn: "those shoes", greaterEn: "these shoes", adj: "きれい", neg: "きれいでは", base: "clean", comparative: "cleaner" },
+	{ lesser: "夏の服", greater: "冬の服", lesserEn: "summer clothes", greaterEn: "winter clothes", adj: "重い", neg: "重く", base: "heavy", comparative: "heavier" },
+	{ lesser: "冬の服", greater: "夏の服", lesserEn: "winter clothes", greaterEn: "summer clothes", adj: "薄い", neg: "薄く", base: "thin", comparative: "thinner" },
+	{ lesser: "台所", greater: "居間", lesserEn: "the kitchen", greaterEn: "the living room", adj: "明るい", neg: "明るく", base: "bright", comparative: "brighter" },
+	{ lesser: "居間", greater: "寝室", lesserEn: "the living room", greaterEn: "the bedroom", adj: "静か", neg: "静かでは", base: "quiet", comparative: "quieter" },
+	{ lesser: "寝室", greater: "台所", lesserEn: "the bedroom", greaterEn: "the kitchen", adj: "暗い", neg: "暗く", base: "dark", comparative: "darker" },
+	{ lesser: "古いアパート", greater: "新しいマンション", lesserEn: "the old apartment", greaterEn: "the new apartment building", adj: "便利", neg: "便利では", base: "convenient", comparative: "more convenient" },
+	{ lesser: "新しいマンション", greater: "古いアパート", lesserEn: "the new apartment building", greaterEn: "the old apartment", adj: "安い", neg: "安く", base: "cheap", comparative: "cheaper" },
+	{ lesser: "山のホテル", greater: "海のホテル", lesserEn: "the mountain hotel", greaterEn: "the seaside hotel", adj: "涼しい", neg: "涼しく", base: "cool", comparative: "cooler" },
+	{ lesser: "海のホテル", greater: "山のホテル", lesserEn: "the seaside hotel", greaterEn: "the mountain hotel", adj: "静か", neg: "静かでは", base: "quiet", comparative: "quieter" },
+	{ lesser: "日本語の授業", greater: "数学の授業", lesserEn: "Japanese class", greaterEn: "math class", adj: "難しい", neg: "難しく", base: "difficult", comparative: "more difficult" },
+	{ lesser: "数学の授業", greater: "日本語の授業", lesserEn: "math class", greaterEn: "Japanese class", adj: "楽しい", neg: "楽しく", base: "fun", comparative: "more fun" },
+	{ lesser: "朝のクラス", greater: "午後のクラス", lesserEn: "the morning class", greaterEn: "the afternoon class", adj: "眠い", neg: "眠く", base: "sleepy", comparative: "sleepier" },
+	{ lesser: "午後のクラス", greater: "朝のクラス", lesserEn: "the afternoon class", greaterEn: "the morning class", adj: "短い", neg: "短く", base: "short", comparative: "shorter" },
+	{ lesser: "作文の宿題", greater: "漢字の宿題", lesserEn: "the essay homework", greaterEn: "the kanji homework", adj: "多い", neg: "多く", base: "much", comparative: "more" },
+	{ lesser: "漢字の宿題", greater: "作文の宿題", lesserEn: "the kanji homework", greaterEn: "the essay homework", adj: "易しい", neg: "易しく", base: "easy", comparative: "easier" },
+	{ lesser: "昨日のテスト", greater: "来週のテスト", lesserEn: "yesterday's test", greaterEn: "next week's test", adj: "大切", neg: "大切では", base: "important", comparative: "more important" },
+	{ lesser: "来週のテスト", greater: "昨日のテスト", lesserEn: "next week's test", greaterEn: "yesterday's test", adj: "短い", neg: "短く", base: "short", comparative: "shorter" },
+	{ lesser: "電話の説明", greater: "メールの説明", lesserEn: "the phone explanation", greaterEn: "the email explanation", adj: "分かりやすい", neg: "分かりやすく", base: "easy to understand", comparative: "easier to understand" },
+	{ lesser: "メールの説明", greater: "電話の説明", lesserEn: "the email explanation", greaterEn: "the phone explanation", adj: "長い", neg: "長く", base: "long", comparative: "longer" },
+	{ lesser: "友だちの家", greater: "祖母の家", lesserEn: "my friend's house", greaterEn: "my grandmother's house", adj: "遠い", neg: "遠く", base: "far away", comparative: "farther away" },
+	{ lesser: "祖母の家", greater: "友だちの家", lesserEn: "my grandmother's house", greaterEn: "my friend's house", adj: "広い", neg: "広く", base: "wide", comparative: "wider" },
+	{ lesser: "母の車", greater: "父の車", lesserEn: "my mother's car", greaterEn: "my father's car", adj: "新しい", neg: "新しく", base: "new", comparative: "newer" },
+	{ lesser: "父の車", greater: "母の車", lesserEn: "my father's car", greaterEn: "my mother's car", adj: "大きい", neg: "大きく", base: "large", comparative: "larger" },
+	{ lesser: "兄の自転車", greater: "姉の自転車", lesserEn: "my older brother's bicycle", greaterEn: "my older sister's bicycle", adj: "速い", neg: "速く", base: "fast", comparative: "faster" },
+	{ lesser: "姉の自転車", greater: "兄の自転車", lesserEn: "my older sister's bicycle", greaterEn: "my older brother's bicycle", adj: "古い", neg: "古く", base: "old", comparative: "older" },
+	{ lesser: "月曜日の朝", greater: "金曜日の朝", lesserEn: "Monday morning", greaterEn: "Friday morning", adj: "忙しい", neg: "忙しく", base: "busy", comparative: "busier" },
+	{ lesser: "金曜日の夜", greater: "月曜日の夜", lesserEn: "Friday night", greaterEn: "Monday night", adj: "楽しい", neg: "楽しく", base: "fun", comparative: "more fun" },
+	{ lesser: "三月", greater: "八月", lesserEn: "March", greaterEn: "August", adj: "暑い", neg: "暑く", base: "hot", comparative: "hotter" },
+	{ lesser: "八月", greater: "十二月", lesserEn: "August", greaterEn: "December", adj: "寒い", neg: "寒く", base: "cold", comparative: "colder" },
+	{ lesser: "東京の冬", greater: "北海道の冬", lesserEn: "Tokyo's winter", greaterEn: "Hokkaido's winter", adj: "寒い", neg: "寒く", base: "cold", comparative: "colder" },
+	{ lesser: "北海道の夏", greater: "東京の夏", lesserEn: "Hokkaido's summer", greaterEn: "Tokyo's summer", adj: "暑い", neg: "暑く", base: "hot", comparative: "hotter" },
+	{ lesser: "朝の電車", greater: "夜の電車", lesserEn: "the morning train", greaterEn: "the night train", adj: "遅い", neg: "遅く", base: "late", comparative: "later" },
+	{ lesser: "夜の電車", greater: "朝の電車", lesserEn: "the night train", greaterEn: "the morning train", adj: "早い", neg: "早く", base: "early", comparative: "earlier" },
+	{ lesser: "空港行きのバス", greater: "駅行きのバス", lesserEn: "the airport bus", greaterEn: "the station bus", adj: "早い", neg: "早く", base: "early", comparative: "earlier" },
+	{ lesser: "駅行きのバス", greater: "空港行きのバス", lesserEn: "the station bus", greaterEn: "the airport bus", adj: "安い", neg: "安く", base: "cheap", comparative: "cheaper" },
+	{ lesser: "海への道", greater: "山への道", lesserEn: "the road to the sea", greaterEn: "the road to the mountain", adj: "長い", neg: "長く", base: "long", comparative: "longer" },
+	{ lesser: "山への道", greater: "海への道", lesserEn: "the road to the mountain", greaterEn: "the road to the sea", adj: "狭い", neg: "狭く", base: "narrow", comparative: "narrower" }
 ];
 
-function comparisonSentences(item) {
+function comparisonTerm(item, side) {
+	return `${item[`${side}Demonstrative`] || ""}${item[side]}`;
+}
+
+function comparisonDisplayItem(item) {
 	return {
-		yori: `${item.greater}は${item.lesser}より${item.adj}です。`,
-		hou: `${item.lesser}より${item.greater}のほうが${item.adj}です。`,
-		hodo: `${item.lesser}は${item.greater}ほど${item.neg}ありません。`,
-		question: `${item.lesser}と${item.greater}と、どちらが${item.adj}ですか。`,
-		response: `${item.greater}のほうが${item.adj}です。`,
-		shorterHou: `${item.greater}のほうが${item.adj}です。`,
-		taiQuestion: `${item.lesser}と${item.greater}と、どちらを選びたいですか。`,
-		taiAnswer: `${item.greater}のほうを選びたいです。`,
-		hoshiiQuestion: `${item.lesser}と${item.greater}と、どちらがほしいですか。`,
-		hoshiiAnswer: `${item.greater}のほうがほしいです。`
+		...item,
+		lesser: comparisonTerm(item, "lesser"),
+		greater: comparisonTerm(item, "greater")
+	};
+}
+
+function comparisonReverseItem(item) {
+	return {
+		...item,
+		lesser: item.greater,
+		greater: item.lesser,
+		lesserEn: item.greaterEn,
+		greaterEn: item.lesserEn,
+		lesserDemonstrative: item.greaterDemonstrative,
+		greaterDemonstrative: item.lesserDemonstrative
+	};
+}
+
+function comparisonSentences(item) {
+	const displayItem = comparisonDisplayItem(item);
+	return {
+		yori: `${displayItem.greater}は${displayItem.lesser}より${item.adj}です。`,
+		hou: `${displayItem.lesser}より${displayItem.greater}のほうが${item.adj}です。`,
+		hodo: `${displayItem.lesser}は${displayItem.greater}ほど${item.neg}ありません。`,
+		question: `${displayItem.lesser}と${displayItem.greater}と、どちらが${item.adj}ですか。`,
+		response: `${displayItem.greater}のほうが${item.adj}です。`,
+		shorterHou: `${displayItem.greater}のほうが${item.adj}です。`,
+		taiQuestion: `${displayItem.lesser}と${displayItem.greater}と、どちらを選びたいですか。`,
+		taiAnswer: `${displayItem.greater}のほうを選びたいです。`,
+		hoshiiQuestion: `${displayItem.lesser}と${displayItem.greater}と、どちらがほしいですか。`,
+		hoshiiAnswer: `${displayItem.greater}のほうがほしいです。`
 	};
 }
 
@@ -1181,6 +1277,36 @@ const comparisonKanaAnswerAliases = [
 	["説明", "せつめい"],
 	["宿題", "しゅくだい"],
 	["作文", "さくぶん"],
+	["茶", "ちゃ"],
+	["牛乳", "ぎゅうにゅう"],
+	["魚料理", "さかなりょうり"],
+	["肉料理", "にくりょうり"],
+	["野菜料理", "やさいりょうり"],
+	["昼ご飯", "ひるごはん"],
+	["美術館", "びじゅつかん"],
+	["郵便局", "ゆうびんきょく"],
+	["食堂", "しょくどう"],
+	["消しゴム", "けしゴム"],
+	["雑誌", "ざっし"],
+	["教科書", "きょうかしょ"],
+	["紙", "かみ"],
+	["本", "ほん"],
+	["電子書籍", "でんししょせき"],
+	["台所", "だいどころ"],
+	["居間", "いま"],
+	["寝室", "しんしつ"],
+	["山", "やま"],
+	["海", "うみ"],
+	["数学", "すうがく"],
+	["来週", "らいしゅう"],
+	["祖母", "そぼ"],
+	["母", "はは"],
+	["父", "ちち"],
+	["姉", "あね"],
+	["三月", "さんがつ"],
+	["八月", "はちがつ"],
+	["十二月", "じゅうにがつ"],
+	["空港", "くうこう"],
 	["難しい", "むずかしい"],
 	["難しく", "むずかしく"],
 	["易しい", "やさしい"],
@@ -1210,6 +1336,38 @@ const comparisonKanaAnswerAliases = [
 	["近い", "ちかい"],
 	["近く", "ちかく"],
 	["静か", "しずか"],
+	["苦い", "にがい"],
+	["苦く", "にがく"],
+	["甘い", "あまい"],
+	["甘く", "あまく"],
+	["白い", "しろい"],
+	["白く", "しろく"],
+	["辛い", "からい"],
+	["辛く", "からく"],
+	["多い", "おおい"],
+	["多く", "おおく"],
+	["厚い", "あつい"],
+	["厚く", "あつく"],
+	["薄い", "うすい"],
+	["薄く", "うすく"],
+	["読みやすい", "よみやすい"],
+	["読みやすく", "よみやすく"],
+	["見やすい", "みやすい"],
+	["見やすく", "みやすく"],
+	["歩きやすい", "あるきやすい"],
+	["歩きやすく", "あるきやすく"],
+	["便利", "べんり"],
+	["涼しい", "すずしい"],
+	["涼しく", "すずしく"],
+	["眠い", "ねむい"],
+	["眠く", "ねむく"],
+	["大切", "たいせつ"],
+	["遅い", "おそい"],
+	["遅く", "おそく"],
+	["明るい", "あかるい"],
+	["明るく", "あかるく"],
+	["暗い", "くらい"],
+	["暗く", "くらく"],
 	["古い", "ふるい"],
 	["古く", "ふるく"],
 	["新しい", "あたらしい"],
@@ -1262,9 +1420,10 @@ function comparisonBareTimeItem(item) {
 
 function comparisonHouAnswers(item) {
 	const forms = comparisonSentences(item);
+	const displayItem = comparisonDisplayItem(item);
 	const answers = [
 		forms.hou,
-		`${item.greater}のほうが${item.lesser}より${item.adj}です。`
+		`${displayItem.greater}のほうが${displayItem.lesser}より${item.adj}です。`
 	];
 	const bare = comparisonBareTimeItem(item);
 	if (bare) answers.push(...comparisonHouAnswers(bare));
@@ -1273,9 +1432,10 @@ function comparisonHouAnswers(item) {
 
 function comparisonHodoAnswers(item) {
 	const forms = comparisonSentences(item);
+	const displayItem = comparisonDisplayItem(item);
 	const answers = [
 		forms.hodo,
-		`${item.greater}ほど${item.lesser}は${item.neg}ありません。`
+		`${displayItem.greater}ほど${displayItem.lesser}は${item.neg}ありません。`
 	];
 	const bare = comparisonBareTimeItem(item);
 	if (bare) answers.push(...comparisonHodoAnswers(bare));
@@ -2248,9 +2408,10 @@ function buildPermissionPitfallQuestions() {
 }
 
 function buildComparisonPitfallQuestions() {
-	return comparisonScenarios.flatMap((item) => {
-		const forms = comparisonSentences(item);
-		const reverseForms = comparisonSentences({ ...item, lesser: item.greater, greater: item.lesser, lesserEn: item.greaterEn, greaterEn: item.lesserEn });
+	return comparisonScenarios.flatMap((sourceItem) => {
+		const item = comparisonDisplayItem(sourceItem);
+		const forms = comparisonSentences(sourceItem);
+		const reverseForms = comparisonSentences(comparisonReverseItem(sourceItem));
 		return [
 			makeChoiceQuestion({ kind: "nuance · より", prompt: forms.yori, subprompt: "Which item is the comparison base after より?", band: "Read the direction of comparison.", answer: item.lesser, options: [item.lesser, item.greater, item.adj, "どちら"], explanation: "The noun after より is the thing being compared against, not the stronger item." }),
 			makeChoiceQuestion({ kind: "pitfall · ほど", prompt: `Which sentence naturally means “${item.lesserEn} is not as ${item.base} as ${item.greaterEn}”?`, subprompt: "ほど needs a negative predicate in this comparison pattern.", band: "Choose the full ほど sentence.", answer: forms.hodo, options: [forms.hodo, reverseForms.hodo, `${item.lesser}は${item.greater}ほど${item.adj}です。`, `${item.greater}より${item.lesser}のほうが${item.adj}です。`], explanation: "ほど in “not as ... as” sentences pairs with a negative ending, and the stronger benchmark comes after ほど." }),
@@ -2339,9 +2500,10 @@ function makeVarietyChoiceQuestion(config) {
 }
 
 function buildComparisonVarietyQuestions() {
-	return comparisonScenarios.flatMap((item) => {
-		const forms = comparisonSentences(item);
-		const reverseForms = comparisonSentences({ ...item, lesser: item.greater, greater: item.lesser, lesserEn: item.greaterEn, greaterEn: item.lesserEn });
+	return comparisonScenarios.flatMap((sourceItem) => {
+		const item = comparisonDisplayItem(sourceItem);
+		const forms = comparisonSentences(sourceItem);
+		const reverseForms = comparisonSentences(comparisonReverseItem(sourceItem));
 		const englishYori = sentenceCase(`${item.greaterEn} is ${item.comparative} than ${item.lesserEn}.`);
 		const englishHodo = sentenceCase(`${item.lesserEn} is not as ${item.base} as ${item.greaterEn}.`);
 		return [
@@ -2419,9 +2581,10 @@ function buildExperienceVarietyQuestions() {
 
 function buildComparisonPracticeBank() {
 	const bank = [];
-	for (const item of comparisonScenarios) {
-		const forms = comparisonSentences(item);
-		const reverseForms = comparisonSentences({ ...item, lesser: item.greater, greater: item.lesser, lesserEn: item.greaterEn, greaterEn: item.lesserEn });
+	for (const sourceItem of comparisonScenarios) {
+		const item = comparisonDisplayItem(sourceItem);
+		const forms = comparisonSentences(sourceItem);
+		const reverseForms = comparisonSentences(comparisonReverseItem(sourceItem));
 		const englishYori = sentenceCase(`${item.greaterEn} is ${item.comparative} than ${item.lesserEn}.`);
 		const englishHodo = sentenceCase(`${item.lesserEn} is not as ${item.base} as ${item.greaterEn}.`);
 		Object.values(comparisonQuestionTemplates).forEach((templates) => {
@@ -4112,9 +4275,10 @@ function makeComparisonRewriteQuestion({ item, from, to }) {
 
 function makeComparisonTwoBlankQuestion(item) {
 	const forms = comparisonSentences(item);
+	const displayItem = comparisonDisplayItem(item);
 	return makeTextQuestion({
 		kind: "two-blank transformation",
-		prompt: `${item.greater}は${item.lesser}より${item.adj}です。 → ${item.lesser}＿＿${item.greater}＿＿${item.adj}です。`,
+		prompt: `${displayItem.greater}は${displayItem.lesser}より${item.adj}です。 → ${displayItem.lesser}＿＿${displayItem.greater}＿＿${item.adj}です。`,
 		subprompt: "Fill both blanks so the meaning stays the same.",
 		band: "Type both missing parts in order.",
 		answer: "より / のほうが",
@@ -4126,17 +4290,18 @@ function makeComparisonTwoBlankQuestion(item) {
 
 function makeComparisonDialogueQuestion(item) {
 	const forms = comparisonSentences(item);
-	const wrongBase = `${item.lesser}のほうが${item.adj}です。`;
-	const wrongHodo = `${item.greater}は${item.lesser}ほど${item.neg}ありません。`;
-	const wrongParticle = `${item.greater}のほうを${item.adj}です。`;
+	const displayItem = comparisonDisplayItem(item);
+	const wrongBase = `${displayItem.lesser}のほうが${item.adj}です。`;
+	const wrongHodo = `${displayItem.greater}は${displayItem.lesser}ほど${item.neg}ありません。`;
+	const wrongParticle = `${displayItem.greater}のほうを${item.adj}です。`;
 	return makeChoiceQuestion({
 		kind: "dialogue response",
 		prompt: `A: ${forms.question}\nB: ${forms.response}`,
 		subprompt: `B chooses ${item.greaterEn}. Which diagnosis is correct?`,
 		band: "Read A, then B. Choose the grammar reading.",
-		answer: `B uses のほうが because ${item.greater} has more of the quality.`,
+		answer: `B uses のほうが because ${displayItem.greater} has more of the quality.`,
 		options: [
-			`B uses のほうが because ${item.greater} has more of the quality.`,
+			`B uses のほうが because ${displayItem.greater} has more of the quality.`,
 			`${wrongBase} would answer the opposite side.`,
 			`${wrongHodo} says ${item.greaterEn} is not as ${item.base} as ${item.lesserEn}.`,
 			`${wrongParticle} is wrong because ${item.adj} is not an action verb.`
@@ -4147,7 +4312,8 @@ function makeComparisonDialogueQuestion(item) {
 
 function makeComparisonErrorChoice(item) {
 	const forms = comparisonSentences(item);
-	const wrong = `${item.greater}は${item.lesser}ほど${item.adj}です。`;
+	const displayItem = comparisonDisplayItem(item);
+	const wrong = `${displayItem.greater}は${displayItem.lesser}ほど${item.adj}です。`;
 	return makeChoiceQuestion({
 		kind: "error diagnosis",
 		prompt: `${forms.yori} → ${wrong}`,
@@ -4156,7 +4322,7 @@ function makeComparisonErrorChoice(item) {
 		answer: "ほど for “not as...as” needs the benchmark after ほど and a negative predicate.",
 		options: [
 			"ほど for “not as...as” needs the benchmark after ほど and a negative predicate.",
-			`It puts ${item.greater} before は, so the sentence would be about the stronger item instead of ${item.lesser}.`,
+			`It puts ${displayItem.greater} before は, so the sentence would be about the stronger item instead of ${displayItem.lesser}.`,
 			`It keeps the two nouns but changes the pattern into “${item.greaterEn} is not as ${item.base} as ${item.lesserEn}.”`,
 			`It would be natural only if the ending changed to ${item.neg}ありません.`
 		],
