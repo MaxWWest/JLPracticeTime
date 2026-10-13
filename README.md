@@ -19,3 +19,9 @@ vocabulary and grammar datasets.
 The site uses no build step. Vocabulary and grammar datasets are loaded from the
 OpenJLPT CDN, so those features require an internet connection. Saved words and
 practice progress are stored in the current browser.
+
+## Developer checks
+
+Run `node grammar-audit.js` to audit generated grammar practice questions for
+missing context, duplicated choices, answer/option mismatches, and format drift.
+Use `node grammar-audit.js --session comparison` to inspect one session.

@@ -300,19 +300,23 @@ const furiganaAutoEntries = [
 	["今日", "きょう"], ["昨日", "きのう"], ["明日", "あした"], ["来週", "らいしゅう"], ["来月", "らいげつ"], ["毎日", "まいにち"],
 	["毎朝", "まいあさ"], ["朝", "あさ"], ["昼", "ひる"], ["夜", "よる"], ["午後", "ごご"], ["時間", "じかん"], ["始め", "はじめ"],
 	["最後", "さいご"], ["場合", "ばあい"], ["間", "あいだ"], ["前", "まえ"], ["後", "あと"], ["中", "なか"], ["上", "うえ"], ["下", "した"],
-	["右", "みぎ"], ["左", "ひだり"], ["駅", "えき"], ["会社", "かいしゃ"], ["公園", "こうえん"], ["海", "うみ"], ["町", "まち"],
+	["右", "みぎ"], ["左", "ひだり"], ["駅前", "えきまえ"], ["駅", "えき"], ["会社", "かいしゃ"], ["店", "みせ"], ["公園", "こうえん"], ["海", "うみ"], ["川", "かわ"], ["町", "まち"],
 	["部屋", "へや"], ["場所", "ばしょ"], ["入口", "いりぐち"], ["出口", "でぐち"], ["事務所", "じむしょ"], ["体育館", "たいいくかん"],
 	["映画館", "えいがかん"], ["銀行", "ぎんこう"], ["本屋", "ほんや"], ["交番", "こうばん"], ["冷蔵庫", "れいぞうこ"], ["黒い", "くろい"],
 	["青い", "あおい"], ["赤い", "あかい"], ["新しい", "あたらしい"], ["古い", "ふるい"], ["大きな", "おおきな"], ["小さい", "ちいさい"],
-	["短い", "みじかい"], ["長い", "ながい"], ["近い", "ちかい"], ["遠い", "とおい"], ["難しい", "むずかしい"], ["易しい", "やさしい"],
+	["普通電車", "ふつうでんしゃ"], ["新幹線", "しんかんせん"], ["夏", "なつ"], ["秋", "あき"], ["春", "はる"], ["冬", "ふゆ"],
+	["辞書", "じしょ"], ["地下鉄", "ちかてつ"], ["橋", "はし"], ["箱", "はこ"], ["水", "みず"], ["服", "ふく"], ["短い", "みじかい"], ["長い", "ながい"],
+	["狭い", "せまい"], ["広い", "ひろい"], ["暑い", "あつい"], ["寒い", "さむい"], ["重い", "おもい"], ["軽い", "かるい"],
+	["高い", "たかい"], ["安い", "やすい"], ["早い", "はやい"], ["遅い", "おそい"], ["忙しい", "いそがしい"], ["近い", "ちかい"],
+	["遠い", "とおい"], ["難しい", "むずかしい"], ["易しい", "やさしい"],
 	["親切", "しんせつ"], ["便利", "べんり"], ["不便", "ふべん"], ["安心", "あんしん"], ["心配", "しんぱい"], ["大丈夫", "だいじょうぶ"],
 	["無事", "ぶじ"], ["残念", "ざんねん"], ["丁寧", "ていねい"], ["静か", "しずか"], ["苦手", "にがて"], ["上手", "じょうず"],
 	["電話", "でんわ"], ["会議", "かいぎ"], ["資料", "しりょう"], ["予定", "よてい"], ["予約", "よやく"], ["約束", "やくそく"],
 	["連絡", "れんらく"], ["計画", "けいかく"], ["成功", "せいこう"], ["失敗", "しっぱい"], ["財布", "さいふ"], ["写真", "しゃしん"],
-	["荷物", "にもつ"], ["弁当", "べんとう"], ["野菜", "やさい"], ["料理", "りょうり"], ["食事", "しょくじ"], ["牛乳", "ぎゅうにゅう"],
+	["荷物", "にもつ"], ["弁当", "べんとう"], ["野菜", "やさい"], ["料理", "りょうり"], ["食事", "しょくじ"], ["朝ご飯", "あさごはん"], ["晩ご飯", "ばんごはん"], ["牛乳", "ぎゅうにゅう"],
 	["薬", "くすり"], ["風邪", "かぜ"], ["熱", "ねつ"], ["頭", "あたま"], ["足", "あし"], ["手", "て"], ["犬", "いぬ"], ["雨", "あめ"],
 	["雪", "ゆき"], ["台風", "たいふう"], ["富士山", "ふじさん"], ["洗濯物", "せんたくもの"], ["洗濯機", "せんたくき"], ["電車", "でんしゃ"],
-	["自転車", "じてんしゃ"], ["車", "くるま"], ["道", "みち"], ["席", "せき"], ["券", "けん"], ["本", "ほん"], ["日記", "にっき"],
+	["自転車", "じてんしゃ"], ["車", "くるま"], ["道", "みち"], ["席", "せき"], ["券", "けん"], ["本", "ほん"], ["日曜日", "にちようび"], ["月曜日", "げつようび"], ["日記", "にっき"],
 	["物", "もの"], ["人", "ひと"], ["何", "なに"], ["日本語", "にほんご"], ["英語", "えいご"], ["中国語", "ちゅうごくご"],
 	["行", "い"], ["来", "き"], ["帰", "かえ"], ["見", "み"], ["聞", "き"], ["読", "よ"], ["書", "か"], ["話", "はな"], ["買", "か"],
 	["食", "た"], ["飲", "の"], ["作", "つく"], ["使", "つか"], ["持", "も"], ["入", "い"], ["出", "だ"], ["忘", "わす"], ["思", "おも"],
@@ -1083,27 +1087,48 @@ function normalizeJapaneseAnswer(value) {
 const comparisonScenarios = [
 	{ lesser: "バス", greater: "電車", lesserEn: "the bus", greaterEn: "the train", adj: "速い", neg: "速く", base: "fast", comparative: "faster" },
 	{ lesser: "自転車", greater: "車", lesserEn: "the bicycle", greaterEn: "the car", adj: "速い", neg: "速く", base: "fast", comparative: "faster" },
+	{ lesser: "普通電車", greater: "新幹線", lesserEn: "the local train", greaterEn: "the bullet train", adj: "速い", neg: "速く", base: "fast", comparative: "faster" },
+	{ lesser: "メール", greater: "電話", lesserEn: "email", greaterEn: "a phone call", adj: "早い", neg: "早く", base: "quick", comparative: "quicker" },
 	{ lesser: "京都", greater: "東京", lesserEn: "Kyoto", greaterEn: "Tokyo", adj: "大きい", neg: "大きく", base: "large", comparative: "larger" },
 	{ lesser: "東京", greater: "京都", lesserEn: "Tokyo", greaterEn: "Kyoto", adj: "古い", neg: "古く", base: "old", comparative: "older" },
+	{ lesser: "駅前の店", greater: "デパート", lesserEn: "the shop by the station", greaterEn: "the department store", adj: "大きい", neg: "大きく", base: "large", comparative: "larger" },
+	{ lesser: "新しい町", greater: "古い町", lesserEn: "the new town", greaterEn: "the old town", adj: "静か", neg: "静かでは", base: "quiet", comparative: "quieter" },
 	{ lesser: "沖縄", greater: "北海道", lesserEn: "Okinawa", greaterEn: "Hokkaido", adj: "寒い", neg: "寒く", base: "cold", comparative: "colder" },
 	{ lesser: "秋", greater: "夏", lesserEn: "autumn", greaterEn: "summer", adj: "暑い", neg: "暑く", base: "hot", comparative: "hotter" },
+	{ lesser: "春", greater: "冬", lesserEn: "spring", greaterEn: "winter", adj: "寒い", neg: "寒く", base: "cold", comparative: "colder" },
+	{ lesser: "教室", greater: "体育館", lesserEn: "the classroom", greaterEn: "the gym", adj: "暑い", neg: "暑く", base: "hot", comparative: "hotter" },
 	{ lesser: "ひらがな", greater: "漢字", lesserEn: "hiragana", greaterEn: "kanji", adj: "難しい", neg: "難しく", base: "difficult", comparative: "more difficult" },
 	{ lesser: "漢字", greater: "ひらがな", lesserEn: "kanji", greaterEn: "hiragana", adj: "易しい", neg: "易しく", base: "easy", comparative: "easier" },
+	{ lesser: "短い作文", greater: "長い作文", lesserEn: "the short essay", greaterEn: "the long essay", adj: "難しい", neg: "難しく", base: "difficult", comparative: "more difficult" },
+	{ lesser: "この文法", greater: "あの文法", lesserEn: "this grammar point", greaterEn: "that grammar point", adj: "易しい", neg: "易しく", base: "easy", comparative: "easier" },
 	{ lesser: "ノート", greater: "辞書", lesserEn: "the notebook", greaterEn: "the dictionary", adj: "重い", neg: "重く", base: "heavy", comparative: "heavier" },
 	{ lesser: "辞書", greater: "ノート", lesserEn: "the dictionary", greaterEn: "the notebook", adj: "軽い", neg: "軽く", base: "light", comparative: "lighter" },
+	{ lesser: "財布", greater: "かばん", lesserEn: "the wallet", greaterEn: "the bag", adj: "重い", neg: "重く", base: "heavy", comparative: "heavier" },
+	{ lesser: "大きい箱", greater: "小さい箱", lesserEn: "the big box", greaterEn: "the small box", adj: "軽い", neg: "軽く", base: "light", comparative: "lighter" },
 	{ lesser: "地下鉄", greater: "タクシー", lesserEn: "the subway", greaterEn: "the taxi", adj: "高い", neg: "高く", base: "expensive", comparative: "more expensive" },
 	{ lesser: "タクシー", greater: "地下鉄", lesserEn: "the taxi", greaterEn: "the subway", adj: "安い", neg: "安く", base: "cheap", comparative: "cheaper" },
+	{ lesser: "水", greater: "ジュース", lesserEn: "water", greaterEn: "juice", adj: "高い", neg: "高く", base: "expensive", comparative: "more expensive" },
+	{ lesser: "新しい服", greater: "古い服", lesserEn: "new clothes", greaterEn: "old clothes", adj: "安い", neg: "安く", base: "cheap", comparative: "cheaper" },
 	{ lesser: "この道", greater: "あの道", lesserEn: "this road", greaterEn: "that road", adj: "狭い", neg: "狭く", base: "narrow", comparative: "narrower" },
 	{ lesser: "あの道", greater: "この道", lesserEn: "that road", greaterEn: "this road", adj: "広い", neg: "広く", base: "wide", comparative: "wider" },
+	{ lesser: "駅の入口", greater: "学校の入口", lesserEn: "the station entrance", greaterEn: "the school entrance", adj: "狭い", neg: "狭く", base: "narrow", comparative: "narrower" },
+	{ lesser: "私の部屋", greater: "兄の部屋", lesserEn: "my room", greaterEn: "my older brother's room", adj: "広い", neg: "広く", base: "wide", comparative: "wider" },
 	{ lesser: "昨日", greater: "今日", lesserEn: "yesterday", greaterEn: "today", adj: "忙しい", neg: "忙しく", base: "busy", comparative: "busier" },
+	{ lesser: "日曜日", greater: "月曜日", lesserEn: "Sunday", greaterEn: "Monday", adj: "忙しい", neg: "忙しく", base: "busy", comparative: "busier" },
 	{ lesser: "古いスマホ", greater: "新しいスマホ", lesserEn: "the old phone", greaterEn: "the new phone", adj: "新しい", neg: "新しく", base: "new", comparative: "newer" },
 	{ lesser: "この川", greater: "あの川", lesserEn: "this river", greaterEn: "that river", adj: "長い", neg: "長く", base: "long", comparative: "longer" },
 	{ lesser: "あの橋", greater: "この橋", lesserEn: "that bridge", greaterEn: "this bridge", adj: "短い", neg: "短く", base: "short", comparative: "shorter" },
+	{ lesser: "青いえんぴつ", greater: "赤いえんぴつ", lesserEn: "the blue pencil", greaterEn: "the red pencil", adj: "長い", neg: "長く", base: "long", comparative: "longer" },
+	{ lesser: "今日の授業", greater: "昨日の授業", lesserEn: "today's class", greaterEn: "yesterday's class", adj: "短い", neg: "短く", base: "short", comparative: "shorter" },
 	{ lesser: "駅", greater: "学校", lesserEn: "the station", greaterEn: "the school", adj: "遠い", neg: "遠く", base: "far away", comparative: "farther away" },
+	{ lesser: "コンビニ", greater: "銀行", lesserEn: "the convenience store", greaterEn: "the bank", adj: "近い", neg: "近く", base: "near", comparative: "nearer" },
+	{ lesser: "図書館", greater: "公園", lesserEn: "the library", greaterEn: "the park", adj: "遠い", neg: "遠く", base: "far away", comparative: "farther away" },
 	{ lesser: "前のテスト", greater: "このテスト", lesserEn: "the previous test", greaterEn: "this test", adj: "難しい", neg: "難しく", base: "difficult", comparative: "more difficult" },
 	{ lesser: "このテスト", greater: "前のテスト", lesserEn: "this test", greaterEn: "the previous test", adj: "易しい", neg: "易しく", base: "easy", comparative: "easier" },
 	{ lesser: "昼", greater: "朝", lesserEn: "noon", greaterEn: "morning", adj: "早い", neg: "早く", base: "early", comparative: "earlier" },
-	{ lesser: "朝", greater: "夜", lesserEn: "morning", greaterEn: "night", adj: "遅い", neg: "遅く", base: "late", comparative: "later" }
+	{ lesser: "朝", greater: "夜", lesserEn: "morning", greaterEn: "night", adj: "遅い", neg: "遅く", base: "late", comparative: "later" },
+	{ lesser: "バスの時間", greater: "電車の時間", lesserEn: "the bus time", greaterEn: "the train time", adj: "早い", neg: "早く", base: "early", comparative: "earlier" },
+	{ lesser: "朝ご飯", greater: "晩ご飯", lesserEn: "breakfast", greaterEn: "dinner", adj: "遅い", neg: "遅く", base: "late", comparative: "later" }
 ];
 
 function comparisonSentences(item) {
@@ -1122,7 +1147,7 @@ function comparisonSentences(item) {
 }
 
 function makeChoiceQuestion({ kind, prompt, subprompt, band, options, answer, explanation }) {
-	return { kind, mode: "choice", prompt, subprompt, band, options: shuffled(options), answer, explanation };
+	return { kind, mode: "choice", prompt, subprompt, band, options: shuffled(Array.from(new Set(options))), answer, explanation };
 }
 
 function sentenceCase(text) {
@@ -1145,7 +1170,7 @@ const comparisonQuestionTemplates = {
 			subprompt: "Pick the sentence that says A is more adjective than B.",
 			band: "Choose the natural より sentence.",
 			answer: forms.yori,
-			options: [forms.yori, reverseForms.yori, forms.hodo, forms.question],
+			options: [forms.yori, reverseForms.yori, reverseForms.hodo, forms.question],
 			explanation: `より marks the comparison base: ${item.lesser}より = compared with ${item.lesser}.`
 		}),
 		(item, forms, reverseForms) => makeChoiceQuestion({
@@ -1154,16 +1179,16 @@ const comparisonQuestionTemplates = {
 			subprompt: `The comparison base is ${item.lesserEn}.`,
 			band: "Choose the sentence that keeps the base after より.",
 			answer: forms.yori,
-			options: [forms.yori, reverseForms.yori, forms.hou, `${item.lesser}は${item.greater}より${item.adj}です。`],
+			options: [forms.yori, reverseForms.yori, `${item.lesser}は${item.greater}より${item.adj}です。`, `${item.greater}は${item.lesser}ほど${item.neg}ありません。`],
 			explanation: `${item.lesser}より means “than ${item.lesserEn},” so ${item.greater} is the main topic.`
 		}),
 		(item, forms, reverseForms, englishYori) => makeChoiceQuestion({
 			kind: "より",
-			prompt: `Read the note: 「${forms.shorterHou}」`,
+			prompt: `Read the note: 「${forms.question}」「${forms.shorterHou}」`,
 			subprompt: "Which より sentence keeps the same meaning?",
 			band: "Choose the equivalent より sentence.",
 			answer: forms.yori,
-			options: [forms.yori, reverseForms.yori, forms.hodo, englishYori],
+			options: [forms.yori, reverseForms.yori, reverseForms.hodo, englishYori],
 			explanation: `${forms.shorterHou} and ${forms.yori} both say ${englishYori}`
 		})
 	],
@@ -1174,7 +1199,7 @@ const comparisonQuestionTemplates = {
 			subprompt: "Use より...のほう to put the stronger item after のほう.",
 			band: "Choose the sentence with より...のほう.",
 			answer: forms.hou,
-			options: [forms.hou, reverseForms.hou, forms.yori, `${item.greater}より${item.lesser}のほうが${item.adj}です。`],
+			options: [forms.hou, reverseForms.hou, `${item.greater}より${item.lesser}のほうが${item.adj}です。`, `${item.lesser}より${item.greater}ほど${item.neg}ありません。`],
 			explanation: `${item.greater} is the stronger side, so it goes before のほうが.`
 		}),
 		(item, forms, reverseForms) => makeChoiceQuestion({
@@ -1197,24 +1222,23 @@ const comparisonQuestionTemplates = {
 		})
 	],
 	hodo: [
-		(item, forms, _reverseForms, _englishYori, englishHodo) => ({
+		(item, forms, reverseForms, _englishYori, englishHodo) => makeChoiceQuestion({
 			kind: "ほど",
-			mode: "text",
-			prompt: `${item.lesser}は${item.greater}ほど＿＿＿＿。`,
+			prompt: englishHodo,
 			subprompt: englishHodo,
-			band: "Type the negative adjective ending.",
-			answer: `${item.neg}ありません`,
-			accepted: [`${item.neg}ありません`, `${item.neg}ないです`],
-			explanation: `ほど pairs with a negative ending: ${forms.hodo}`
+			band: "Choose the ほど sentence with the correct benchmark and negative ending.",
+			answer: forms.hodo,
+			options: [forms.hodo, reverseForms.hodo, reverseForms.yori, `${item.lesser}は${item.greater}ほど${item.adj}です。`],
+			explanation: `ほど marks the stronger benchmark and needs a negative ending here: ${forms.hodo}`
 		}),
-		(item, forms, _reverseForms, _englishYori, englishHodo) => makeChoiceQuestion({
+		(item, forms, reverseForms, _englishYori, englishHodo) => makeChoiceQuestion({
 			kind: "ほど",
-			prompt: `日記: ${item.lesser}は思ったよりよかった。でも、${item.greater}ほど＿＿＿＿。`,
+			prompt: `日記: ${item.lesser}は思ったよりよかった。でも、${item.greater}ほどではありません。`,
 			subprompt: englishHodo,
-			band: "Choose the ending that makes ほど work.",
-			answer: `${item.neg}ありません`,
-			options: [`${item.neg}ありません`, item.adj, `${item.adj}です`, `${item.neg}あります`],
-			explanation: "ほど needs a negative predicate when it means “not as ... as.”"
+			band: "Which full sentence says the same comparison naturally?",
+			answer: forms.hodo,
+			options: [forms.hodo, reverseForms.hodo, `${item.lesser}は${item.greater}ほど${item.adj}です。`, `${item.greater}より${item.lesser}のほうが${item.adj}です。`],
+			explanation: "ほど needs a negative predicate when it means “not as ... as,” and the noun after ほど is the stronger benchmark."
 		}),
 		(item, forms, reverseForms) => makeChoiceQuestion({
 			kind: "ほど",
@@ -1233,7 +1257,7 @@ const comparisonQuestionTemplates = {
 			subprompt: `Answer: ${englishYori}`,
 			band: "Choose the correct answer to the どちら question.",
 			answer: forms.response,
-			options: [forms.response, `${item.lesser}のほうが${item.adj}です。`, forms.hodo, forms.yori],
+			options: [forms.response, `${item.lesser}のほうが${item.adj}です。`, `${item.greater}ほど${item.neg}ありません。`, `${item.lesser}より${item.greater}です。`],
 			explanation: "どちら asks which of the two has more of the quality. Answer with のほうが."
 		}),
 		(item, forms) => makeChoiceQuestion({
@@ -1345,7 +1369,7 @@ const timeQuestionTemplates = {
 		(item) => makeChoiceQuestion({ kind: "ながら", prompt: `会話: 「何をしながら${item.main}か。」`, subprompt: `Answer: while ${item.sideEn}.`, band: "Choose the answer that keeps the side action before ながら.", answer: `${item.stem}ながら${item.main}。`, options: [`${item.stem}ながら${item.main}。`, `${item.main}ながら${item.stem}ます。`, `${item.stem}までに${item.main}。`, `${item.stem}ところです。`], explanation: "The action before ながら is the accompanying action." }),
 		(item) => makeChoiceQuestion({ kind: "ながら", prompt: `友だちの作文: ${item.natural}`, subprompt: "Which part tells what was happening at the same time?", band: "Find the side action.", answer: `${item.stem}ながら`, options: [`${item.stem}ながら`, item.main, "ところです", "までに"], explanation: "The phrase ending in ながら gives the simultaneous side action." }),
 		(item) => makeChoiceQuestion({ kind: "ながら", prompt: `Class note: ${item.stem}ながら＿＿＿＿。`, subprompt: `Complete it with the main action: ${item.mainEn}.`, band: "Choose the main clause.", answer: `${item.main}。`, options: [`${item.main}。`, `${item.stem}ます。`, "ところです。", "までにします。"], explanation: "ながら attaches to the side action; the main action follows it." }),
-		(item) => makeChoiceQuestion({ kind: "ながら", prompt: `Which sentence is NOT natural for “while ${item.sideEn}, I ${item.mainEn}”?`, subprompt: "Watch the verb form before ながら.", band: "Choose the sentence with the wrong form.", answer: `${item.stem}ますながら${item.main}。`, options: [`${item.stem}ますながら${item.main}。`, item.natural, `${item.stem}ながら、${item.main}。`, `${item.stem}ながら${item.main}。`], explanation: "ながら attaches to the ます-stem, not the full ます form." }),
+		(item) => makeChoiceQuestion({ kind: "ながら", prompt: `Which sentence is NOT natural for “while ${item.sideEn}, I ${item.mainEn}”?`, subprompt: "Watch the verb form before ながら.", band: "Choose the sentence with the wrong form.", answer: `${item.stem}ますながら${item.main}。`, options: [`${item.stem}ますながら${item.main}。`, item.natural, `${item.stem}ところ${item.main}。`, `${item.stem}まで${item.main}。`], explanation: "ながら attaches to the ます-stem, not the full ます form." }),
 		(item) => makeTextQuestion({ kind: "ながら", prompt: `I ${item.mainEn} while ${item.sideEn}.`, subprompt: "Type the full Japanese sentence.", band: "Build the whole ながら sentence.", answer: item.natural, placeholder: "例: 音楽を聞きながら料理を作ります。", explanation: `The full sentence is ${item.natural}` })
 	],
 	tokoro: [
@@ -2093,8 +2117,8 @@ function buildComparisonPitfallQuestions() {
 		const reverseForms = comparisonSentences({ ...item, lesser: item.greater, greater: item.lesser, lesserEn: item.greaterEn, greaterEn: item.lesserEn });
 		return [
 			makeChoiceQuestion({ kind: "nuance · より", prompt: forms.yori, subprompt: "Which item is the comparison base after より?", band: "Read the direction of comparison.", answer: item.lesser, options: [item.lesser, item.greater, item.adj, "どちら"], explanation: "The noun after より is the thing being compared against, not the stronger item." }),
-			makeChoiceQuestion({ kind: "pitfall · ほど", prompt: `${item.lesser}は${item.greater}ほど＿＿＿＿。`, subprompt: "ほど needs a negative predicate in this comparison pattern.", band: "Choose the natural ending.", answer: `${item.neg}ありません`, options: [`${item.neg}ありません`, `${item.adj}です`, `${item.neg}あります`, `${item.adj}ありません`], explanation: "ほど in “not as ... as” sentences pairs with a negative ending." }),
-			makeChoiceQuestion({ kind: "pitfall · のほう", prompt: `${item.greaterEn} is ${item.comparative} than ${item.lesserEn}.`, subprompt: "Which sentence keeps the stronger side before のほう?", band: "Avoid reversing the comparison.", answer: forms.hou, options: [forms.hou, reverseForms.hou, forms.hodo, `${item.greater}より${item.lesser}のほうが${item.adj}です。`], explanation: "The stronger item goes before のほうが." }),
+			makeChoiceQuestion({ kind: "pitfall · ほど", prompt: `Which sentence naturally means “${item.lesserEn} is not as ${item.base} as ${item.greaterEn}”?`, subprompt: "ほど needs a negative predicate in this comparison pattern.", band: "Choose the full ほど sentence.", answer: forms.hodo, options: [forms.hodo, reverseForms.hodo, `${item.lesser}は${item.greater}ほど${item.adj}です。`, `${item.greater}より${item.lesser}のほうが${item.adj}です。`], explanation: "ほど in “not as ... as” sentences pairs with a negative ending, and the stronger benchmark comes after ほど." }),
+			makeChoiceQuestion({ kind: "pitfall · のほう", prompt: `${item.greaterEn} is ${item.comparative} than ${item.lesserEn}.`, subprompt: "Which sentence keeps the stronger side before のほう?", band: "Avoid reversing the comparison.", answer: forms.hou, options: [forms.hou, reverseForms.hou, reverseForms.hodo, `${item.greater}より${item.lesser}のほうが${item.adj}です。`], explanation: "The stronger item goes before のほうが." }),
 			makeChoiceQuestion({ kind: "nuance · のほうを", prompt: forms.taiQuestion, subprompt: `You want to choose ${item.greaterEn}.`, band: "Choose the action-verb answer.", answer: forms.taiAnswer, options: [forms.taiAnswer, forms.hoshiiAnswer, `${item.greater}のほうが選びたいです。`, `${item.greater}ほど選びたいです。`], explanation: "With an action verb like 選びたい, the preferred thing can be marked with を." }),
 			makeChoiceQuestion({ kind: "nuance · ほしい", prompt: forms.hoshiiQuestion, subprompt: `You want ${item.greaterEn}.`, band: "Choose the ほしい answer.", answer: forms.hoshiiAnswer, options: [forms.hoshiiAnswer, forms.taiAnswer, `${item.greater}のほうをほしいです。`, `${item.greater}よりほしいです。`], explanation: "ほしい describes the wanted thing with が, not を." })
 		];
@@ -2105,7 +2129,7 @@ function buildTimePitfallQuestions() {
 	return [
 		...nagaraScenarios.flatMap((item) => [
 			makeChoiceQuestion({ kind: "pitfall · ながら", prompt: `＿＿＿＿ながら${item.main}。`, subprompt: `Fill in: while ${item.sideEn}.`, band: "Choose the form before ながら.", answer: item.stem, options: [item.stem, `${item.stem}ます`, `${item.stem}て`, `${item.stem}た`], explanation: "ながら attaches to the ます-stem, not the full ます form or て-form." }),
-			makeChoiceQuestion({ kind: "pitfall · ながら", prompt: `Which sentence has the wrong ながら form?`, subprompt: `Target meaning: while ${item.sideEn}, ${item.mainEn}.`, band: "Find the form error.", answer: `${item.stem}ますながら${item.main}。`, options: [`${item.stem}ますながら${item.main}。`, item.natural, `${item.stem}ながら、${item.main}。`, `${item.stem}ながら${item.main}。`], explanation: "Do not put ます before ながら." }),
+			makeChoiceQuestion({ kind: "pitfall · ながら", prompt: `Which sentence has the wrong ながら form?`, subprompt: `Target meaning: while ${item.sideEn}, ${item.mainEn}.`, band: "Find the form error.", answer: `${item.stem}ますながら${item.main}。`, options: [`${item.stem}ますながら${item.main}。`, item.natural, `${item.stem}ところ${item.main}。`, `${item.stem}まで${item.main}。`], explanation: "Do not put ます before ながら." }),
 			makeChoiceQuestion({ kind: "nuance · ながら", prompt: item.natural, subprompt: "Which action is the main action?", band: "Do not overread the side action.", answer: item.main, options: [item.main, `${item.stem}ます`, "両方とも終わりました", "まだ始まりません"], explanation: "The main action is usually the clause after ながら." })
 		]),
 		...tokoroScenarios.flatMap((item) => [
@@ -2185,7 +2209,7 @@ function buildComparisonVarietyQuestions() {
 		const englishYori = sentenceCase(`${item.greaterEn} is ${item.comparative} than ${item.lesserEn}.`);
 		const englishHodo = sentenceCase(`${item.lesserEn} is not as ${item.base} as ${item.greaterEn}.`);
 		return [
-			makeVarietyChoiceQuestion({ kind: "variety · comparison rewrite", prompt: `Rewrite without changing meaning: ${forms.hodo}`, subprompt: englishHodo, band: "Choose the より...のほう equivalent.", answer: forms.hou, options: [forms.hou, reverseForms.hou, forms.yori, `${item.greater}は${item.lesser}ほど${item.neg}ありません。`], explanation: "AはBほど...ません means Bのほうが...です." }),
+			makeVarietyChoiceQuestion({ kind: "variety · comparison rewrite", prompt: `Rewrite without changing meaning: ${forms.hodo}`, subprompt: englishHodo, band: "Choose the より...のほう equivalent.", answer: forms.hou, options: [forms.hou, reverseForms.hou, `${item.greater}より${item.lesser}のほうが${item.adj}です。`, `${item.lesser}より${item.greater}ほど${item.neg}ありません。`], explanation: "AはBほど...ません means Bのほうが...です." }),
 			makeVarietyChoiceQuestion({ kind: "variety · dialogue", prompt: `A: ${forms.question} B: ＿＿＿＿`, subprompt: `Answer that ${item.greaterEn} is ${item.comparative}.`, band: "Choose the most natural short answer.", answer: forms.shorterHou, options: [forms.shorterHou, `${item.lesser}のほうが${item.adj}です。`, forms.hodo, reverseForms.shorterHou], explanation: "Answer どちら questions with the chosen side + のほうが." }),
 			makeVarietyChoiceQuestion({ kind: "variety · false friend", prompt: `Which sentence is grammatically correct and means “${englishYori}”?`, subprompt: "Watch より direction and ほど negativity.", band: "Choose the correct comparison.", answer: forms.yori, options: [forms.yori, `${item.lesser}は${item.greater}ほど${item.adj}です。`, reverseForms.yori, `${item.greater}ほど${item.lesser}は${item.neg}ありません。`], explanation: "より marks the base; ほど needs a negative ending." }),
 			makeVarietyChoiceQuestion({ kind: "variety · particle with desire", prompt: `A: ${forms.taiQuestion} B: ＿＿＿＿`, subprompt: `Choose ${item.greaterEn} with 選びたい.`, band: "Choose のほうを for the action verb.", answer: forms.taiAnswer, options: [forms.taiAnswer, forms.hoshiiAnswer, `${item.greater}のほうが選びたいです。`, `${item.greater}のほうをほしいです。`], explanation: "選びたい keeps an object-like noun with を; ほしい takes が." })
@@ -4680,12 +4704,12 @@ const grammarCorrectionPacks = Object.fromEntries(grammarCorrectionData.map(([id
 
 const grammarSessionBossData = [
 	["comparison", "店で、サラさんは『赤いかばんと青いかばんと、どちらを買いたいですか』と聞かれました。サラさんは青いかばんを指して、『こちらのほうを買いたいです』と言いました。", "Why is ほうを used?", "Because 買いたい is an action verb and the chosen item is the object.", ["Because 青い is an adjective.", "Because ほしい always uses を.", "Because the red bag is cheaper."], "Boss check: separate adjective comparison のほうが from object-choice のほうを."],
-	["time", "会議は三時までです。資料は三時までに出してください。田中さんは資料を作りながら電話をしていました。", "Which sentence uses a deadline?", "資料は三時までに出してください。", ["会議は三時までです。", "資料を作りながら電話をしていました。", "All three sentences use deadlines."], "までに marks the deadline for a completed action."],
+	["time", "会議は三時までです。資料は三時までに出してください。田中さんは資料を作りながら電話をしていました。", "Which sentence uses a deadline?", "資料は三時までに出してください。", ["会議は三時までです。", "資料を作りながら電話をしていました。", "三つとも締め切りを表します。"], "までに marks the deadline for a completed action."],
 	["invitation", "A『週末、いっしょに勉強しませんか。』B『いいですね。重い本は私が持ちましょうか。』", "Which statement is correct?", "ませんか invites; ましょうか offers help.", ["ませんか offers help; ましょうか reports hearsay.", "Both forms only invite.", "Both forms only ask permission."], "Boss check: invitation vs speaker's offer."],
 	["ability", "ホテルの部屋から海が見えます。ロビーでは無料でコーヒーを飲むことができます。", "What is the contrast?", "見えます is natural perception; 飲むことができます is available possibility.", ["Both are learned skills.", "Both are passive forms.", "見えます means permission from hotel staff."], "Boss check: natural perception vs enabled action."],
 	["experience", "私は一度、富士山に登ったことがあります。でも、雨の日は山道で転ぶことがあります。", "What do the two ことがあります forms mean?", "Past life experience, then occasional occurrence.", ["Occasional occurrence, then past life experience.", "Two recent events.", "Two obligations."], "Boss check: たことがあります vs dictionary/ない + ことがあります."],
 	["permission", "ここでは写真を撮ってもいいですが、フラッシュを使ってはいけません。チケットをなくした人は、受付に行かなければなりません。", "Which action is forbidden?", "Using flash.", ["Taking photos.", "Going to reception after losing a ticket.", "Having a ticket."], "Boss check: allowed, forbidden, and required actions."],
-	["desire", "私は新しい辞書がほしいです。妹はマンガを読みたがっています。父は仕事が早く終わるといいと言っています。", "Which pattern describes another person's visible desire?", "妹はマンガを読みたがっています。", ["私は新しい辞書がほしいです。", "仕事が早く終わるといい。", "All three are speaker desire."], "Boss check: speaker desire vs third-person desire vs hoped-for situation."],
+	["desire", "私は新しい辞書がほしいです。妹はマンガを読みたがっています。父は仕事が早く終わるといいと言っています。", "Which pattern describes another person's visible desire?", "妹はマンガを読みたがっています。", ["私は新しい辞書がほしいです。", "仕事が早く終わるといい。", "三つとも話者の希望です。"], "Boss check: speaker desire vs third-person desire vs hoped-for situation."],
 	["appearance", "空が暗くて雨が降りそうです。弟は犬をこわがっています。窓は開いたままです。", "Which pattern describes a state left unchanged?", "窓は開いたままです。", ["雨が降りそうです。", "弟は犬をこわがっています。", "空が暗いです。"], "Boss check: appearance, third-person emotion, and unchanged state."],
 	["reason", "電車が遅れたので、会議に遅れました。急いでいたので、友だちに『先に行って』と言いました。", "Why is ので acceptable in the first sentence but less ideal before a command?", "It calmly explains a reason; commands usually prefer から.", ["ので is never used for reasons.", "から cannot be used with commands.", "遅れる cannot take ので."], "Boss check: reason nuance and sentence ending."],
 	["purpose", "日本語の本を買いに行きました。漢字を覚えるために、毎日書いています。小さい子にも読めるように、ひらがなをつけました。", "Which pattern marks a desired outcome rather than direct purpose?", "読めるように", ["買いに", "覚えるために", "毎日書いています"], "Boss check: movement purpose, intentional purpose, and outcome goal."],
@@ -5415,6 +5439,83 @@ function showGrammarPracticeQuestion() {
 	`;
 }
 
+function findGrammarRetryCandidate(question) {
+	if (!question?.meta || !gpState.bank?.length) return null;
+	const queuedPrompts = new Set(gpState.queue.map((queued) => queued.prompt));
+	const currentKey = `${question.prompt}|${question.answer}`;
+	const candidates = gpState.bank.filter((candidate) => {
+		if (`${candidate.prompt}|${candidate.answer}` === currentKey) return false;
+		if (queuedPrompts.has(candidate.prompt)) return false;
+		return candidate.meta?.pattern === question.meta.pattern || candidate.meta?.pitfall === question.meta.pitfall;
+	});
+	return candidates.find((candidate) => candidate.meta?.pattern === question.meta.pattern && candidate.meta?.format !== question.meta.format) || candidates[0] || null;
+}
+
+function queueGrammarRetryQuestion(question) {
+	const retry = findGrammarRetryCandidate(question);
+	if (!retry) return false;
+	gpState.queue.splice(gpState.index + 1, 0, { ...retry, kind: `retry · ${retry.kind}` });
+	return true;
+}
+
+function renderGrammarAnswerCoaching(question, value, isCorrect) {
+	const selected = String(value || "").trim();
+	const pattern = question.meta?.pattern || "this pattern";
+	const pitfall = question.meta?.pitfall || "the grammar job";
+	const format = question.meta?.format || "question";
+	const cue = question.subprompt || question.band || "Read the sentence role before choosing the form.";
+	const retryAvailable = !isCorrect && Boolean(findGrammarRetryCandidate(question));
+	const selectedBlock = isCorrect ? "" : `
+		<p class="is-wrong">
+			<span>Your answer</span>
+			<strong${jpLangAttribute(selected)}>${renderJapaneseTextWithFurigana(selected || "No answer")}</strong>
+		</p>
+	`;
+	const trapCopy = question.mode === "choice"
+		? "It was probably tempting because it is a real-looking option in the same grammar neighborhood."
+		: "It was probably tempting because it is close to the target form or meaning.";
+	const failCopy = question.explanation || `The cue points to ${pattern}, not the selected form.`;
+	return `
+		<div class="gp-coaching">
+			<div class="gp-coaching-answer">
+				<p>
+					<span>Answer</span>
+					<strong${jpLangAttribute(question.answer)}>${renderJapaneseTextWithFurigana(question.answer)}</strong>
+				</p>
+				${selectedBlock}
+			</div>
+			<div class="gp-coaching-card">
+				<h5>${isCorrect ? "Cue you caught" : "Cue to notice next time"}</h5>
+				<p>${renderJapaneseTextWithFurigana(cue)}</p>
+			</div>
+			${isCorrect ? `
+				<div class="gp-coaching-card">
+					<h5>Why it works</h5>
+					<p>${renderJapaneseTextWithFurigana(failCopy)}</p>
+				</div>
+			` : `
+				<div class="gp-coaching-card is-trap">
+					<h5>Why the trap is tempting</h5>
+					<p>${escapeHtml(trapCopy)} This item is testing <strong>${escapeHtml(pattern)}</strong> through <strong>${escapeHtml(pitfall)}</strong>.</p>
+				</div>
+				<div class="gp-coaching-card">
+					<h5>Why it fails here</h5>
+					<p>${renderJapaneseTextWithFurigana(failCopy)}</p>
+				</div>
+				<div class="gp-coaching-card">
+					<h5>Minimal pair</h5>
+					<p><span>Correct ${escapeHtml(format)}</span><strong${jpLangAttribute(question.answer)}>${renderJapaneseTextWithFurigana(question.answer)}</strong></p>
+					<p><span>Trap answer</span><strong${jpLangAttribute(selected)}>${renderJapaneseTextWithFurigana(selected || "No answer")}</strong></p>
+				</div>
+			`}
+			<div class="gp-coaching-actions">
+				${retryAvailable ? `<button class="gp-card-action" type="button" id="gp-retry-pattern">Retry this point</button>` : ""}
+				<button class="practice-start rh-next" type="button" id="gp-next">Next <span aria-hidden="true">→</span></button>
+			</div>
+		</div>
+	`;
+}
+
 function answerGrammarPractice(value) {
 	const question = gpState.queue[gpState.index];
 	if (!question || gpState.answered) return;
@@ -5451,11 +5552,7 @@ function answerGrammarPractice(value) {
 	feedback.textContent = isCorrect ? "Correct." : "Not quite.";
 	feedback.className = `rh-feedback ${isCorrect ? "is-correct" : "is-incorrect"}`;
 	explanation.hidden = false;
-	explanation.innerHTML = `
-		<p><span>Answer</span><strong${jpLangAttribute(question.answer)}>${renderJapaneseTextWithFurigana(question.answer)}</strong></p>
-		<p>${renderJapaneseTextWithFurigana(question.explanation)}</p>
-		<button class="practice-start rh-next" type="button" id="gp-next">Next <span aria-hidden="true">→</span></button>
-	`;
+	explanation.innerHTML = renderGrammarAnswerCoaching(question, value, isCorrect);
 	if (question.mode === "choice") {
 		gpEls.body.querySelectorAll("[data-gp-choice]").forEach((button) => {
 			button.disabled = true;
@@ -5476,6 +5573,35 @@ function nextGrammarPracticeQuestion() {
 	showGrammarPracticeQuestion();
 }
 
+function getGrammarStatRows(items, limit = 8) {
+	return items
+		.sort((a, b) => (a.correct / a.total) - (b.correct / b.total) || b.total - a.total || a.label.localeCompare(b.label))
+		.slice(0, limit)
+		.map((item) => {
+			const percent = Math.round((item.correct / item.total) * 100);
+			return `
+				<div class="gp-breakdown-row">
+					<strong>${escapeHtml(item.label)}</strong>
+					<span>${item.correct}/${item.total}</span>
+					<div class="gp-breakdown-track" aria-hidden="true"><i style="width:${percent}%"></i></div>
+				</div>
+			`;
+		})
+		.join("");
+}
+
+function collectGrammarStatsBy(selector) {
+	const map = new Map();
+	gpState.responses.forEach(({ question, isCorrect }) => {
+		const label = selector(question) || "Mixed";
+		const entry = map.get(label) || { label, correct: 0, total: 0 };
+		entry.total += 1;
+		if (isCorrect) entry.correct += 1;
+		map.set(label, entry);
+	});
+	return [...map.values()];
+}
+
 function renderGrammarResultBreakdown() {
 	if (!gpState.responses?.length) return "";
 	const familyMap = new Map();
@@ -5494,17 +5620,42 @@ function renderGrammarResultBreakdown() {
 		familyMap.set(family, familyEntry);
 		patternMap.set(pattern, patternEntry);
 	});
-	const rows = [...familyMap.values()]
-		.sort((a, b) => (a.correct / a.total) - (b.correct / b.total) || b.total - a.total)
-		.map((item) => `<div class="gp-breakdown-row"><strong>${escapeHtml(item.label)}</strong><span>${item.correct}/${item.total}</span></div>`)
-		.join("");
+	const familyRows = getGrammarStatRows([...familyMap.values()]);
+	const patternRows = getGrammarStatRows([...patternMap.values()], 10);
+	const formatRows = getGrammarStatRows(collectGrammarStatsBy((question) => question.meta?.format), 8);
+	const pitfallRows = getGrammarStatRows(collectGrammarStatsBy((question) => question.meta?.pitfall), 8);
 	const weakPatterns = [...patternMap.values()]
 		.filter((item) => item.correct < item.total)
 		.sort((a, b) => (a.correct / a.total) - (b.correct / b.total) || b.total - a.total)
 		.slice(0, 4)
 		.map((item) => `<span>${escapeHtml(item.label)} · ${item.correct}/${item.total}</span>`)
 		.join("");
-	return `<div class="gp-breakdown"><h4>${gpState.isMockTest ? "Mock test breakdown" : "Score breakdown"}</h4>${rows}${weakPatterns ? `<div class="gp-review-summary"><strong>Review next:</strong> ${weakPatterns}</div>` : ""}</div>`;
+	const perfect = gpState.responses.every((response) => response.isCorrect);
+	return `
+		<div class="gp-breakdown">
+			<h4>${gpState.isMockTest ? "Mock test diagnostics" : "Session diagnostics"}</h4>
+			<p>${perfect ? "Clean round. Keep rotating sessions so the pattern stays flexible." : "Use this to see whether the miss was the pattern, the question format, or the specific trap."}</p>
+			<div class="gp-breakdown-grid">
+				<section>
+					<h5>Grammar area</h5>
+					${familyRows}
+				</section>
+				<section>
+					<h5>Patterns</h5>
+					${patternRows}
+				</section>
+				<section>
+					<h5>Question type</h5>
+					${formatRows}
+				</section>
+				<section>
+					<h5>Common traps</h5>
+					${pitfallRows}
+				</section>
+			</div>
+			${weakPatterns ? `<div class="gp-review-summary"><strong>Review next:</strong> ${weakPatterns}</div>` : `<div class="gp-review-summary"><strong>Review next:</strong> <span>mixed review</span><span>boss round</span></div>`}
+		</div>
+	`;
 }
 
 function finishGrammarPractice() {
@@ -6721,6 +6872,13 @@ gpEls.again.addEventListener("click", () => {
 	gpEls.status.hidden = false;
 });
 gpEls.body.addEventListener("click", (event) => {
+	const retry = event.target.closest("#gp-retry-pattern");
+	if (retry) {
+		const question = gpState.queue[gpState.index];
+		queueGrammarRetryQuestion(question);
+		nextGrammarPracticeQuestion();
+		return;
+	}
 	const next = event.target.closest("#gp-next");
 	if (next) {
 		nextGrammarPracticeQuestion();

@@ -811,11 +811,29 @@ body.practice-fullscreen { overflow: hidden; }
 .gp-explanation p + p { margin-top: 7px; }
 .gp-explanation span { display: block; color: #858d7e; font-size: 9px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
 .gp-explanation strong { color: #315e4b; font-family: "Noto Sans JP", sans-serif; font-size: 20px; }
+.gp-coaching { display: grid; gap: 12px; text-align: left; }
+.gp-coaching-answer { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.gp-coaching-answer p, .gp-coaching-card { padding: 11px; border: 1px solid #edf0e8; border-radius: 8px; background: #fbfdf9; }
+.gp-coaching-answer p { display: grid; gap: 5px; }
+.gp-coaching-answer p:first-child { border-color: #cfe0d3; background: #f6faf6; }
+.gp-coaching-answer p.is-wrong { border-color: #e3b0a9; background: #fff7f4; }
+.gp-coaching-card { display: grid; gap: 5px; }
+.gp-coaching-card h5 { margin: 0; color: #315e4b; font-size: 12px; }
+.gp-coaching-card p { margin: 0; }
+.gp-coaching-card.is-trap { border-color: #e9d6c9; background: #fff8f2; }
+.gp-coaching-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
 .gp-final-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-.gp-breakdown { display: grid; width: min(100%, 760px); gap: 8px; margin-top: 12px; }
-.gp-breakdown-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: #fff; color: #596158; font-size: 11px; }
-.gp-breakdown-row strong { color: #315e4b; }
-.gp-breakdown-row span:last-child { font-weight: 700; color: #252b27; }
+.gp-breakdown { display: grid; gap: 12px; width: min(100%, 940px); margin: 18px auto 0; text-align: left; }
+.gp-breakdown h4 { margin: 0; color: #315e4b; font-size: 16px; text-align: center; }
+.gp-breakdown > p { max-width: 620px; margin: 0 auto; color: #667064; font-size: 12px; line-height: 1.6; text-align: center; }
+.gp-breakdown-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.gp-breakdown-grid section { display: grid; gap: 7px; align-content: start; padding: 12px; border: 1px solid #dde8de; border-radius: 9px; background: #fbfdf9; }
+.gp-breakdown-grid h5 { margin: 0 0 2px; color: #315e4b; font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.gp-breakdown-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 5px 10px; align-items: center; color: #596158; font-size: 11px; }
+.gp-breakdown-row strong { min-width: 0; color: #252b27; font-size: 12px; overflow-wrap: anywhere; }
+.gp-breakdown-row span { color: #315e4b; font-weight: 800; }
+.gp-breakdown-track { grid-column: 1 / -1; overflow: hidden; height: 6px; border-radius: 999px; background: #e4e8df; }
+.gp-breakdown-track i { display: block; height: 100%; border-radius: inherit; background: #6f9c82; }
 .pitch-missed-item small { display: block; grid-column: 1 / -1; color: #747c70; font-size: 10px; line-height: 1.5; }
 @media (max-width: 700px) {
 	.gp-layout { grid-template-columns: 1fr; }
@@ -834,7 +852,9 @@ body.practice-fullscreen { overflow: hidden; }
 	.gp-options { grid-template-columns: 1fr; }
 	.gp-options button > span:last-child { font-size: 15px; }
 	.gp-answer input { font-size: 18px; }
+	.gp-coaching-answer { grid-template-columns: 1fr; }
 	.gp-final-stats { grid-template-columns: 1fr; }
+	.gp-breakdown-grid { grid-template-columns: 1fr; }
 }
 
 /* Reading help */
