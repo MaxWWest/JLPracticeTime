@@ -3934,11 +3934,11 @@ function makeGrammarOrderQuestion({ kind = "sentence ordering", prompt, fragment
 	});
 }
 
-function makeGrammarDiagnosisQuestion({ kind = "error diagnosis", prompt, answer, options, explanation }) {
+function makeGrammarDiagnosisQuestion({ kind = "error diagnosis", prompt, subprompt = "What is the main problem?", answer, options, explanation }) {
 	return makeChoiceQuestion({
 		kind,
 		prompt,
-		subprompt: "What is the main problem?",
+		subprompt,
 		band: "Pick the best diagnosis.",
 		options: uniqueGrammarOptions([answer, ...options], [answer]),
 		answer,
@@ -5082,7 +5082,8 @@ function serializableGrammarQuestion(question, sessionId) {
 function hydrateStoredGrammarQuestion(question) {
 	if (!question || !question.prompt) return null;
 	const sessionId = question.sessionId || question.meta?.sourceSessionId || "comparison";
-	return withGrammarPracticeMetadata(question, sessionId, {
+	const refreshedQuestion = refreshGrammarTrapDiagnosisQuestion(question, sessionId);
+	return withGrammarPracticeMetadata(refreshedQuestion, sessionId, {
 		sourceSessionId: question.meta?.sourceSessionId || sessionId,
 		familyId: question.meta?.familyId,
 		familyLabel: question.meta?.familyLabel,
@@ -5329,14 +5330,58 @@ function diagnoseGenericGrammarTrap(question, wrong, sessionId) {
 	return { answer, options: chooseGrammarTrapDistractors(answer, preferred) };
 }
 
+const staleGrammarTrapDiagnoses = new Set([
+	"It does not match the grammar job or context cue.",
+	"It changes only the tense, not the meaning.",
+	"It is always more polite than the correct answer.",
+	"It is the plain form of the correct answer."
+]);
+
+function cleanGrammarTrapCue(question) {
+	const prompt = String(question?.prompt || "").replace(/^Read the note:\s*/i, "").trim();
+	const subprompt = String(question?.subprompt || "").trim();
+	if (subprompt && subprompt !== "What is the main problem?") return `Target: ${subprompt}`;
+	if (/^[A-Z][^。？?]+[.!?]$/.test(prompt)) return `Target: ${prompt}`;
+	if (prompt) return `Target cue: ${prompt}`;
+	return "What is the main problem?";
+}
+
+function splitStoredGrammarTrapPrompt(prompt) {
+	const match = String(prompt || "").match(/^(.*?)\s+\/\s+Context:\s+([\s\S]+)$/);
+	return match ? { wrong: match[1].trim(), context: match[2].trim() } : { wrong: String(prompt || "").trim(), context: "" };
+}
+
+function refreshGrammarTrapDiagnosisQuestion(question, sessionId) {
+	if (!String(question?.kind || "").includes("wrong-answer trap")) return question;
+	const split = splitStoredGrammarTrapPrompt(question.prompt);
+	const sourceQuestion = {
+		...question,
+		prompt: split.context || question.prompt,
+		subprompt: question.subprompt === "What is the main problem?" ? "" : question.subprompt,
+		answer: question.meta?.expectedAnswer || question.answer
+	};
+	const diagnosis = sessionId === "comparison" ? diagnoseComparisonTrap(sourceQuestion, split.wrong) : diagnoseGenericGrammarTrap(sourceQuestion, split.wrong, sessionId);
+	const hasStaleShape = staleGrammarTrapDiagnoses.has(question.answer) || (question.options || []).some((option) => staleGrammarTrapDiagnoses.has(option)) || /\/\s+Context:/.test(question.prompt);
+	if (!hasStaleShape) return question;
+	return {
+		...question,
+		prompt: split.wrong,
+		subprompt: cleanGrammarTrapCue(sourceQuestion),
+		answer: diagnosis.answer,
+		options: shuffled(Array.from(new Set([diagnosis.answer, ...diagnosis.options]))),
+		explanation: question.explanation || "Review the context cue first, then choose the pattern that matches that grammar job."
+	};
+}
+
 function buildGenericAdvancedGrammarQuestions(sessionId, baseBank) {
 	const choices = baseBank.filter((question) => question.mode === "choice" && question.options?.length > 2).slice(0, 4);
 	return choices.map((question) => {
-		const wrong = question.options.find((option) => option !== question.answer);
+		const wrong = question.options.find((option) => option !== question.answer && hasJapanese(option)) || question.options.find((option) => option !== question.answer);
 		const diagnosis = sessionId === "comparison" ? diagnoseComparisonTrap(question, wrong) : diagnoseGenericGrammarTrap(question, wrong, sessionId);
 		return makeGrammarDiagnosisQuestion({
 			kind: "wrong-answer trap",
-			prompt: `${wrong} / Context: ${question.prompt}`,
+			prompt: wrong,
+			subprompt: cleanGrammarTrapCue(question),
 			answer: diagnosis.answer,
 			options: diagnosis.options,
 			explanation: question.explanation || "Review the context cue first, then choose the pattern that matches that grammar job."
@@ -5354,7 +5399,7 @@ function buildAdvancedGrammarPracticeBank(sessionId, baseBank) {
 	];
 	const seen = new Set();
 	return [...baseBank, ...advanced].filter((question) => {
-		const key = `${question.kind}|${question.mode}|${question.prompt}|${question.answer}`;
+		const key = `${question.kind}|${question.mode}|${question.prompt}|${question.subprompt}|${question.answer}`;
 		if (seen.has(key)) return false;
 		seen.add(key);
 		return true;
