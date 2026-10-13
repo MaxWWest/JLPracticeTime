@@ -1373,6 +1373,51 @@ const comparisonAdjectivePool = [
 	{ adj: "暗い", neg: "暗く", base: "dark", comparative: "darker", tags: ["buildings", "places", "rooms"] }
 ];
 
+const grammarVerbPool = [
+	{ ja: "行く", en: "go", group: "godan", transitivity: "intransitive", particle: "に", objectRole: "destination", tags: ["places", "buildings", "nature", "schedule"], forms: { dictionary: "行く", masuStem: "行き", masu: "行きます", te: "行って", ta: "行った", nai: "行かない", potential: "行ける", volitional: "行こう" } },
+	{ ja: "来る", en: "come", group: "kuru", transitivity: "intransitive", particle: "に", objectRole: "destination", tags: ["places", "buildings", "rooms", "schedule"], forms: { dictionary: "来る", masuStem: "来", masu: "来ます", te: "来て", ta: "来た", nai: "来ない", potential: "来られる", volitional: "来よう" } },
+	{ ja: "帰る", en: "return", group: "godan", transitivity: "intransitive", particle: "に", objectRole: "destination", tags: ["places", "buildings", "rooms"], forms: { dictionary: "帰る", masuStem: "帰り", masu: "帰ります", te: "帰って", ta: "帰った", nai: "帰らない", potential: "帰れる", volitional: "帰ろう" } },
+	{ ja: "入る", en: "enter", group: "godan", transitivity: "intransitive", particle: "に", objectRole: "destination", tags: ["buildings", "rooms", "places"], forms: { dictionary: "入る", masuStem: "入り", masu: "入ります", te: "入って", ta: "入った", nai: "入らない", potential: "入れる", volitional: "入ろう" } },
+	{ ja: "出る", en: "leave", group: "ichidan", transitivity: "intransitive", particle: "を", objectRole: "source", tags: ["buildings", "rooms", "places", "transport"], forms: { dictionary: "出る", masuStem: "出", masu: "出ます", te: "出て", ta: "出た", nai: "出ない", potential: "出られる", volitional: "出よう" } },
+	{ ja: "乗る", en: "ride", group: "godan", transitivity: "intransitive", particle: "に", objectRole: "vehicle", tags: ["transport"], forms: { dictionary: "乗る", masuStem: "乗り", masu: "乗ります", te: "乗って", ta: "乗った", nai: "乗らない", potential: "乗れる", volitional: "乗ろう" } },
+	{ ja: "降りる", en: "get off", group: "ichidan", transitivity: "intransitive", particle: "を", objectRole: "vehicle", tags: ["transport"], forms: { dictionary: "降りる", masuStem: "降り", masu: "降ります", te: "降りて", ta: "降りた", nai: "降りない", potential: "降りられる", volitional: "降りよう" } },
+	{ ja: "歩く", en: "walk", group: "godan", transitivity: "intransitive", particle: "を", objectRole: "path", tags: ["places", "nature"], forms: { dictionary: "歩く", masuStem: "歩き", masu: "歩きます", te: "歩いて", ta: "歩いた", nai: "歩かない", potential: "歩ける", volitional: "歩こう" } },
+	{ ja: "走る", en: "run", group: "godan", transitivity: "intransitive", particle: "を", objectRole: "path", tags: ["places", "nature"], forms: { dictionary: "走る", masuStem: "走り", masu: "走ります", te: "走って", ta: "走った", nai: "走らない", potential: "走れる", volitional: "走ろう" } },
+	{ ja: "食べる", en: "eat", group: "ichidan", transitivity: "transitive", particle: "を", objectRole: "object", tags: ["food"], forms: { dictionary: "食べる", masuStem: "食べ", masu: "食べます", te: "食べて", ta: "食べた", nai: "食べない", potential: "食べられる", volitional: "食べよう" } },
+	{ ja: "飲む", en: "drink", group: "godan", transitivity: "transitive", particle: "を", objectRole: "object", tags: ["food"], forms: { dictionary: "飲む", masuStem: "飲み", masu: "飲みます", te: "飲んで", ta: "飲んだ", nai: "飲まない", potential: "飲める", volitional: "飲もう" } },
+	{ ja: "買う", en: "buy", group: "godan", transitivity: "transitive", particle: "を", objectRole: "object", tags: ["food", "clothing", "objects", "transport"], forms: { dictionary: "買う", masuStem: "買い", masu: "買います", te: "買って", ta: "買った", nai: "買わない", potential: "買える", volitional: "買おう" } },
+	{ ja: "使う", en: "use", group: "godan", transitivity: "transitive", particle: "を", objectRole: "object", tags: ["objects", "transport", "school"], forms: { dictionary: "使う", masuStem: "使い", masu: "使います", te: "使って", ta: "使った", nai: "使わない", potential: "使える", volitional: "使おう" } },
+	{ ja: "選ぶ", en: "choose", group: "godan", transitivity: "transitive", particle: "を", objectRole: "object", tags: ["food", "clothing", "objects", "places", "transport"], forms: { dictionary: "選ぶ", masuStem: "選び", masu: "選びます", te: "選んで", ta: "選んだ", nai: "選ばない", potential: "選べる", volitional: "選ぼう" } },
+	{ ja: "読む", en: "read", group: "godan", transitivity: "transitive", particle: "を", objectRole: "object", tags: ["school", "study", "objects"], forms: { dictionary: "読む", masuStem: "読み", masu: "読みます", te: "読んで", ta: "読んだ", nai: "読まない", potential: "読める", volitional: "読もう" } },
+	{ ja: "書く", en: "write", group: "godan", transitivity: "transitive", particle: "を", objectRole: "object", tags: ["school", "study", "objects"], forms: { dictionary: "書く", masuStem: "書き", masu: "書きます", te: "書いて", ta: "書いた", nai: "書かない", potential: "書ける", volitional: "書こう" } },
+	{ ja: "聞く", en: "listen to", group: "godan", transitivity: "transitive", particle: "を", objectRole: "object", tags: ["study", "schedule"], forms: { dictionary: "聞く", masuStem: "聞き", masu: "聞きます", te: "聞いて", ta: "聞いた", nai: "聞かない", potential: "聞ける", volitional: "聞こう" } },
+	{ ja: "見る", en: "watch", group: "ichidan", transitivity: "transitive", particle: "を", objectRole: "object", tags: ["objects", "places", "schedule"], forms: { dictionary: "見る", masuStem: "見", masu: "見ます", te: "見て", ta: "見た", nai: "見ない", potential: "見られる", volitional: "見よう" } },
+	{ ja: "覚える", en: "memorize", group: "ichidan", transitivity: "transitive", particle: "を", objectRole: "object", tags: ["study", "school"], forms: { dictionary: "覚える", masuStem: "覚え", masu: "覚えます", te: "覚えて", ta: "覚えた", nai: "覚えない", potential: "覚えられる", volitional: "覚えよう" } },
+	{ ja: "忘れる", en: "forget", group: "ichidan", transitivity: "transitive", particle: "を", objectRole: "object", tags: ["study", "school", "objects", "schedule"], forms: { dictionary: "忘れる", masuStem: "忘れ", masu: "忘れます", te: "忘れて", ta: "忘れた", nai: "忘れない", potential: "忘れられる", volitional: "忘れよう" } },
+	{ ja: "勉強する", en: "study", group: "suru", transitivity: "transitive", particle: "を", objectRole: "object", tags: ["study", "school"], forms: { dictionary: "勉強する", masuStem: "勉強し", masu: "勉強します", te: "勉強して", ta: "勉強した", nai: "勉強しない", potential: "勉強できる", volitional: "勉強しよう" } },
+	{ ja: "練習する", en: "practice", group: "suru", transitivity: "transitive", particle: "を", objectRole: "object", tags: ["study", "school", "schedule"], forms: { dictionary: "練習する", masuStem: "練習し", masu: "練習します", te: "練習して", ta: "練習した", nai: "練習しない", potential: "練習できる", volitional: "練習しよう" } },
+	{ ja: "電話する", en: "call", group: "suru", transitivity: "intransitive", particle: "に", objectRole: "person", tags: ["people", "communication"], forms: { dictionary: "電話する", masuStem: "電話し", masu: "電話します", te: "電話して", ta: "電話した", nai: "電話しない", potential: "電話できる", volitional: "電話しよう" } },
+	{ ja: "話す", en: "talk", group: "godan", transitivity: "intransitive", particle: "と", objectRole: "person", tags: ["people", "communication"], forms: { dictionary: "話す", masuStem: "話し", masu: "話します", te: "話して", ta: "話した", nai: "話さない", potential: "話せる", volitional: "話そう" } },
+	{ ja: "待つ", en: "wait for", group: "godan", transitivity: "transitive", particle: "を", objectRole: "object", tags: ["people", "transport", "schedule"], forms: { dictionary: "待つ", masuStem: "待ち", masu: "待ちます", te: "待って", ta: "待った", nai: "待たない", potential: "待てる", volitional: "待とう" } },
+	{ ja: "作る", en: "make", group: "godan", transitivity: "transitive", particle: "を", objectRole: "object", tags: ["food", "objects", "study"], forms: { dictionary: "作る", masuStem: "作り", masu: "作ります", te: "作って", ta: "作った", nai: "作らない", potential: "作れる", volitional: "作ろう" } },
+	{ ja: "借りる", en: "borrow", group: "ichidan", transitivity: "transitive", particle: "を", objectRole: "object", tags: ["objects", "school", "clothing"], forms: { dictionary: "借りる", masuStem: "借り", masu: "借ります", te: "借りて", ta: "借りた", nai: "借りない", potential: "借りられる", volitional: "借りよう" } },
+	{ ja: "貸す", en: "lend", group: "godan", transitivity: "transitive", particle: "を", objectRole: "object", tags: ["objects", "school", "clothing"], forms: { dictionary: "貸す", masuStem: "貸し", masu: "貸します", te: "貸して", ta: "貸した", nai: "貸さない", potential: "貸せる", volitional: "貸そう" } },
+	{ ja: "送る", en: "send", group: "godan", transitivity: "transitive", particle: "を", objectRole: "object", tags: ["objects", "communication", "study"], forms: { dictionary: "送る", masuStem: "送り", masu: "送ります", te: "送って", ta: "送った", nai: "送らない", potential: "送れる", volitional: "送ろう" } },
+	{ ja: "払う", en: "pay", group: "godan", transitivity: "transitive", particle: "を", objectRole: "object", tags: ["food", "transport", "places", "objects"], forms: { dictionary: "払う", masuStem: "払い", masu: "払います", te: "払って", ta: "払った", nai: "払わない", potential: "払える", volitional: "払おう" } },
+	{ ja: "泊まる", en: "stay overnight", group: "godan", transitivity: "intransitive", particle: "に", objectRole: "location", tags: ["buildings", "places", "nature"], forms: { dictionary: "泊まる", masuStem: "泊まり", masu: "泊まります", te: "泊まって", ta: "泊まった", nai: "泊まらない", potential: "泊まれる", volitional: "泊まろう" } }
+];
+
+function grammarVerbsForTag(tag, filters = {}) {
+	return grammarVerbPool.filter((verb) => {
+		if (!verb.tags.includes(tag)) return false;
+		if (filters.group && verb.group !== filters.group) return false;
+		if (filters.particle && verb.particle !== filters.particle) return false;
+		if (filters.objectRole && verb.objectRole !== filters.objectRole) return false;
+		if (filters.transitivity && verb.transitivity !== filters.transitivity) return false;
+		return true;
+	});
+}
+
 function buildComparisonPoolScenarios() {
 	const scenarios = [];
 	comparisonAdjectivePool.forEach((adjective, adjectiveIndex) => {
