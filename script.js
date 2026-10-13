@@ -4554,6 +4554,186 @@ function buildComparisonHardPracticeBank() {
 			explanation: "空港はホテルほど近くありません keeps ホテル as the nearer benchmark."
 		}),
 		makeChoiceQuestion({
+			kind: "N5 context · te-form routine",
+			prompt: "朝ご飯を食べてから、駅まで歩きました。歩く道はバスの道より静かでしたが、時間はバスほど早くありませんでした。",
+			subprompt: "Which sentence matches the speaker's morning?",
+			band: "Read both the てから sequence and the comparison.",
+			answer: "歩く道は静かでしたが、バスのほうが早かったです。",
+			options: [
+				"歩く道は静かでしたが、バスのほうが早かったです。",
+				"歩く道はバスの道ほど静かではありませんでした。",
+				"歩く時間はバスより早かったです。",
+				"バスは歩く時間ほど早くありませんでした。"
+			],
+			explanation: "The walking route was quieter, but it was not as early/fast as the bus option."
+		}),
+		makeTextQuestion({
+			kind: "N5 context · existence rewrite",
+			prompt: "机の上に辞書とノートがあります。辞書はノートより重いです。\n→ ＿＿＿＿",
+			subprompt: "Use ほど...ありません to say the same comparison.",
+			band: "Type the full Japanese sentence.",
+			answer: "ノートは辞書ほど重くありません。",
+			accepted: comparisonAnswerVariants("ノートは辞書ほど重くありません。", "辞書ほどノートは重くありません。"),
+			explanation: "The existence sentence gives the objects; the comparison says the notebook is not as heavy as the dictionary.",
+			placeholder: "ノートは辞書ほど重くありません。"
+		}),
+		makeChoiceQuestion({
+			kind: "N5 context · reason から",
+			prompt: "今日は雨が降っていますから、近い店へ行きたいです。スーパーはコンビニより遠いです。薬局はコンビニほど近くありません。",
+			subprompt: "Which place is clearly the nearest?",
+			band: "Use the reason as context, then compare the places.",
+			answer: "コンビニ",
+			options: ["コンビニ", "スーパー", "薬局", "三つとも同じ"],
+			explanation: "The supermarket is farther than the convenience store, and the pharmacy is not as near as it."
+		}),
+		makeChoiceQuestion({
+			kind: "N5 context · invitation",
+			prompt: "A: 土曜日に映画を見ませんか。駅前の映画館は古いですが、学校の近くの映画館より安いです。\nB: 安いほうへ行きましょう。",
+			subprompt: "Where does B want to go?",
+			band: "Connect the invitation to the comparison.",
+			answer: "駅前の映画館",
+			options: ["駅前の映画館", "学校の近くの映画館", "どちらも高い映画館", "まだ決めていません"],
+			explanation: "B chooses the cheaper one, and the station-front theater is cheaper."
+		}),
+		makeTextQuestion({
+			kind: "N5 context · want production",
+			prompt: "旅行で小さいかばんを持って行きたいです。黒いかばんは白いかばんより軽いです。",
+			subprompt: "Write one sentence saying the black bag is the better/light option with より...のほう.",
+			band: "Type the full Japanese sentence.",
+			answer: "白いかばんより黒いかばんのほうが軽いです。",
+			accepted: comparisonAnswerVariants("白いかばんより黒いかばんのほうが軽いです。", "黒いかばんのほうが白いかばんより軽いです。"),
+			explanation: "The white bag is the comparison base; the black bag has more of the lightness.",
+			placeholder: "白いかばんより黒いかばんのほうが軽いです。"
+		}),
+		makeChoiceQuestion({
+			kind: "N5 context · location particles",
+			prompt: "駅の前に新しいカフェがあります。学校の中にもカフェがあります。駅前のカフェは学校のカフェほど静かではありません。",
+			subprompt: "Which sentence says the same thing?",
+			band: "Read the location phrases, then the comparison.",
+			answer: "駅前のカフェより学校のカフェのほうが静かです。",
+			options: [
+				"駅前のカフェより学校のカフェのほうが静かです。",
+				"学校のカフェより駅前のカフェのほうが静かです。",
+				"学校のカフェは駅前のカフェほど静かではありません。",
+				"駅前のカフェは学校のカフェより静かです。"
+			],
+			explanation: "駅前のカフェ is not as quiet as the school cafe, so the school cafe is quieter."
+		}),
+		makeChoiceQuestion({
+			kind: "N5 context · counter/time",
+			prompt: "昨日は宿題を三十分しました。今日は一時間しました。先週は二時間しました。",
+			subprompt: "Which sentence is true?",
+			band: "Use the time amounts, then choose the comparison.",
+			answer: "今日の宿題は昨日の宿題より長かったです。",
+			options: [
+				"今日の宿題は昨日の宿題より長かったです。",
+				"昨日の宿題は今日の宿題より長かったです。",
+				"先週の宿題は今日の宿題ほど長くありませんでした。",
+				"今日の宿題は先週の宿題より長かったです。"
+			],
+			explanation: "One hour is longer than thirty minutes but shorter than two hours."
+		}),
+		makeTextQuestion({
+			kind: "N5 context · request correction",
+			prompt: "友だちに写真を見せています。『この写真はあの写真より明るいです』と書きました。\n→ ＿＿＿＿",
+			subprompt: "Rewrite it with ほど...ありません.",
+			band: "Type the full Japanese sentence.",
+			answer: "あの写真はこの写真ほど明るくありません。",
+			accepted: comparisonAnswerVariants("あの写真はこの写真ほど明るくありません。", "この写真ほどあの写真は明るくありません。"),
+			explanation: "If this photo is brighter, that photo is not as bright as this photo.",
+			placeholder: "あの写真はこの写真ほど明るくありません。"
+		}),
+		makeChoiceQuestion({
+			kind: "N5 context · past narrative",
+			prompt: "昨日、友だちと本屋へ行きました。私は新しい本を買いました。友だちの本は私の本より高かったです。",
+			subprompt: "Which sentence keeps the meaning?",
+			band: "Watch the past-tense comparison.",
+			answer: "私の本は友だちの本ほど高くありませんでした。",
+			options: [
+				"私の本は友だちの本ほど高くありませんでした。",
+				"友だちの本は私の本ほど高くありませんでした。",
+				"私の本より友だちの本のほうが安かったです。",
+				"友だちの本は私の本より安かったです。"
+			],
+			explanation: "The friend's book was more expensive, so my book was not as expensive."
+		}),
+		makeChoiceQuestion({
+			kind: "N5 context · family dialogue",
+			prompt: "A: お兄さんと弟さんと、どちらが背が高いですか。\nB: 弟は兄ほど高くありません。",
+			subprompt: "What does B mean?",
+			band: "Read the family words and ほど negative.",
+			answer: "The older brother is taller.",
+			options: [
+				"The older brother is taller.",
+				"The younger brother is taller.",
+				"They are exactly the same height.",
+				"B is choosing which brother to meet."
+			],
+			explanation: "弟は兄ほど高くありません means the younger brother is not as tall as the older brother."
+		}),
+		makeTextQuestion({
+			kind: "N5 context · adjective chain",
+			prompt: "この部屋は明るくて広いです。あの部屋はこの部屋ほど明るくありません。でも、あの部屋はこの部屋より静かです。\n静かな部屋: ＿＿＿＿",
+			subprompt: "Write the sentence that says the other room is quieter.",
+			band: "Type the full Japanese sentence from the context.",
+			answer: "あの部屋はこの部屋より静かです。",
+			accepted: comparisonAnswerVariants("あの部屋はこの部屋より静かです。", "この部屋よりあの部屋のほうが静かです。", "あの部屋のほうがこの部屋より静かです。"),
+			explanation: "The final sentence shifts to quietness; do not carry over the brightness comparison.",
+			placeholder: "あの部屋はこの部屋より静かです。"
+		}),
+		makeChoiceQuestion({
+			kind: "N5 context · daily routine",
+			prompt: "毎朝、七時に家を出ます。月曜日は道が混んでいました。火曜日は月曜日ほど混んでいませんでした。",
+			subprompt: "Which sentence says the same thing?",
+			band: "Use the routine as context and compare the days.",
+			answer: "火曜日より月曜日のほうが混んでいました。",
+			options: [
+				"火曜日より月曜日のほうが混んでいました。",
+				"月曜日より火曜日のほうが混んでいました。",
+				"月曜日は火曜日ほど混んでいませんでした。",
+				"火曜日は月曜日より混んでいました。"
+			],
+			explanation: "Tuesday was not as crowded as Monday, so Monday was more crowded."
+		}),
+		makeChoiceQuestion({
+			kind: "N5 context · likes",
+			prompt: "私はコーヒーが好きです。でも、夜はコーヒーよりお茶のほうをよく飲みます。お茶はコーヒーほど苦くありません。",
+			subprompt: "Why might the speaker drink tea at night?",
+			band: "Use the preference sentence and the comparison.",
+			answer: "Tea is not as bitter as coffee.",
+			options: [
+				"Tea is not as bitter as coffee.",
+				"Coffee is not as bitter as tea.",
+				"The speaker does not like coffee at all.",
+				"The speaker says tea is more expensive."
+			],
+			explanation: "お茶はコーヒーほど苦くありません gives the likely reason."
+		}),
+		makeTextQuestion({
+			kind: "N5 context · place choice",
+			prompt: "日曜日に友だちと勉強します。図書館はカフェより静かですから、図書館へ行きたいです。\n理由: ＿＿＿＿",
+			subprompt: "Write the comparison sentence from the note.",
+			band: "Type the full Japanese sentence.",
+			answer: "図書館はカフェより静かです。",
+			accepted: comparisonAnswerVariants("図書館はカフェより静かです。", "カフェより図書館のほうが静かです。", "図書館のほうがカフェより静かです。"),
+			explanation: "The から sentence gives the reason: the library is quieter than the cafe.",
+			placeholder: "図書館はカフェより静かです。"
+		}),
+		makeChoiceQuestion({
+			kind: "N5 context · shopping numbers",
+			prompt: "このシャツは二千円です。あのシャツは千五百円です。妹は安いほうがほしいです。",
+			subprompt: "Which sentence fits the situation?",
+			band: "Turn prices into a comparison.",
+			answer: "あのシャツはこのシャツより安いです。",
+			options: [
+				"あのシャツはこのシャツより安いです。",
+				"このシャツはあのシャツより安いです。",
+				"あのシャツはこのシャツほど安くありません。",
+				"妹は高いほうがほしいです。"
+			],
+			explanation: "1,500 yen is cheaper than 2,000 yen, and the sister wants the cheaper one."
+		}),
+		makeChoiceQuestion({
 			kind: "dialogue diagnosis · object choice",
 			prompt: "A: コーヒーと紅茶と、どちらを飲みたいですか。\nB: 紅茶のほうを飲みたいです。",
 			subprompt: "Why is B's answer natural?",
