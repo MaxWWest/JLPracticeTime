@@ -25,3 +25,13 @@ practice progress are stored in the current browser.
 Run `node grammar-audit.js` to audit generated grammar practice questions for
 missing context, duplicated choices, answer/option mismatches, and format drift.
 Use `node grammar-audit.js --session comparison` to inspect one session.
+
+Run `node --test comparison-practice.test.js` for comparison logic, accepted
+answers, question construction, session diversity, and Review/Boss routing.
+With Playwright installed, run `node comparison-browser-test.js` for a complete
+Review, Boss routing, answer feedback, and desktop/mobile layout checks.
+Set `PLAYWRIGHT_CHANNEL=chrome` to use an installed Chrome instead of bundled
+Chromium; `COMPARISON_TEST_URL` can point the browser checks at a deployed site.
+
+See [COMPARISON_DESIGN.md](COMPARISON_DESIGN.md) for the comparison generator's
+teaching rules, architecture, and extension checklist.

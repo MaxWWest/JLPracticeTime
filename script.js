@@ -290,6 +290,17 @@ function renderJapaneseWithFurigana(example) {
 }
 
 const furiganaAutoEntries = [
+	["自習室", "じしゅうしつ"], ["問題集", "もんだいしゅう"], ["旅館", "りょかん"], ["会議室", "かいぎしつ"], ["説明会", "せつめいかい"],
+	["集中", "しゅうちゅう"], ["暖かい", "あたたかい"], ["暖かく", "あたたかく"], ["楽では", "らくでは"], ["楽です", "らくです"],
+	["午前", "ごぜん"], ["先月", "せんげつ"], ["今月", "こんげつ"], ["今週", "こんしゅう"], ["先週", "せんしゅう"], ["平日", "へいじつ"],
+	["空港", "くうこう"], ["喫茶店", "きっさてん"], ["郵便局", "ゆうびんきょく"], ["病院", "びょういん"], ["雑誌", "ざっし"],
+	["出かけ", "でかけ"], ["出発", "しゅっぱつ"], ["参加", "さんか"], ["交通案内", "こうつうあんない"], ["情報", "じょうほう"],
+	["確認", "かくにん"], ["利用", "りよう"], ["感想", "かんそう"], ["内容", "ないよう"], ["距離", "きょり"],
+	["手元", "てもと"], ["最近", "さいきん"], ["商品", "しょうひん"], ["必要", "ひつよう"], ["試す", "ためす"],
+	["同じ", "おなじ"], ["比べ", "くらべ"], ["調べ", "しらべ"], ["決め", "きめ"], ["集まる", "あつまる"],
+	["引っ越した", "ひっこした"], ["知らせ", "しらせ"], ["変わった", "かわった"], ["頼まれ", "たのまれ"], ["残した", "のこした"],
+	["大きい", "おおきい"], ["大きく", "おおきく"], ["甘い", "あまい"], ["甘く", "あまく"], ["辛い", "からい"], ["辛く", "からく"],
+	["速い", "はやい"], ["速く", "はやく"], ["長く", "ながく"], ["明るい", "あかるい"], ["明るく", "あかるく"],
 	["一生懸命", "いっしょうけんめい"], ["新幹線", "しんかんせん"], ["図書館", "としょかん"], ["教科書", "きょうかしょ"],
 	["作文", "さくぶん"], ["宿題", "しゅくだい"], ["漢字", "かんじ"], ["黒板", "こくばん"], ["先生", "せんせい"], ["学生", "がくせい"],
 	["学校", "がっこう"], ["授業", "じゅぎょう"], ["教室", "きょうしつ"], ["説明", "せつめい"], ["質問", "しつもん"], ["勉強", "べんきょう"],
@@ -2929,8 +2940,27 @@ function buildExperienceVarietyQuestions() {
 	];
 }
 
+let comparisonPracticeEngine;
+function getComparisonPracticeEngine() {
+	if (!comparisonPracticeEngine) {
+		comparisonPracticeEngine = ComparisonPractice.create({ nounPools: comparisonNounPools, adjectivePool: comparisonAdjectivePool, verbPool: grammarVerbPool, aliases: comparisonKanaAnswerAliases });
+	}
+	return comparisonPracticeEngine;
+}
+
 function buildComparisonPracticeBank() {
-	return buildComparisonGeneratedPracticeBank(80);
+	return getComparisonPracticeEngine().buildBank();
+}
+
+function comparisonReviewHistory() {
+	try {
+		const value = JSON.parse(localStorage.getItem("comparison-review-history-v2") || "[]");
+		return Array.isArray(value) ? value.filter((key) => typeof key === "string").slice(-100) : [];
+	} catch { return []; }
+}
+
+function selectComparisonReview(bank, count) {
+	return ComparisonPractice.selectQueue(bank, count, { recent: comparisonReviewHistory() });
 }
 
 function buildTimePracticeBank() {
@@ -3952,7 +3982,7 @@ const grammarPracticeRuleNotes = {
 				points: [
 					"ほど in this N4 pattern means A is not as adjective as B.",
 					"The predicate must be negative: 高くありません, 静かではありません, 好きではありません.",
-					"The noun after ほど is the stronger benchmark."
+					"The noun immediately before ほど is the stronger benchmark."
 				],
 				examples: ["今日は昨日ほど寒くありません。", "この店はあの店ほど有名ではありません。"]
 			},
@@ -3967,14 +3997,14 @@ const grammarPracticeRuleNotes = {
 				examples: ["日本語と英語とどちらが難しいですか。", "コーヒーとお茶とどちらが好きですか。"]
 			},
 			{
-				heading: "のほうを with たい, のほうが with ほしい",
-				pattern: "赤い物のほうを買いたいです。 / 赤い物のほうがほしいです。",
+				heading: "Word order and the particle after ほう",
+				pattern: "AよりBのほうが安いです。 / BのほうがAより安いです。",
 				points: [
-					"たい behaves like an adjective, but the wanted action still has an object, so のほうを can sound natural with verbs like 選びたい or 買いたい.",
-					"ほしい describes the wanted thing itself, so the wanted item is usually marked with が.",
-					"This is a fringe but useful distinction: action desire often allows を, wanted object takes が."
+					"Both orders express the same relationship. Track the words attached to より and ほうが, not which noun appears first.",
+					"Nouns take のほう; dictionary-form verbs attach directly to ほう: 歩くより電車で行くほうが楽です.",
+					"Use が for the subject of an adjective comparison and を for the object of 選びます. With たい, both が and を can be possible, so this review does not use that ambiguity as a wrong-answer trap."
 				],
-				examples: ["大きいかばんのほうを使いたいです。", "新しいスマホのほうがほしいです。"]
+				examples: ["青いかばんのほうが軽いです。", "青いかばんのほうを選びます。"]
 			}
 		],
 		pitfalls: [
@@ -5866,9 +5896,7 @@ function makeGrammarCorrectionQuestion({ kind = "wrong sentence correction", wro
 }
 
 const advancedGrammarPracticePacks = {
-	comparison: [
-		...buildComparisonGeneratedPracticeBank(80)
-	],
+	comparison: [],
 	time: [
 		makeGrammarDiagnosisQuestion({
 			prompt: "昨日、音楽を聞いているところで宿題をしました。",
@@ -6859,6 +6887,7 @@ function withGrammarPracticeMetadata(question, sessionId, extra = {}) {
 	const previous = question.meta || {};
 	const sourceSessionId = previous.sourceSessionId || extra.sourceSessionId || (grammarPracticeSessions?.[sessionId] ? sessionId : previous.sessionId) || sessionId;
 	const meta = {
+		...previous,
 		sessionId,
 		sourceSessionId,
 		familyId: previous.familyId || extra.familyId || metadata.familyId,
@@ -7307,11 +7336,14 @@ function buildGrammarPracticeBank(sessionId = gpState.sessionId || "comparison")
 	return session.isBossBlock ? session.buildBank() : buildAdvancedGrammarPracticeBank(sessionId, session.buildBank());
 }
 
-function buildBossBlockGrammarQueue(sessionId, bank) {
+function buildBossBlockGrammarQueue(sessionId, bank, questionCount = 25) {
 	const bossBlock = getGrammarBossBlockConfig(sessionId);
 	if (!bossBlock) return shuffled(bank);
 	const buckets = bossBlock.sessions
-		.map((sourceSessionId) => shuffled(bank.filter((question) => question.meta?.sourceSessionId === sourceSessionId)))
+		.map((sourceSessionId) => {
+			const sourceBank = bank.filter((question) => question.meta?.sourceSessionId === sourceSessionId);
+			return sourceSessionId === "comparison" ? selectComparisonReview(sourceBank, Math.ceil(questionCount / bossBlock.sessions.length)) : shuffled(sourceBank);
+		})
 		.filter((bucket) => bucket.length);
 	const queue = [];
 	let cursor = 0;
@@ -7325,6 +7357,7 @@ function buildBossBlockGrammarQueue(sessionId, bank) {
 }
 
 function buildFocusedGrammarQueue(sessionId, bank, focus, questionCount) {
+	if (sessionId === "comparison") return selectComparisonReview(bank, questionCount);
 	if (focus === "review") {
 		const targets = bank.filter((question) => (
 			question.meta?.difficulty !== "core" ||
@@ -7333,7 +7366,7 @@ function buildFocusedGrammarQueue(sessionId, bank, focus, questionCount) {
 		return shuffled(targets.length ? targets : bank);
 	}
 	if (focus === "boss") {
-		if (getGrammarBossBlockConfig(sessionId)) return buildBossBlockGrammarQueue(sessionId, bank);
+		if (getGrammarBossBlockConfig(sessionId)) return buildBossBlockGrammarQueue(sessionId, bank, questionCount);
 		const directBoss = normalizeGrammarPracticeBank([
 			...(sessionId === "comparison" ? [] : (grammarSessionBossPacks[sessionId] || [])),
 			...(sessionId === "comparison" ? [] : (grammarReadingIntegrationPacks[sessionId] || [])),
@@ -7368,11 +7401,15 @@ function startGrammarPractice(sessionId = "comparison", questionCount = Number(g
 	gpState.sessionLabel = isBossRound ? `BOSS · ${session.label.replace(/^SESSION \d+ ·\s*/, "").replace(/^BOSS ·\s*/, "")}` : `REVIEW · ${session.label.replace(/^SESSION \d+ ·\s*/, "")}`;
 	gpState.bank = buildGrammarPracticeBank(sessionId);
 	gpState.roundKind = gpState.isMockTest ? "mock" : isBossRound ? "boss" : isReviewRound ? "review" : "review";
-	const focusedQueue = buildFocusedGrammarQueue(sessionId, gpState.bank, options.focus, questionCount);
+	const focusedQueue = buildFocusedGrammarQueue(sessionId, gpState.bank, options.focus || gpState.roundKind, questionCount);
 	if (focusedQueue) {
 		gpState.queue = focusedQueue.slice(0, Math.min(questionCount, focusedQueue.length));
 	} else {
 		gpState.queue = shuffled(gpState.bank).slice(0, Math.min(questionCount, gpState.bank.length));
+	}
+	const comparisonKeys = gpState.queue.filter((q) => q.meta?.engine === ComparisonPractice.version).map((q) => q.meta.familyKey);
+	if (comparisonKeys.length) {
+		try { localStorage.setItem("comparison-review-history-v2", JSON.stringify([...comparisonReviewHistory(), ...comparisonKeys].slice(-100))); } catch { /* Practice also works when browser storage is unavailable. */ }
 	}
 	gpState.index = 0;
 	gpState.correct = 0;
@@ -7398,14 +7435,32 @@ function showGrammarPracticeQuestion() {
 		return;
 	}
 	gpState.answered = false;
+	gpEls.session.scrollTop = 0;
 	gpEls.hero.className = "gp-hero";
 	gpEls.hero.classList.toggle("is-ordering", question.kind === "sentence ordering");
+	gpEls.hero.classList.toggle("is-comparison", question.meta?.engine === ComparisonPractice.version);
 	gpEls.type.textContent = `${gpState.sessionLabel || "GRAMMAR PRACTICE"} · ${question.kind}`;
 	gpEls.prompt.innerHTML = renderJapaneseTextWithFurigana(question.prompt);
 	gpEls.subprompt.innerHTML = renderJapaneseTextWithFurigana(question.subprompt);
 	gpEls.band.innerHTML = renderJapaneseTextWithFurigana(question.band);
 	gpEls.progress.textContent = `${gpState.index + 1} / ${gpState.queue.length}`;
 	gpEls.correct.textContent = `✓ ${gpState.correct}`;
+	if (question.fields) {
+		gpEls.body.innerHTML = `
+			${question.vocabulary ? `<p class="gp-vocabulary" lang="ja">${renderJapaneseTextWithFurigana(question.vocabulary)}</p>` : ""}
+			<form class="gp-answer gp-answer-parts" id="gp-answer-form">
+				<div class="gp-fields ${question.fields.every((field) => !field.multiline) ? "gp-fields-short" : ""}">
+					${question.fields.map((field, index) => `<label class="gp-field" for="gp-part-${index}"><span>${escapeHtml(field.label)}</span>${field.multiline
+						? `<textarea id="gp-part-${index}" data-gp-part="${index}" lang="ja" rows="2" autocomplete="off" spellcheck="false" required></textarea>`
+						: `<input id="gp-part-${index}" data-gp-part="${index}" lang="ja" autocomplete="off" spellcheck="false" required>`}</label>`).join("")}
+				</div>
+				<button type="submit" aria-label="Check answer">›</button>
+			</form>
+			<p class="rh-feedback" id="gp-feedback" aria-live="polite"></p>
+			<div class="gp-explanation" id="gp-explanation" hidden></div>`;
+		gpEls.body.querySelector("input, textarea").focus({ preventScroll: true });
+		return;
+	}
 	if (question.mode === "text") {
 		gpEls.body.innerHTML = `
 			<form class="gp-answer" id="gp-answer-form">
@@ -7433,6 +7488,10 @@ function showGrammarPracticeQuestion() {
 
 function findGrammarRetryCandidate(question) {
 	if (!question?.meta || !gpState.bank?.length) return null;
+	if (question.meta.engine === ComparisonPractice.version) {
+		const used = new Set(gpState.queue.filter((q) => q.meta?.engine === ComparisonPractice.version).map((q) => q.meta.familyKey));
+		return gpState.bank.find((q) => q.meta?.engine === ComparisonPractice.version && q.meta.task === question.meta.task && !used.has(q.meta.familyKey)) || null;
+	}
 	const queuedPrompts = new Set(gpState.queue.map((queued) => queued.prompt));
 	const currentKey = `${question.prompt}|${question.answer}`;
 	const candidates = gpState.bank.filter((candidate) => {
@@ -7455,7 +7514,7 @@ function isFinalGrammarPracticeQuestion() {
 }
 
 function renderGrammarAnswerCoaching(question, value, isCorrect) {
-	const selected = String(value || "").trim();
+	const selected = (Array.isArray(value) ? value.join(" / ") : String(value || "")).trim();
 	const retryAvailable = !isCorrect && Boolean(findGrammarRetryCandidate(question));
 	const selectedBlock = isCorrect ? "" : `
 		<p class="is-wrong">
@@ -7492,7 +7551,8 @@ function answerGrammarPractice(value) {
 	gpState.answered = true;
 	const normalized = normalizeJapaneseAnswer(value);
 	const accepted = question.accepted || [question.answer];
-	const isCorrect = accepted.some((answer) => normalized === normalizeJapaneseAnswer(answer));
+	const grading = question.meta?.engine === ComparisonPractice.version ? getComparisonPracticeEngine().grade(question, value) : null;
+	const isCorrect = grading ? grading.correct : accepted.some((answer) => normalized === normalizeJapaneseAnswer(answer));
 	if (isCorrect) gpState.correct += 1;
 	else gpState.missed.push(question);
 	gpState.responses.push({ question, value, isCorrect });
@@ -7514,7 +7574,7 @@ function answerGrammarPractice(value) {
 			});
 		} else {
 			const form = gpEls.body.querySelector(".gp-answer");
-			form.querySelectorAll("input, button").forEach((control) => { control.disabled = true; });
+			form.querySelectorAll("input, textarea, button").forEach((control) => { control.disabled = true; });
 		}
 		gpEls.body.querySelector("#gp-next").focus();
 		return;
@@ -7533,7 +7593,10 @@ function answerGrammarPractice(value) {
 	} else {
 		const form = gpEls.body.querySelector(".gp-answer");
 		form.classList.add(isCorrect ? "is-correct" : "is-incorrect");
-		form.querySelectorAll("input, button").forEach((control) => { control.disabled = true; });
+		form.querySelectorAll("input, textarea, button").forEach((control) => { control.disabled = true; });
+		form.querySelectorAll(".gp-field").forEach((field, index) => {
+			field.classList.add(grading?.parts[index] ? "is-correct" : "is-incorrect");
+		});
 	}
 	gpEls.body.querySelector("#gp-next").focus();
 }
@@ -8852,6 +8915,11 @@ gpEls.body.addEventListener("click", (event) => {
 gpEls.body.addEventListener("submit", (event) => {
 	if (!event.target.matches("#gp-answer-form")) return;
 	event.preventDefault();
+	const parts = [...event.target.querySelectorAll("[data-gp-part]")];
+	if (parts.length) {
+		if (parts.every((part) => part.value.trim())) answerGrammarPractice(parts.map((part) => part.value));
+		return;
+	}
 	const input = event.target.querySelector("input");
 	if (input.value.trim()) answerGrammarPractice(input.value);
 });

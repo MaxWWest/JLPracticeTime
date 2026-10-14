@@ -791,6 +791,29 @@ body.practice-fullscreen { overflow: hidden; }
 .gp-hero rt, .gp-options rt, .gp-explanation rt, .pitch-missed-item rt { color: #6f8b7c; font-family: "Noto Sans JP", sans-serif; font-size: .36em; font-weight: 500; line-height: 1; }
 .gp-hero p:last-child { max-width: 720px; margin: 12px 0 0; color: #4f7d68; font-size: 13px; line-height: 1.6; }
 .gp-hero.is-ordering p:last-child { max-width: 920px; margin-top: 16px; font-family: "Noto Sans JP", "DM Sans", sans-serif; font-size: clamp(20px, 2vw, 28px); line-height: 1.8; }
+.gp-hero.is-comparison { min-height: auto; padding: 76px 24px 28px; }
+.gp-hero.is-comparison h3 { width: 100%; max-width: 1000px; font-size: 23px; line-height: 2; text-align: left; white-space: pre-line; word-break: normal; }
+.gp-hero.is-comparison p:last-child { max-width: 1000px; font-size: 15px; }
+.gp-hero.is-comparison ~ .gp-body .gp-options button > span:last-child { line-height: 1.9; white-space: pre-line; }
+.gp-vocabulary { width: 100%; margin: 0 0 16px; color: #596158; font-size: 14px; line-height: 1.9; overflow-wrap: anywhere; }
+.gp-answer.gp-answer-parts { max-width: 100%; border-radius: 8px; }
+.gp-fields { display: grid; flex: 1; min-width: 0; gap: 16px; padding: 16px; }
+.gp-fields-short { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.gp-field { display: grid; min-width: 0; gap: 8px; }
+.gp-field > span { font-size: 13px; color: #4f6256; }
+.gp-answer .gp-field input, .gp-answer .gp-field textarea { box-sizing: border-box; width: 100%; min-width: 0; padding: 12px; border: 1px solid #a9bdaf; border-radius: 4px; font-family: "Noto Sans JP", sans-serif; font-size: 20px; line-height: 1.7; color: #315e4b; background: #fff; text-align: left; resize: vertical; }
+.gp-field input:focus-visible, .gp-field textarea:focus-visible { outline: 2px solid #315e4b; outline-offset: 2px; }
+.gp-field.is-correct input, .gp-field.is-correct textarea { border-color: #578960; background: #f3faf3; }
+.gp-field.is-incorrect input, .gp-field.is-incorrect textarea { border-color: #b85a4a; background: #fff7f4; }
+@media (max-width: 700px) {
+	.gp-hero.is-comparison { padding: 72px 18px 22px; }
+	.gp-hero.is-comparison h3 { font-size: 18px; line-height: 2; }
+	.gp-hero.is-comparison p:last-child { font-size: 14px; }
+	.gp-fields { padding: 12px; gap: 12px; }
+	.gp-fields-short { grid-template-columns: 1fr; }
+	.gp-answer .gp-field input, .gp-answer .gp-field textarea { font-size: 17px; }
+	.gp-answer.gp-answer-parts > button { width: 46px; flex-shrink: 0; }
+}
 .gp-body { display: flex; flex-direction: column; align-items: center; width: min(100% - 28px, 1000px); margin: 0 auto; padding: 22px 0 48px; }
 .gp-options { display: grid; width: 100%; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 .gp-options button { display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 10px; align-items: start; min-height: 72px; padding: 13px; border: 1px solid #cfe0d3; border-radius: 9px; background: #fff; color: #252b27; text-align: left; cursor: pointer; }

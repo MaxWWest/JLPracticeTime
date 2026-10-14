@@ -48,6 +48,12 @@ globalThis.__grammarAuditApi = {
 	grammarPracticeSessions,
 	buildAdvancedGrammarPracticeBank,
 	buildFocusedGrammarQueue,
+	buildGrammarPracticeBank,
+	getComparisonPracticeEngine,
+	comparisonNounPools,
+	comparisonAdjectivePool,
+	grammarVerbPool,
+	comparisonKanaAnswerAliases,
 	renderJapaneseTextWithFurigana
 };`;
 	const document = {
@@ -60,6 +66,7 @@ globalThis.__grammarAuditApi = {
 	};
 	const context = {
 		console,
+		ComparisonPractice: require("./comparison-practice.js"),
 		document,
 		window: {
 			addEventListener() {},
@@ -145,10 +152,6 @@ function negativeStemToAdjective(value) {
 	return stem;
 }
 
-function hasNonstandardHouBeforeYori(value) {
-	return /[ぁ-んァ-ヶ一-龯]+のほうが[^。]*より/.test(String(value || ""));
-}
-
 function auditQuestion(sessionId, question, index, findings) {
 	if (!question || typeof question !== "object") return;
 	if (!question.prompt) {
@@ -190,10 +193,6 @@ function auditQuestion(sessionId, question, index, findings) {
 				);
 			}
 		}
-		const houBeforeYori = [question.prompt, question.subprompt, question.band, question.answer, ...options].filter(hasNonstandardHouBeforeYori);
-		if (houBeforeYori.length) {
-			addFinding(findings, "medium", "nonstandard-hou-yori-order", sessionId, index, question, "Question uses のほうが before より, which is understandable but not the clean N4 drill pattern.", "Prefer AよりBのほうが... or BはAより..., especially in beginner transformation questions.");
-		}
 		if (expectsJapaneseSentenceChoice(question) && options.some((option) => !hasJapanese(option))) {
 			addFinding(findings, "medium", "format-language-mix", sessionId, index, question, "Question asks for a Japanese sentence/form but includes a non-Japanese option.", "Move English meaning checks into a meaning-check format, or keep all options Japanese.");
 		}
@@ -204,7 +203,7 @@ function auditQuestion(sessionId, question, index, findings) {
 			addFinding(findings, "medium", "text-answer-not-accepted", sessionId, index, question, "Text answer is not included in accepted answers.", "Add the canonical answer to the accepted list.");
 		}
 		const textKind = `${question.kind || ""} ${question.band || ""}`;
-		if (!/production|correction|rewrite|transformation/i.test(textKind) && !/[＿_]/.test(`${question.prompt || ""}${question.blankPrompt || ""}`) && /blank|type|missing|complete/i.test(textKind)) {
+		if (!question.fields && !/production|correction|rewrite|transformation/i.test(textKind) && !/[＿_]/.test(`${question.prompt || ""}${question.blankPrompt || ""}`) && /blank|type|missing|complete/i.test(textKind)) {
 			addFinding(findings, "low", "missing-blank-marker", sessionId, index, question, "Text completion item does not visibly show a blank.", "Add ＿＿＿＿ to the prompt if this is a fill-in question.");
 		}
 	}
@@ -309,8 +308,8 @@ function auditHardPracticeQueues(api, sessionBanks, findings) {
 		hardQueue.forEach((question, index) => {
 			const text = questionText(question);
 			const options = optionText(question);
-			if (/赤いかばん|青いかばん|The sea was more fun for the narrator/.test(text)) {
-				addFinding(findings, "high", "stale-comparison-hard-item", "comparison:hard", index, question, "Comparison hard practice contains an old shallow prompt.", "Replace it with a direction/equivalence/context question using より, ほど, or のほう.");
+			if (question.meta?.engine !== "comparison-v2") {
+				addFinding(findings, "high", "stale-comparison-hard-item", "comparison:hard", index, question, "Comparison practice contains a retired question generator.", "Route Review and Boss through the comparison facts engine.");
 			}
 			if (/より must stay in every comparison sentence|のほうが is required because the sentence has an adjective|not an action verb|ほど cannot compare roads|より must appear in every answer/i.test(options)) {
 				addFinding(findings, "high", "irrelevant-comparison-distractor", "comparison:hard", index, question, "Comparison hard practice contains a distractor that is too obviously unrelated or generic.", "Use plausible direction, benchmark, polarity, or object-choice distractors tied to the same sentence.");
@@ -392,4 +391,5 @@ function main() {
 	if (strict && findings.some((finding) => finding.severity === "high")) process.exitCode = 1;
 }
 
-main();
+if (require.main === module) main();
+module.exports = { loadGrammarRuntime, auditQuestion };
