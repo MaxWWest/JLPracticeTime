@@ -1715,10 +1715,35 @@ function comparisonActionPreferenceForms(item) {
 	};
 }
 
+function comparisonActionPreferenceOppositeForms(item) {
+	return {
+		yoriHou: `${item.preferredAction}より${item.baseAction}ほうが${item.adjective}です。`,
+		houYori: `${item.baseAction}ほうが${item.preferredAction}より${item.adjective}です。`,
+		hodo: `${item.preferredAction}のは${item.baseAction}ほど${item.neg}ありません。`,
+		hodoFronted: `${item.baseAction}ほど${item.preferredAction}のは${item.neg}ありません。`
+	};
+}
+
 function comparisonActionPreferenceAnswers(item, pattern) {
 	const forms = comparisonActionPreferenceForms(item);
 	if (pattern === "hodo") return comparisonAnswerVariants(forms.hodo, forms.hodoFronted);
 	return comparisonAnswerVariants(forms.yoriHou, forms.houYori);
+}
+
+function comparisonActionPreferenceFormAnswers(forms, pattern) {
+	if (pattern === "hodo") return comparisonAnswerVariants(forms.hodo, forms.hodoFronted);
+	return comparisonAnswerVariants(forms.yoriHou, forms.houYori);
+}
+
+function comparisonSentenceListAnswers(...forms) {
+	const compact = forms.map((form) => form.replace(/。$/, "")).join(" / ");
+	return comparisonAnswerVariants(
+		forms.join(""),
+		forms.join(" "),
+		forms.join("\n"),
+		forms.join(" / "),
+		compact
+	);
 }
 
 function comparisonBareTimeItem(item) {
@@ -2892,18 +2917,7 @@ function buildExperienceVarietyQuestions() {
 }
 
 function buildComparisonPracticeBank() {
-	const bank = [];
-	for (const sourceItem of comparisonScenarios) {
-		const item = comparisonDisplayItem(sourceItem);
-		const forms = comparisonSentences(sourceItem);
-		const reverseForms = comparisonSentences(comparisonReverseItem(sourceItem));
-		const englishYori = sentenceCase(`${item.greaterEn} is ${item.comparative} than ${item.lesserEn}.`);
-		const englishHodo = sentenceCase(`${item.lesserEn} is not as ${item.base} as ${item.greaterEn}.`);
-		Object.values(comparisonQuestionTemplates).forEach((templates) => {
-			templates.forEach((template) => bank.push(template(item, forms, reverseForms, englishYori, englishHodo)));
-		});
-	}
-	return [...bank, ...buildComparisonPitfallQuestions(), ...buildComparisonVarietyQuestions()];
+	return buildComparisonGeneratedPracticeBank(80);
 }
 
 function buildTimePracticeBank() {
@@ -4567,81 +4581,6 @@ function makeGrammarContextBlank({ kind = "context blank", prompt, answer, accep
 	});
 }
 
-function makeComparisonRewriteQuestion({ item, from, to }) {
-	const forms = comparisonSentences(item);
-	const prompt = from === "hodo" ? forms.hodo : forms.yori;
-	const answer = to === "hodo" ? forms.hodo : forms.hou;
-	const targetLabel = to === "hodo" ? "ほど...ありません" : "より...のほう";
-	const accepted = to === "hodo" ? comparisonHodoAnswers(item) : comparisonHouAnswers(item);
-	return makeTextQuestion({
-		kind: `rewrite · ${from} to ${to}`,
-		prompt,
-		subprompt: `Rewrite with ${targetLabel} without changing the meaning.`,
-		band: "Type the full rewritten Japanese sentence.",
-		answer,
-		accepted,
-		explanation: `${forms.hodo} and ${forms.hou} express the same comparison: ${item.greaterEn} is ${item.comparative} than ${item.lesserEn}.`,
-		placeholder: answer
-	});
-}
-
-function makeComparisonTwoBlankQuestion(item) {
-	const forms = comparisonSentences(item);
-	const displayItem = comparisonDisplayItem(item);
-	return makeTextQuestion({
-		kind: "two-blank transformation",
-		prompt: `${displayItem.greater}は${displayItem.lesser}より${item.adj}です。 → ${displayItem.lesser}＿＿${displayItem.greater}＿＿${item.adj}です。`,
-		subprompt: "Fill both blanks so the meaning stays the same.",
-		band: "Type both missing parts in order.",
-		answer: "より / のほうが",
-		accepted: comparisonCompactPairAnswers("より", "のほうが"),
-		explanation: `The base stays before より, and the stronger side takes のほうが: ${forms.hou}`,
-		placeholder: "より / のほうが"
-	});
-}
-
-function makeComparisonDialogueQuestion(item) {
-	const forms = comparisonSentences(item);
-	const displayItem = comparisonDisplayItem(item);
-	const wrongBase = `${displayItem.lesser}のほうが${item.adj}です。`;
-	const wrongHodo = `${displayItem.greater}は${displayItem.lesser}ほど${item.neg}ありません。`;
-	const wrongParticle = `${displayItem.greater}のほうを${item.adj}です。`;
-	return makeChoiceQuestion({
-		kind: "dialogue response",
-		prompt: `A: ${forms.question}\nB: ${forms.response}`,
-		subprompt: `B chooses ${item.greaterEn}. Which diagnosis is correct?`,
-		band: "Read A, then B. Choose the grammar reading.",
-		answer: `B uses のほうが because ${displayItem.greater} has more of the quality.`,
-		options: [
-			`B uses のほうが because ${displayItem.greater} has more of the quality.`,
-			`${wrongBase} would answer the opposite side.`,
-			`${wrongHodo} says ${item.greaterEn} is not as ${item.base} as ${item.lesserEn}.`,
-			`${wrongParticle} is wrong because ${item.adj} is not an action verb.`
-		],
-		explanation: `In a どちらが question, B can answer with the chosen side plus のほうが: ${forms.response}`
-	});
-}
-
-function makeComparisonErrorChoice(item) {
-	const forms = comparisonSentences(item);
-	const displayItem = comparisonDisplayItem(item);
-	const wrong = `${displayItem.greater}は${displayItem.lesser}ほど${item.adj}です。`;
-	return makeChoiceQuestion({
-		kind: "error diagnosis",
-		prompt: `${forms.yori} → ${wrong}`,
-		subprompt: "The rewrite is trying to use ほど. What is the problem?",
-		band: "Pick the best diagnosis.",
-		answer: "ほど for “not as...as” needs the benchmark after ほど and a negative predicate.",
-		options: [
-			"ほど for “not as...as” needs the benchmark after ほど and a negative predicate.",
-			`It puts ${displayItem.greater} before は, so the sentence would be about the stronger item instead of ${displayItem.lesser}.`,
-			`It keeps the two nouns but changes the pattern into “${item.greaterEn} is not as ${item.base} as ${item.lesserEn}.”`,
-			`It would be natural only if the ending changed to ${item.neg}ありません.`
-		],
-		explanation: `The correct ほど rewrite is ${forms.hodo}`
-	});
-}
-
 // Layer 1: adjectives describe which semantic feature must be stronger or weaker.
 const comparisonActionPreferenceAdjectiveRules = [
 	{ feature: "safety", direction: "higher", adj: "安全", neg: "安全では", base: "safe", comparative: "safer" },
@@ -4993,7 +4932,7 @@ const comparisonActionPreferenceReasonFrames = [
 		reason: "雨が強い",
 		reasonEn: "it is raining hard",
 		pressures: ["safety", "effort", "convenience", "speed", "rainExposure"],
-		baseFrameIds: ["go-to-place-outside"],
+		baseFrameIds: ["walk-to-place-outside"],
 		preferredFrameIds: ["take-transit", "drive-or-use-car"],
 		tags: ["places", "transport"]
 	},
@@ -5001,8 +4940,8 @@ const comparisonActionPreferenceReasonFrames = [
 		id: "heavy-bag-local-transport",
 		reason: "荷物が重い",
 		reasonEn: "the luggage is heavy",
-		pressures: ["effort", "convenience", "safety"],
-		baseFrameIds: ["go-to-place-outside"],
+		pressures: ["effort", "convenience"],
+		baseFrameIds: ["walk-to-place-outside"],
 		preferredFrameIds: ["take-transit", "drive-or-use-car"],
 		tags: ["places", "transport"]
 	},
@@ -5076,7 +5015,6 @@ const comparisonActionPreferenceReasonFrames = [
 		reasonEn: "I am tired after school",
 		pressures: ["effort", "convenience"],
 		framePairs: [
-			["walk-to-errand-building", "read-digital-study-material"],
 			["write-at-quiet-place", "write-at-home-room"],
 			["read-paper-study-material", "read-digital-study-material"]
 		],
@@ -5371,604 +5309,177 @@ const comparisonActionPreferencePatterns = [
 	}
 ];
 
-function buildComparisonHardPracticeBank() {
-	const timeItem = findComparisonScenario({ lesser: "バスの時間", greater: "電車の時間", adj: "早い" });
-	const kanjiItem = findComparisonScenario({ lesser: "ひらがな", greater: "漢字", adj: "難しい" });
-	const testItem = findComparisonScenario({ lesser: "前のテスト", greater: "テスト", adj: "難しい" });
-	const roadItem = findComparisonScenario({ lesser: "道", greater: "道", adj: "狭い", lesserDemonstrative: "この" });
-	const dictionaryItem = findComparisonScenario({ lesser: "辞書", greater: "ノート", adj: "軽い" });
-	const townItem = findComparisonScenario({ lesser: "新しい町", greater: "古い町", adj: "静か" });
-	const entranceItem = findComparisonScenario({ lesser: "駅の入口", greater: "学校の入口", adj: "狭い" });
-	return [
-		makeComparisonRewriteQuestion({ item: timeItem, from: "hodo", to: "hou" }),
-		makeComparisonRewriteQuestion({ item: timeItem, from: "yori", to: "hodo" }),
-		makeComparisonRewriteQuestion({ item: kanjiItem, from: "yori", to: "hodo" }),
-		makeComparisonRewriteQuestion({ item: kanjiItem, from: "hodo", to: "hou" }),
-		makeComparisonRewriteQuestion({ item: testItem, from: "yori", to: "hodo" }),
-		makeComparisonRewriteQuestion({ item: roadItem, from: "hodo", to: "hou" }),
-		makeTextQuestion({
-			kind: "chain inference · class length",
-			prompt: "昨日の授業は今日の授業より短いです。今日の授業は先週の授業より短いです。\n→ ＿＿＿＿、＿＿＿＿長いです。",
-			subprompt: "Use both facts to compare last week's class with yesterday's class.",
-			band: "Type the two missing chunks in order.",
-			answer: "昨日の授業より / 先週の授業のほうが",
-			accepted: comparisonCompactPairAnswers("昨日の授業より", "先週の授業のほうが"),
-			explanation: "昨日 < 今日 < 先週 for length, so last week's class is longer than yesterday's class.",
-			placeholder: "昨日の授業より / 先週の授業のほうが"
-		}),
-		makeTextQuestion({
-			kind: "chain rewrite · class length",
-			prompt: "昨日の授業は今日の授業より短いです。今日の授業は先週の授業より短いです。",
-			subprompt: "Write one ほど sentence comparing yesterday's class with last week's class.",
-			band: "Type the full Japanese sentence.",
-			answer: "昨日の授業は先週の授業ほど長くありません。",
-			accepted: comparisonAnswerVariants("昨日の授業は先週の授業ほど長くありません。", "先週の授業ほど昨日の授業は長くありません。"),
-			explanation: "Because yesterday's class is shorter than today's, and today is shorter than last week, yesterday is not as long as last week.",
-			placeholder: "昨日の授業は先週の授業ほど長くありません。"
-		}),
-		makeChoiceQuestion({
-			kind: "chain inference · class length",
-			prompt: "昨日の授業は今日の授業より短いです。今日の授業は先週の授業より短いです。",
-			subprompt: "Which sentence must be true?",
-			band: "Track the direction across both comparisons.",
-			answer: "先週の授業は昨日の授業より長いです。",
-			options: [
-				"先週の授業は昨日の授業より長いです。",
-				"昨日の授業は先週の授業より長いです。",
-				"先週の授業は昨日の授業ほど長くありません。",
-				"今日の授業は昨日の授業ほど長くありません。"
-			],
-			explanation: "The two facts make the order 昨日 < 今日 < 先週 for length."
-		}),
-		makeTextQuestion({
-			kind: "chain inference · price",
-			prompt: "駅まで行くなら、地下鉄はバスより安いです。バスはタクシーより安くありません。\n→ ＿＿＿＿、＿＿＿＿高いです。",
-			subprompt: "Compare the taxi with the subway.",
-			band: "Type the two missing chunks in order.",
-			answer: "地下鉄より / タクシーのほうが",
-			accepted: comparisonCompactPairAnswers("地下鉄より", "タクシーのほうが"),
-			explanation: "地下鉄 is cheaper than bus, and bus is not cheaper than taxi, so taxi is more expensive than subway.",
-			placeholder: "地下鉄より / タクシーのほうが"
-		}),
-		makeChoiceQuestion({
-			kind: "context choice · price",
-			prompt: "駅まで急いでいないので、安い方法を選びたいです。地下鉄はバスより安いです。タクシーはバスより高いです。",
-			subprompt: "Which comparison fits the situation?",
-			band: "Choose the sentence that keeps both facts.",
-			answer: "地下鉄はタクシーほど高くありません。",
-			options: [
-				"地下鉄はタクシーほど高くありません。",
-				"タクシーは地下鉄ほど高くありません。",
-				"地下鉄よりタクシーのほうが安いです。",
-				"バスは地下鉄ほど安くありません。"
-			],
-			explanation: "The subway is the cheaper option; it is not as expensive as the taxi."
-		}),
-		makeTextQuestion({
-			kind: "context rewrite · notebook bag",
-			prompt: "旅行の前に荷物を減らしています。辞書は重いですが、ノートは辞書より軽いです。",
-			subprompt: "Rewrite the last comparison with ほど...ありません.",
-			band: "Type the full Japanese sentence.",
-			answer: "ノートは辞書ほど重くありません。",
-			accepted: comparisonAnswerVariants("ノートは辞書ほど重くありません。", "辞書ほどノートは重くありません。"),
-			explanation: "If the notebook is lighter than the dictionary, it is not as heavy as the dictionary.",
-			placeholder: "ノートは辞書ほど重くありません。"
-		}),
-		makeChoiceQuestion({
-			kind: "context choice · errands",
-			prompt: "雨が強いので、近い場所に行きたいです。コンビニは銀行より近いですが、駅はコンビニほど近くありません。",
-			subprompt: "Which sentence matches the whole note?",
-			band: "Do not answer from only the first comparison.",
-			answer: "駅よりコンビニのほうが近いです。",
-			options: [
-				"駅よりコンビニのほうが近いです。",
-				"コンビニより駅のほうが近いです。",
-				"銀行はコンビニほど近くありません。",
-				"駅より銀行のほうが近いです。"
-			],
-			explanation: "駅 is not as near as コンビニ, so コンビニ is nearer than 駅."
-		}),
-		makeTextQuestion({
-			kind: "context rewrite · neighborhood",
-			prompt: "新しい町は便利ですが、夜は車が多いです。古い町は新しい町より静かです。",
-			subprompt: "Rewrite the final comparison with ほど...ありません.",
-			band: "Type the full Japanese sentence.",
-			answer: "新しい町は古い町ほど静かではありません。",
-			accepted: comparisonAnswerVariants("新しい町は古い町ほど静かではありません。", "古い町ほど新しい町は静かではありません。"),
-			explanation: "古い町 is quieter, so 新しい町 is not as quiet as 古い町.",
-			placeholder: "新しい町は古い町ほど静かではありません。"
-		}),
-		makeChoiceQuestion({
-			kind: "dialogue diagnosis · room",
-			prompt: "A: 私の部屋と兄の部屋と、どちらが広いですか。\nB: 兄の部屋のほうが広いです。",
-			subprompt: "What does B's answer mean?",
-			band: "Read the comparison, not just the noun order.",
-			answer: "兄の部屋 has more of the quality, so it is wider.",
-			options: [
-				"兄の部屋 has more of the quality, so it is wider.",
-				"私の部屋 is the comparison base and therefore wider.",
-				"兄の部屋 is not as wide as 私の部屋.",
-				"The answer needs を because B is choosing a room."
-			],
-			explanation: "For adjective comparison, のほうが marks the side with more of the quality."
-		}),
-		makeChoiceQuestion({
-			kind: "repair diagnosis · room",
-			prompt: "私の部屋は兄の部屋より広いです。 → 兄の部屋は私の部屋ほど広くありません。",
-			subprompt: "Is the rewrite correct?",
-			band: "Check whether the stronger room stayed the same.",
-			answer: "Correct: it keeps my room as the wider room.",
-			options: [
-				"Correct: it keeps my room as the wider room.",
-				"Wrong: it says my older brother's room is wider.",
-				"Wrong: ほど cannot be used with 広い.",
-				"Wrong: the comparison base must always use より."
-			],
-			explanation: "AはBより広い and BはAほど広くありません both say A is wider than B."
-		}),
-		makeComparisonErrorChoice(dictionaryItem),
-		makeComparisonErrorChoice(townItem),
-		makeComparisonErrorChoice(entranceItem),
-		makeChoiceQuestion({
-			kind: "error diagnosis · subtle reversal",
-			prompt: "この道はあの道より狭いです。 → あの道はこの道ほど狭くありません。",
-			subprompt: "Why does this rewrite fail?",
-			band: "Both sentences are grammatical, but one changes the meaning.",
-			answer: "It changes the stronger side: the rewrite says this road is more narrow than that road.",
-			options: [
-				"It changes the stronger side: the rewrite says this road is more narrow than that road.",
-				"It is wrong only because あの must come after より.",
-				"It keeps ほど negative, but it puts the wrong road after ほど.",
-				"It is correct because both sentences contain この道 and あの道."
-			],
-			explanation: "If この道 is narrower, the equivalent ほど sentence is あの道はこの道ほど狭くありません."
-		}),
-		makeChoiceQuestion({
-			kind: "context choice · schedule",
-			prompt: "会議は九時に始まります。説明会は八時半に始まります。友だちは『説明会のほうが早いね』と言いました。",
-			subprompt: "Which sentence says the same thing?",
-			band: "早い here is about starting time.",
-			answer: "会議は説明会ほど早く始まりません。",
-			options: [
-				"会議は説明会ほど早く始まりません。",
-				"説明会は会議ほど早く始まりません。",
-				"会議より説明会のほうが遅く始まります。",
-				"説明会は会議ほど遅く始まりません。"
-			],
-			explanation: "八時半 is earlier than 九時, so the meeting does not start as early as the briefing."
-		}),
-		makeTextQuestion({
-			kind: "context rewrite · schedule",
-			prompt: "映画館の開く時間は十時です。図書館の開く時間は九時です。図書館の開く時間のほうが早いです。",
-			subprompt: "Rewrite the final sentence with より...のほう.",
-			band: "Type the full Japanese sentence.",
-			answer: "映画館の開く時間より図書館の開く時間のほうが早いです。",
-			accepted: comparisonAnswerVariants(
-				"映画館の開く時間より図書館の開く時間のほうが早いです。",
-				"図書館の開く時間のほうが映画館の開く時間より早いです。",
-				"映画館より図書館のほうが早いです。",
-				"図書館のほうが映画館より早いです。"
-			),
-			explanation: "The library opens earlier; the later opening time is the より base.",
-			placeholder: "映画館の開く時間より図書館の開く時間のほうが早いです。"
-		}),
-		makeChoiceQuestion({
-			kind: "context choice · homework",
-			prompt: "日本語の宿題は昨日一時間かかりました。数学の宿題は四十分で終わりました。英語の宿題は日本語の宿題ほど時間がかかりませんでした。",
-			subprompt: "Which sentence can you safely say?",
-			band: "Use the whole context.",
-			answer: "数学の宿題は日本語の宿題より短い時間で終わりました。",
-			options: [
-				"数学の宿題は日本語の宿題より短い時間で終わりました。",
-				"日本語の宿題は英語の宿題ほど時間がかかりませんでした。",
-				"英語の宿題より日本語の宿題のほうが短いです。",
-				"数学の宿題は日本語の宿題ほど早くありませんでした。"
-			],
-			explanation: "Forty minutes is less than one hour; the math homework took less time than the Japanese homework."
-		}),
-		makeTextQuestion({
-			kind: "context production · clinic",
-			prompt: "駅前の病院は学校の入口より広いです。友だちの書き換え: 学校の入口は駅前の病院ほど広くありません。",
-			subprompt: "The rewrite is correct. Type it yourself.",
-			band: "Type the full Japanese sentence.",
-			answer: "学校の入口は駅前の病院ほど広くありません。",
-			accepted: comparisonAnswerVariants("学校の入口は駅前の病院ほど広くありません。", "駅前の病院ほど学校の入口は広くありません。"),
-			explanation: "The school entrance is not as wide as the hospital entrance, so the wider side remains the hospital entrance.",
-			placeholder: "学校の入口は駅前の病院ほど広くありません。"
-		}),
-		makeChoiceQuestion({
-			kind: "context choice · shopping",
-			prompt: "母は軽いかばんを探しています。黒いかばんはリュックより軽いです。でも、白いかばんは黒いかばんほど軽くありません。",
-			subprompt: "Which bag is definitely lighter than the white bag?",
-			band: "Compare across both sentences.",
-			answer: "黒いかばん",
-			options: ["黒いかばん", "白いかばん", "リュック", "三つとも同じ"],
-			explanation: "白いかばんは黒いかばんほど軽くありません means the black bag is lighter than the white bag."
-		}),
-		makeChoiceQuestion({
-			kind: "context choice · restaurant",
-			prompt: "昼ご飯は駅前の店で食べました。駅前の店は学校の食堂より高いです。でも、デパートのレストランほど高くありません。",
-			subprompt: "Which order is correct from cheapest to most expensive?",
-			band: "Track two comparison bases.",
-			answer: "学校の食堂 → 駅前の店 → デパートのレストラン",
-			options: [
-				"学校の食堂 → 駅前の店 → デパートのレストラン",
-				"駅前の店 → 学校の食堂 → デパートのレストラン",
-				"デパートのレストラン → 駅前の店 → 学校の食堂",
-				"学校の食堂 → デパートのレストラン → 駅前の店"
-			],
-			explanation: "The station-front shop is more expensive than the cafeteria but not as expensive as the department-store restaurant."
-		}),
-		makeTextQuestion({
-			kind: "context rewrite · explanation",
-			prompt: "先生の説明は教科書の説明より分かりやすいです。",
-			subprompt: "Rewrite with ほど...ありません without changing the meaning.",
-			band: "Type the full Japanese sentence.",
-			answer: "教科書の説明は先生の説明ほど分かりやすくありません。",
-			accepted: comparisonAnswerVariants("教科書の説明は先生の説明ほど分かりやすくありません。", "先生の説明ほど教科書の説明は分かりやすくありません。"),
-			explanation: "If the teacher's explanation is easier to understand, the textbook explanation is not as easy to understand.",
-			placeholder: "教科書の説明は先生の説明ほど分かりやすくありません。"
-		}),
-		makeChoiceQuestion({
-			kind: "context choice · review",
-			prompt: "今回のテストは前のテストより難しかったです。でも、漢字の問題は文法の問題ほど難しくありませんでした。",
-			subprompt: "Which sentence matches the second comparison?",
-			band: "Ignore the first sentence unless it helps the context.",
-			answer: "漢字の問題より文法の問題のほうが難しかったです。",
-			options: [
-				"漢字の問題より文法の問題のほうが難しかったです。",
-				"文法の問題より漢字の問題のほうが難しかったです。",
-				"文法の問題は漢字の問題ほど難しくありませんでした。",
-				"今回のテストは前のテストほど難しくありませんでした。"
-			],
-			explanation: "漢字の問題は文法の問題ほど難しくありません means grammar questions were harder."
-		}),
-		makeChoiceQuestion({
-			kind: "table reading · distance",
-			prompt: "家からの時間: コンビニ 5分 / 銀行 12分 / 駅 20分",
-			subprompt: "Which sentence matches the table?",
-			band: "Turn the numbers into a comparison.",
-			answer: "銀行は駅ほど遠くありません。",
-			options: [
-				"銀行は駅ほど遠くありません。",
-				"駅は銀行ほど遠くありません。",
-				"コンビニより駅のほうが近いです。",
-				"銀行はコンビニほど近いです。"
-			],
-			explanation: "The station takes longer to reach than the bank, so the bank is not as far as the station."
-		}),
-		makeChoiceQuestion({
-			kind: "table reading · schedule",
-			prompt: "開く時間: 図書館 9:00 / 喫茶店 8:30 / 映画館 10:00",
-			subprompt: "Which sentence is true?",
-			band: "早い means earlier in time here.",
-			answer: "喫茶店は図書館より早く開きます。",
-			options: [
-				"喫茶店は図書館より早く開きます。",
-				"映画館は図書館ほど遅く開きません。",
-				"図書館より映画館のほうが早く開きます。",
-				"喫茶店は映画館ほど早く開きません。"
-			],
-			explanation: "8:30 is earlier than 9:00 and 10:00."
-		}),
-		makeChoiceQuestion({
-			kind: "unsupported inference · commute",
-			prompt: "会社へ行く時、地下鉄はバスより速いです。タクシーは地下鉄ほど安くありません。",
-			subprompt: "Which sentence cannot be known from this note?",
-			band: "Separate speed from price.",
-			answer: "タクシーはバスより速いです。",
-			options: [
-				"タクシーはバスより速いです。",
-				"地下鉄はバスより速いです。",
-				"タクシーは地下鉄より高いです。",
-				"地下鉄はタクシーほど高くありません。"
-			],
-			explanation: "The note compares subway vs bus speed and taxi vs subway price; it never compares taxi vs bus speed."
-		}),
-		makeChoiceQuestion({
-			kind: "sentence pair · same meaning",
-			prompt: "Pick the pair where the two Japanese sentences say the same thing.",
-			subprompt: "Only one pair preserves both direction and adjective.",
-			band: "Compare the whole pair.",
-			answer: "先生の説明は教科書の説明より分かりやすいです。 / 教科書の説明は先生の説明ほど分かりやすくありません。",
-			options: [
-				"先生の説明は教科書の説明より分かりやすいです。 / 教科書の説明は先生の説明ほど分かりやすくありません。",
-				"先生の説明は教科書の説明より分かりやすいです。 / 先生の説明は教科書の説明ほど分かりやすくありません。",
-				"教科書の説明は先生の説明より分かりやすいです。 / 教科書の説明は先生の説明ほど分かりやすくありません。",
-				"先生の説明は教科書の説明より分かりやすいです。 / 教科書の説明より先生の説明のほうが分かりにくいです。"
-			],
-			explanation: "If the teacher's explanation is easier, the textbook explanation is not as easy as the teacher's."
-		}),
-		makeTextQuestion({
-			kind: "line edit · hodo polarity",
-			prompt: "Wrong rewrite: バスの時間は電車の時間ほど早いです。\nCorrect ending: バスの時間は電車の時間＿＿＿＿",
-			subprompt: "Replace only the final comparison phrase after 電車の時間.",
-			band: "Type the corrected ending.",
-			answer: "ほど早くありません",
-			accepted: comparisonAnswerVariants("ほど早くありません", "ほどはやくありません"),
-			explanation: "ほど for “not as early as” needs the negative predicate 早くありません.",
-			placeholder: "ほど早くありません"
-		}),
-		makeTextQuestion({
-			kind: "english production · commute",
-			prompt: "Say in Japanese: The train time is earlier than the bus time.",
-			subprompt: "Use より...のほうが.",
-			band: "Type one natural Japanese sentence.",
-			answer: "バスの時間より電車の時間のほうが早いです。",
-			accepted: comparisonHouAnswers(timeItem),
-			explanation: "The bus time is the comparison base after より; the train time is the earlier side.",
-			placeholder: "バスの時間より電車の時間のほうが早いです。"
-		}),
-		makeChoiceQuestion({
-			kind: "missing reply · crowding",
-			prompt: "A: 駅前の店とデパートのレストランと、どちらが混んでいますか。\nB: ＿＿＿＿",
-			subprompt: "B means the department-store restaurant is more crowded.",
-			band: "Choose the most natural reply.",
-			answer: "デパートのレストランのほうが混んでいます。",
-			options: [
-				"デパートのレストランのほうが混んでいます。",
-				"駅前の店のほうが混んでいます。",
-				"デパートのレストランほど混んでいません。",
-				"駅前の店より混んでいません。"
-			],
-			explanation: "The chosen side with more of the adjective takes のほうが."
-		}),
-		makeChoiceQuestion({
-			kind: "minimal pair · marker role",
-			prompt: "A: ホテルは空港より近いです。\nB: 空港はホテルほど近くありません。",
-			subprompt: "What do A and B have in common?",
-			band: "Read the role of より and ほど.",
-			answer: "Both say the hotel is nearer than the airport.",
-			options: [
-				"Both say the hotel is nearer than the airport.",
-				"Both say the airport is nearer than the hotel.",
-				"A is about distance, but B is about price.",
-				"B is wrong because ほど cannot be used with 近い."
-			],
-			explanation: "A says hotel > airport for nearness; B says the airport is not as near as the hotel."
-		}),
-		makeTextQuestion({
-			kind: "two-sentence synthesis · errands",
-			prompt: "銀行は駅より近いです。コンビニは銀行より近いです。\n→ ＿＿＿＿",
-			subprompt: "Use ほど...ありません to compare the station with the convenience store.",
-			band: "Type the full Japanese sentence.",
-			answer: "駅はコンビニほど近くありません。",
-			accepted: comparisonAnswerVariants("駅はコンビニほど近くありません。", "コンビニほど駅は近くありません。"),
-			explanation: "コンビニ is nearer than 銀行, and 銀行 is nearer than 駅, so the station is not as near as the convenience store.",
-			placeholder: "駅はコンビニほど近くありません。"
-		}),
-		makeChoiceQuestion({
-			kind: "wrong-answer triage · object vs adjective",
-			prompt: "A: コーヒーと紅茶と、どちらが苦いですか。\nB: コーヒーのほうを苦いです。",
-			subprompt: "What should be fixed?",
-			band: "Identify the exact particle problem.",
-			answer: "Change のほうを to のほうが because 苦い describes a quality.",
-			options: [
-				"Change のほうを to のほうが because 苦い describes a quality.",
-				"Change 苦い to 飲みたい because every どちら question uses を.",
-				"Add より after コーヒー because short answers cannot use のほう.",
-				"Use ほど because bitter is an adjective."
-			],
-			explanation: "のほうを fits object choice with verbs like 飲みたい; adjective comparison uses のほうが."
-		}),
-		makeChoiceQuestion({
-			kind: "negative comparison · choose base",
-			prompt: "友だちは『ホテルは空港より近い』と言いました。あなたは同じ意味を ほど で言いたいです。",
-			subprompt: "Which noun should come after ほど?",
-			band: "The stronger benchmark follows ほど.",
-			answer: "ホテル",
-			options: ["ホテル", "空港", "近い", "友だち"],
-			explanation: "空港はホテルほど近くありません keeps ホテル as the nearer benchmark."
-		}),
-		makeChoiceQuestion({
-			kind: "N5 context · te-form routine",
-			prompt: "朝ご飯を食べてから、駅まで歩きました。歩く道はバスの道より静かでしたが、時間はバスほど早くありませんでした。",
-			subprompt: "Which sentence matches the speaker's morning?",
-			band: "Read both the てから sequence and the comparison.",
-			answer: "歩く道は静かでしたが、バスのほうが早かったです。",
-			options: [
-				"歩く道は静かでしたが、バスのほうが早かったです。",
-				"歩く道はバスの道ほど静かではありませんでした。",
-				"歩く時間はバスより早かったです。",
-				"バスは歩く時間ほど早くありませんでした。"
-			],
-			explanation: "The walking route was quieter, but it was not as early/fast as the bus option."
-		}),
-		makeTextQuestion({
-			kind: "N5 context · existence rewrite",
-			prompt: "机の上に辞書とノートがあります。辞書はノートより重いです。\n→ ＿＿＿＿",
-			subprompt: "Use ほど...ありません to say the same comparison.",
-			band: "Type the full Japanese sentence.",
-			answer: "ノートは辞書ほど重くありません。",
-			accepted: comparisonAnswerVariants("ノートは辞書ほど重くありません。", "辞書ほどノートは重くありません。"),
-			explanation: "The existence sentence gives the objects; the comparison says the notebook is not as heavy as the dictionary.",
-			placeholder: "ノートは辞書ほど重くありません。"
-		}),
-		makeChoiceQuestion({
-			kind: "N5 context · reason から",
-			prompt: "今日は雨が降っていますから、近い店へ行きたいです。スーパーはコンビニより遠いです。薬局はコンビニほど近くありません。",
-			subprompt: "Which place is clearly the nearest?",
-			band: "Use the reason as context, then compare the places.",
-			answer: "コンビニ",
-			options: ["コンビニ", "スーパー", "薬局", "三つとも同じ"],
-			explanation: "The supermarket is farther than the convenience store, and the pharmacy is not as near as it."
-		}),
-		makeChoiceQuestion({
-			kind: "N5 context · invitation",
-			prompt: "A: 土曜日に映画を見ませんか。駅前の映画館は古いですが、学校の近くの映画館より安いです。\nB: 安いほうへ行きましょう。",
-			subprompt: "Where does B want to go?",
-			band: "Connect the invitation to the comparison.",
-			answer: "駅前の映画館",
-			options: ["駅前の映画館", "学校の近くの映画館", "どちらも高い映画館", "まだ決めていません"],
-			explanation: "B chooses the cheaper one, and the station-front theater is cheaper."
-		}),
-		makeTextQuestion({
-			kind: "N5 context · want production",
-			prompt: "旅行で小さいかばんを持って行きたいです。黒いかばんは白いかばんより軽いです。",
-			subprompt: "Write one sentence saying the black bag is the better/light option with より...のほう.",
-			band: "Type the full Japanese sentence.",
-			answer: "白いかばんより黒いかばんのほうが軽いです。",
-			accepted: comparisonAnswerVariants("白いかばんより黒いかばんのほうが軽いです。", "黒いかばんのほうが白いかばんより軽いです。"),
-			explanation: "The white bag is the comparison base; the black bag has more of the lightness.",
-			placeholder: "白いかばんより黒いかばんのほうが軽いです。"
-		}),
-		makeChoiceQuestion({
-			kind: "N5 context · location particles",
-			prompt: "駅の前に新しいカフェがあります。学校の中にもカフェがあります。駅前のカフェは学校のカフェほど静かではありません。",
-			subprompt: "Which sentence says the same thing?",
-			band: "Read the location phrases, then the comparison.",
-			answer: "駅前のカフェより学校のカフェのほうが静かです。",
-			options: [
-				"駅前のカフェより学校のカフェのほうが静かです。",
-				"学校のカフェより駅前のカフェのほうが静かです。",
-				"学校のカフェは駅前のカフェほど静かではありません。",
-				"駅前のカフェは学校のカフェより静かです。"
-			],
-			explanation: "駅前のカフェ is not as quiet as the school cafe, so the school cafe is quieter."
-		}),
-		makeChoiceQuestion({
-			kind: "N5 context · counter/time",
-			prompt: "昨日は宿題を三十分しました。今日は一時間しました。先週は二時間しました。",
-			subprompt: "Which sentence is true?",
-			band: "Use the time amounts, then choose the comparison.",
-			answer: "今日の宿題は昨日の宿題より長かったです。",
-			options: [
-				"今日の宿題は昨日の宿題より長かったです。",
-				"昨日の宿題は今日の宿題より長かったです。",
-				"先週の宿題は今日の宿題ほど長くありませんでした。",
-				"今日の宿題は先週の宿題より長かったです。"
-			],
-			explanation: "One hour is longer than thirty minutes but shorter than two hours."
-		}),
-		makeTextQuestion({
-			kind: "N5 context · request correction",
-			prompt: "友だちに写真を見せています。『この写真はあの写真より明るいです』と書きました。\n→ ＿＿＿＿",
-			subprompt: "Rewrite it with ほど...ありません.",
-			band: "Type the full Japanese sentence.",
-			answer: "あの写真はこの写真ほど明るくありません。",
-			accepted: comparisonAnswerVariants("あの写真はこの写真ほど明るくありません。", "この写真ほどあの写真は明るくありません。"),
-			explanation: "If this photo is brighter, that photo is not as bright as this photo.",
-			placeholder: "あの写真はこの写真ほど明るくありません。"
-		}),
-		makeChoiceQuestion({
-			kind: "N5 context · past narrative",
-			prompt: "昨日、友だちと本屋へ行きました。私は新しい本を買いました。友だちの本は私の本より高かったです。",
-			subprompt: "Which sentence keeps the meaning?",
-			band: "Watch the past-tense comparison.",
-			answer: "私の本は友だちの本ほど高くありませんでした。",
-			options: [
-				"私の本は友だちの本ほど高くありませんでした。",
-				"友だちの本は私の本ほど高くありませんでした。",
-				"私の本より友だちの本のほうが安かったです。",
-				"友だちの本は私の本より安かったです。"
-			],
-			explanation: "The friend's book was more expensive, so my book was not as expensive."
-		}),
-		makeChoiceQuestion({
-			kind: "N5 context · family dialogue",
-			prompt: "A: お兄さんと弟さんと、どちらが背が高いですか。\nB: 弟は兄ほど高くありません。",
-			subprompt: "What does B mean?",
-			band: "Read the family words and ほど negative.",
-			answer: "The older brother is taller.",
-			options: [
-				"The older brother is taller.",
-				"The younger brother is taller.",
-				"They are exactly the same height.",
-				"B is choosing which brother to meet."
-			],
-			explanation: "弟は兄ほど高くありません means the younger brother is not as tall as the older brother."
-		}),
-		makeTextQuestion({
-			kind: "N5 context · adjective chain",
-			prompt: "この部屋は明るくて広いです。あの部屋はこの部屋ほど明るくありません。でも、あの部屋はこの部屋より静かです。\n静かな部屋: ＿＿＿＿",
-			subprompt: "Write the sentence that says the other room is quieter.",
-			band: "Type the full Japanese sentence from the context.",
-			answer: "あの部屋はこの部屋より静かです。",
-			accepted: comparisonAnswerVariants("あの部屋はこの部屋より静かです。", "この部屋よりあの部屋のほうが静かです。", "あの部屋のほうがこの部屋より静かです。"),
-			explanation: "The final sentence shifts to quietness; do not carry over the brightness comparison.",
-			placeholder: "あの部屋はこの部屋より静かです。"
-		}),
-		makeChoiceQuestion({
-			kind: "N5 context · daily routine",
-			prompt: "毎朝、七時に家を出ます。月曜日は道が混んでいました。火曜日は月曜日ほど混んでいませんでした。",
-			subprompt: "Which sentence says the same thing?",
-			band: "Use the routine as context and compare the days.",
-			answer: "火曜日より月曜日のほうが混んでいました。",
-			options: [
-				"火曜日より月曜日のほうが混んでいました。",
-				"月曜日より火曜日のほうが混んでいました。",
-				"月曜日は火曜日ほど混んでいませんでした。",
-				"火曜日は月曜日より混んでいました。"
-			],
-			explanation: "Tuesday was not as crowded as Monday, so Monday was more crowded."
-		}),
-		makeChoiceQuestion({
-			kind: "N5 context · likes",
-			prompt: "私はコーヒーが好きです。でも、夜はコーヒーよりお茶のほうをよく飲みます。お茶はコーヒーほど苦くありません。",
-			subprompt: "Why might the speaker drink tea at night?",
-			band: "Use the preference sentence and the comparison.",
-			answer: "Tea is not as bitter as coffee.",
-			options: [
-				"Tea is not as bitter as coffee.",
-				"Coffee is not as bitter as tea.",
-				"The speaker does not like coffee at all.",
-				"The speaker says tea is more expensive."
-			],
-			explanation: "お茶はコーヒーほど苦くありません gives the likely reason."
-		}),
-		makeTextQuestion({
-			kind: "N5 context · place choice",
-			prompt: "日曜日に友だちと勉強します。図書館はカフェより静かですから、図書館へ行きたいです。\n理由: ＿＿＿＿",
-			subprompt: "Write the comparison sentence from the note.",
-			band: "Type the full Japanese sentence.",
-			answer: "図書館はカフェより静かです。",
-			accepted: comparisonAnswerVariants("図書館はカフェより静かです。", "カフェより図書館のほうが静かです。", "図書館のほうがカフェより静かです。"),
-			explanation: "The から sentence gives the reason: the library is quieter than the cafe.",
-			placeholder: "図書館はカフェより静かです。"
-		}),
-		makeChoiceQuestion({
-			kind: "N5 context · shopping numbers",
-			prompt: "このシャツは二千円です。あのシャツは千五百円です。妹は安いほうがほしいです。",
-			subprompt: "Which sentence fits the situation?",
-			band: "Turn prices into a comparison.",
-			answer: "あのシャツはこのシャツより安いです。",
-			options: [
-				"あのシャツはこのシャツより安いです。",
-				"このシャツはあのシャツより安いです。",
-				"あのシャツはこのシャツほど安くありません。",
-				"妹は高いほうがほしいです。"
-			],
-			explanation: "1,500 yen is cheaper than 2,000 yen, and the sister wants the cheaper one."
-		}),
-		makeChoiceQuestion({
-			kind: "dialogue diagnosis · object choice",
-			prompt: "A: コーヒーと紅茶と、どちらを飲みたいですか。\nB: 紅茶のほうを飲みたいです。",
-			subprompt: "Why is B's answer natural?",
-			band: "Separate object choice from adjective comparison.",
-			answer: "With 飲みたい, のほうを can mark the option B wants to drink.",
-			options: [
-				"With 飲みたい, のほうを can mark the option B wants to drink.",
-				"のほうが is required because 紅茶 is a drink.",
-				"より is required after 紅茶 in every choice question.",
-				"ほど is better because there are two options."
-			],
-			explanation: "飲みたい takes the chosen drink as an object, so のほうを is natural here."
-		}),
-		makeChoiceQuestion({
-			kind: "dialogue diagnosis · adjective comparison",
-			prompt: "A: コーヒーと紅茶と、どちらが苦いですか。\nB: コーヒーのほうが苦いです。",
-			subprompt: "Why is B's answer natural?",
-			band: "Use が for the side with more of the adjective.",
-			answer: "With 苦い, のほうが marks the drink with more bitterness.",
-			options: [
-				"With 苦い, のほうが marks the drink with more bitterness.",
-				"のほうを is required because B chooses coffee.",
-				"ほど is required because 苦い is an adjective.",
-				"紅茶 should be marked with のほうが because it is the comparison base."
-			],
-			explanation: "Adjective comparisons use が for the side that has more of the quality."
-		})
-	];
+const comparisonActionPreferenceQuestionSurfaces = [
+	{
+		id: "fill-adjective",
+		build(item) {
+			return makeTextQuestion({
+				kind: "generated action preference · context blank",
+				prompt: `理由: ${item.reason}。\n${item.baseAction}より${item.preferredAction}ほうが＿＿＿＿です。`,
+				subprompt: item.meaning,
+				band: "Type the adjective that fits the context.",
+				answer: item.adjective,
+				accepted: comparisonAnswerVariants(item.adjective),
+				explanation: `${item.reason} makes ${item.preferredAction} the better side for ${item.adjective}: ${comparisonActionPreferenceForms(item).yoriHou}`,
+				placeholder: item.adjective
+			});
+		}
+	},
+	{
+		id: "rewrite-same-hodo",
+		build(item) {
+			const forms = comparisonActionPreferenceForms(item);
+			return makeTextQuestion({
+				kind: "generated action preference · yori to hodo rewrite",
+				prompt: `理由: ${item.reason}。\n${forms.yoriHou}`,
+				subprompt: "Rewrite the comparison with ほど...ありません without changing the meaning.",
+				band: "Type the full Japanese sentence.",
+				answer: forms.hodo,
+				accepted: comparisonActionPreferenceFormAnswers(forms, "hodo"),
+				explanation: `${forms.yoriHou} and ${forms.hodo} keep ${item.preferredAction} as the stronger side.`,
+				placeholder: forms.hodo
+			});
+		}
+	},
+	{
+		id: "rewrite-same-yori",
+		build(item) {
+			const forms = comparisonActionPreferenceForms(item);
+			return makeTextQuestion({
+				kind: "generated action preference · hodo to yori rewrite",
+				prompt: `理由: ${item.reason}。\n${forms.hodo}`,
+				subprompt: "Rewrite the comparison with より and のほうが without changing the meaning.",
+				band: "Type the full Japanese sentence.",
+				answer: forms.yoriHou,
+				accepted: comparisonActionPreferenceFormAnswers(forms, "yori"),
+				explanation: `${forms.hodo} means ${item.baseAction} is not as ${item.adjective} as ${item.preferredAction}.`,
+				placeholder: forms.yoriHou
+			});
+		}
+	},
+	{
+		id: "rewrite-opposite-hodo",
+		build(item) {
+			const forms = comparisonActionPreferenceForms(item);
+			const oppositeForms = comparisonActionPreferenceOppositeForms(item);
+			return makeTextQuestion({
+				kind: "generated action preference · opposite meaning rewrite",
+				prompt: `元の文: ${forms.yoriHou}\n理由は使わず、反対の意味を ほど...ありません で書いてください。`,
+				subprompt: `Make the sentence say ${item.baseAction} is more ${item.adjective}.`,
+				band: "Type the full Japanese sentence.",
+				answer: oppositeForms.hodo,
+				accepted: comparisonActionPreferenceFormAnswers(oppositeForms, "hodo"),
+				explanation: `To flip the meaning, ${item.preferredAction} becomes the side that is not as ${item.adjective}: ${oppositeForms.hodo}`,
+				placeholder: oppositeForms.hodo
+			});
+		}
+	},
+	{
+		id: "meaning-ab",
+		build(item) {
+			const forms = comparisonActionPreferenceForms(item);
+			return makeChoiceQuestion({
+				kind: "generated action preference · meaning check",
+				prompt: `理由: ${item.reason}。\n${forms.hodo}`,
+				subprompt: `Which action is more ${item.adjective}?`,
+				band: "Choose the stronger side of the comparison.",
+				answer: item.preferredAction,
+				options: uniqueGrammarOptions([
+					item.preferredAction,
+					item.baseAction,
+					"どちらも同じです",
+					"文からは分かりません"
+				], [item.preferredAction]),
+				explanation: `${item.baseAction}のは${item.preferredAction}ほど...ありません means ${item.preferredAction} has more of the quality.`
+			});
+		}
+	},
+	{
+		id: "english-target",
+		build(item) {
+			const forms = comparisonActionPreferenceForms(item);
+			return makeTextQuestion({
+				kind: "generated action preference · production from meaning",
+				prompt: `理由: ${item.reason}。\nEnglish target: ${item.meaning}`,
+				subprompt: "Finish the Japanese comparison with より and のほうが.",
+				band: "Type the full Japanese sentence.",
+				answer: forms.yoriHou,
+				accepted: comparisonActionPreferenceFormAnswers(forms, "yori"),
+				explanation: `The base goes with より, and the stronger action takes ほうが: ${forms.yoriHou}`,
+				placeholder: forms.yoriHou
+			});
+		}
+	},
+	{
+		id: "particle-choice",
+		build(item) {
+			const forms = comparisonActionPreferenceForms(item);
+			return makeChoiceQuestion({
+				kind: "generated action preference · particle choice",
+				prompt: `理由: ${item.reason}。\n${item.preferredAction}ほう＿＿${item.baseAction}より${item.adjective}です。`,
+				subprompt: "Choose the particle after ほう.",
+				band: "Adjective comparison uses のほうが.",
+				answer: "が",
+				options: ["が", "を", "に", "で"],
+				explanation: `The side with more of the adjective is marked by が: ${forms.houYori}`
+			});
+		}
+	},
+	{
+		id: "three-form-build",
+		build(item) {
+			const forms = comparisonActionPreferenceForms(item);
+			return makeTextQuestion({
+				kind: "generated action preference · three form production",
+				prompt: `理由: ${item.reason}。\nMeaning: ${item.meaning}`,
+				subprompt: "Write all three forms in order: より→のほうが / のほうが→より / ほど...ありません.",
+				band: "Type the three Japanese sentences.",
+				answer: `${forms.yoriHou} ${forms.houYori} ${forms.hodo}`,
+				accepted: comparisonSentenceListAnswers(forms.yoriHou, forms.houYori, forms.hodo),
+				explanation: `All three forms keep ${item.preferredAction} as the stronger side for ${item.adjective}.`,
+				placeholder: `${forms.yoriHou} ${forms.houYori} ${forms.hodo}`
+			});
+		}
+	}
+];
+
+const comparisonGeneratedSentenceStructures = [
+	{
+		id: "action-preference",
+		buildSentenceUnits: buildComparisonActionPreferenceSentenceScenarios,
+		questionSurfaces: comparisonActionPreferenceQuestionSurfaces
+	}
+];
+
+function buildComparisonGeneratedSentenceUnits(limitPerStructure = 10) {
+	return comparisonGeneratedSentenceStructures.flatMap((structure) => (
+		structure.buildSentenceUnits(limitPerStructure).map((unit, index) => ({
+			...unit,
+			structureId: structure.id,
+			structureIndex: index
+		}))
+	));
+}
+
+function buildComparisonGeneratedPracticeBank(limitPerStructure = 10) {
+	return comparisonGeneratedSentenceStructures.flatMap((structure) => {
+		const units = structure.buildSentenceUnits(limitPerStructure);
+		return units.map((unit, index) => {
+			const surfaceIndex = index % structure.questionSurfaces.length;
+			const surface = structure.questionSurfaces[surfaceIndex];
+			const item = { ...unit, structureId: structure.id, structureIndex: index, surfaceId: surface.id };
+			const question = surface.build(item);
+			return {
+				...question,
+				meta: {
+					...(question.meta || {}),
+					sourceStructureId: structure.id,
+					sourceSurfaceId: surface.id,
+					rotationKey: `${structure.id}:${index}:${surfaceIndex}`
+				}
+			};
+		});
+	});
 }
 
 function makeGrammarReadingQuestion({ kind = "grammar in reading", passage, prompt, answer, options, explanation }) {
@@ -5998,7 +5509,7 @@ function makeGrammarCorrectionQuestion({ kind = "wrong sentence correction", wro
 
 const advancedGrammarPracticePacks = {
 	comparison: [
-		...buildComparisonHardPracticeBank()
+		...buildComparisonGeneratedPracticeBank(80)
 	],
 	time: [
 		makeGrammarDiagnosisQuestion({
@@ -7426,11 +6937,12 @@ function buildGenericAdvancedGrammarQuestions(sessionId, baseBank) {
 }
 
 function buildAdvancedGrammarPracticeBank(sessionId, baseBank) {
+	const generatedComparisonOnly = sessionId === "comparison";
 	const advanced = [
 		...(advancedGrammarPracticePacks[sessionId] || []),
-		...(grammarCorrectionPacks[sessionId] || []),
-		...(grammarSessionBossPacks[sessionId] || []),
-		...(grammarReadingIntegrationPacks[sessionId] || []),
+		...(generatedComparisonOnly ? [] : (grammarCorrectionPacks[sessionId] || [])),
+		...(generatedComparisonOnly ? [] : (grammarSessionBossPacks[sessionId] || [])),
+		...(generatedComparisonOnly ? [] : (grammarReadingIntegrationPacks[sessionId] || [])),
 		...(sessionId === "comparison" ? [] : buildGenericAdvancedGrammarQuestions(sessionId, baseBank))
 	];
 	const seen = new Set();
@@ -7538,9 +7050,9 @@ function buildFocusedGrammarQueue(sessionId, bank, focus, questionCount) {
 	}
 	if (focus === "boss") {
 		const directBoss = normalizeGrammarPracticeBank([
-			...(grammarSessionBossPacks[sessionId] || []),
-			...(grammarReadingIntegrationPacks[sessionId] || []),
-			...(grammarCorrectionPacks[sessionId] || []),
+			...(sessionId === "comparison" ? [] : (grammarSessionBossPacks[sessionId] || [])),
+			...(sessionId === "comparison" ? [] : (grammarReadingIntegrationPacks[sessionId] || [])),
+			...(sessionId === "comparison" ? [] : (grammarCorrectionPacks[sessionId] || [])),
 			...(advancedGrammarPracticePacks[sessionId] || [])
 		], sessionId);
 		const hardBank = bank.filter((question) => (
