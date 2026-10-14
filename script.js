@@ -7553,14 +7553,11 @@ function buildBossBlockGrammarQueue(sessionId, bank) {
 
 function buildFocusedGrammarQueue(sessionId, bank, focus, questionCount) {
 	if (focus === "review") {
-		const adaptiveReview = getAdaptiveGrammarPracticeQuestions(sessionId, questionCount);
-		const weakPitfalls = new Set(adaptiveReview.map((question) => question.meta?.pitfall).filter(Boolean));
 		const targets = bank.filter((question) => (
 			question.meta?.difficulty !== "core" ||
-			question.meta?.format !== "choice" ||
-			weakPitfalls.has(question.meta?.pitfall)
+			question.meta?.format !== "choice"
 		));
-		return [...adaptiveReview, ...shuffled(targets)];
+		return shuffled(targets.length ? targets : bank);
 	}
 	if (focus === "boss") {
 		if (getGrammarBossBlockConfig(sessionId)) return buildBossBlockGrammarQueue(sessionId, bank);
@@ -7602,7 +7599,7 @@ function startGrammarPractice(sessionId = "comparison", questionCount = Number(g
 	if (focusedQueue) {
 		gpState.queue = focusedQueue.slice(0, Math.min(questionCount, focusedQueue.length));
 	} else {
-		const adaptiveReview = session.isBossBlock || sessionId.startsWith("family-") || sessionId === "adaptive-review" || sessionId === "mixed-boss" || sessionId === "mock-test" ? [] : getAdaptiveGrammarPracticeQuestions(sessionId);
+		const adaptiveReview = sessionId === "adaptive-review" ? getAdaptiveGrammarPracticeQuestions(sessionId) : [];
 		const adaptiveKeys = new Set(adaptiveReview.map((question) => `${question.prompt}|${question.answer}`));
 		const baseQueue = shuffled(gpState.bank.filter((question) => !adaptiveKeys.has(`${question.prompt}|${question.answer}`)));
 		gpState.queue = [...adaptiveReview, ...baseQueue].slice(0, Math.min(questionCount, gpState.bank.length + adaptiveReview.length));
