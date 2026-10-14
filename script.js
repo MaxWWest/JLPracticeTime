@@ -4674,6 +4674,14 @@ const comparisonActionPreferenceActionFrames = {
 		allowedVerbs: ["歩く"],
 		particle: "まで"
 	},
+	"go-to-person-place": {
+		nounTag: "people",
+		verbTag: "places",
+		allowedNouns: ["先生", "友だち", "母", "父", "兄", "姉"],
+		allowedVerbs: ["行く"],
+		nounSuffix: "のところ",
+		particle: "に"
+	},
 	"take-transit": {
 		nounTag: "transport",
 		allowedNouns: ["バス", "電車", "地下鉄", "タクシー"],
@@ -4772,7 +4780,7 @@ const comparisonActionPreferenceActionFrames = {
 		nounTag: "buildings",
 		verbTag: "places",
 		allowedNouns: ["図書館", "駅", "スーパー"],
-		allowedVerbs: ["歩く", "走る"],
+		allowedVerbs: ["歩く"],
 		particle: "まで"
 	},
 	"walk-nature-route": {
@@ -4868,6 +4876,29 @@ const comparisonActionPreferenceActionFrames = {
 		allowedVerbs: ["勉強する", "読む", "書く"],
 		particle: "で",
 		features: { clarity: -1, convenience: 1 }
+	},
+	"write-at-room": {
+		nounTag: "rooms",
+		verbTag: "study",
+		allowedNouns: ["私の部屋", "兄の部屋", "教室", "会議室"],
+		allowedVerbs: ["書く"],
+		particle: "で"
+	},
+	"write-at-home-room": {
+		nounTag: "rooms",
+		verbTag: "study",
+		allowedNouns: ["私の部屋", "兄の部屋"],
+		allowedVerbs: ["書く"],
+		particle: "で",
+		features: { clarity: -1, convenience: 1 }
+	},
+	"write-at-quiet-place": {
+		nounTag: "buildings",
+		verbTag: "study",
+		allowedNouns: ["図書館"],
+		allowedVerbs: ["書く"],
+		particle: "で",
+		features: { clarity: 2, effort: 1 }
 	},
 	"practice-study-skill": {
 		nounTag: "study",
@@ -4989,8 +5020,9 @@ const comparisonActionPreferenceReasonFrames = [
 		reason: "説明が長い",
 		reasonEn: "the explanation is long",
 		pressures: ["speed", "effort", "clarity"],
-		baseFrameIds: ["read-long-study-text", "study-grammar"],
+		baseFrameIds: ["read-long-study-text"],
 		preferredFrameIds: ["ask-teacher-explanation", "do-conversation-practice"],
+		maxScenarios: 1,
 		tags: ["study", "communication"]
 	},
 	{
@@ -5008,7 +5040,7 @@ const comparisonActionPreferenceReasonFrames = [
 		reasonEn: "there is no time",
 		pressures: ["speed", "effort", "convenience"],
 		framePairs: [
-			["talk-to-person", "call-person"]
+			["go-to-person-place", "call-person"]
 		],
 		matchNounTags: ["people"],
 		tags: ["time", "communication"]
@@ -5044,7 +5076,8 @@ const comparisonActionPreferenceReasonFrames = [
 		reasonEn: "I am tired after school",
 		pressures: ["effort", "convenience"],
 		framePairs: [
-			["walk-to-errand-building", "study-at-home-room"],
+			["walk-to-errand-building", "read-digital-study-material"],
+			["write-at-quiet-place", "write-at-home-room"],
 			["read-paper-study-material", "read-digital-study-material"]
 		],
 		tags: ["daily-life", "study"]
@@ -5056,6 +5089,7 @@ const comparisonActionPreferenceReasonFrames = [
 		pressures: ["clarity", "effort"],
 		framePairs: [
 			["study-at-home-room", "study-at-quiet-place"],
+			["write-at-home-room", "write-at-quiet-place"],
 			["read-long-study-text", "ask-teacher-explanation"]
 		],
 		tags: ["study", "places"]
@@ -5164,8 +5198,9 @@ function comparisonActionPairAllowedForRule(rule, baseOption, preferredOption) {
 
 function comparisonActionPhrase(noun, verb, slot) {
 	const particle = slot.particle || verb.particle;
-	if (verb.objectRole === "path" && particle === "まで") return `${noun.ja}${particle}${verb.ja}`;
-	return `${noun.ja}${particle}${verb.ja}`;
+	const nounPhrase = `${noun.ja}${slot.nounSuffix || ""}`;
+	if (verb.objectRole === "path" && particle === "まで") return `${nounPhrase}${particle}${verb.ja}`;
+	return `${nounPhrase}${particle}${verb.ja}`;
 }
 
 const comparisonVerbEnglishGerunds = {
@@ -5201,6 +5236,9 @@ function comparisonActionEnglishPhrase(noun, verb, slot) {
 	const verbEn = verb.ja === "乗る" && noun.ja !== "自転車" ? "taking" : comparisonVerbEnglishGerunds[verb.en] || verb.en;
 	if (slot.particle === "で") {
 		return `${verbEn} at ${noun.en}`;
+	}
+	if (slot.nounSuffix === "のところ") {
+		return `going to see ${noun.en}`;
 	}
 	if (slot.particle === "まで" || verb.objectRole === "destination" || verb.objectRole === "path") {
 		return `${verbEn} to ${noun.en}`;
@@ -5248,7 +5286,7 @@ function comparisonActionPreferenceCandidateBuckets() {
 				});
 			});
 		});
-		return { rule, candidates };
+		return { rule, candidates, selectedCount: 0 };
 	});
 }
 
@@ -5256,10 +5294,16 @@ function comparisonActionPreferenceDiversityScore(candidate, used) {
 	const scenario = candidate.scenario;
 	const pairKey = `${scenario.baseAction}||${scenario.preferredAction}`;
 	const framePairKey = `${scenario.baseFrameId}||${scenario.preferredFrameId}`;
+	const reasonNounPairKey = `${scenario.sourceRule}||${scenario.baseNoun}||${scenario.preferredNoun}`;
+	const reasonBaseNounKey = `${scenario.sourceRule}||${scenario.baseNoun}`;
+	const reasonPreferredNounKey = `${scenario.sourceRule}||${scenario.preferredNoun}`;
 	let score = 0;
 	if (!used.pairs.has(pairKey)) score += 12;
 	if (!used.baseActions.has(scenario.baseAction)) score += 8;
 	if (!used.preferredActions.has(scenario.preferredAction)) score += 8;
+	if (!used.reasonNounPairs.has(reasonNounPairKey)) score += 8;
+	if (!used.reasonBaseNouns.has(reasonBaseNounKey)) score += 5;
+	if (!used.reasonPreferredNouns.has(reasonPreferredNounKey)) score += 5;
 	if (!used.framePairs.has(framePairKey)) score += 4;
 	if (!used.reasonAdjectives.has(`${scenario.sourceRule}||${scenario.adjective}`)) score += 2;
 	return score;
@@ -5269,6 +5313,9 @@ function comparisonMarkActionPreferenceScenarioUsed(scenario, used) {
 	used.pairs.add(`${scenario.baseAction}||${scenario.preferredAction}`);
 	used.baseActions.add(scenario.baseAction);
 	used.preferredActions.add(scenario.preferredAction);
+	used.reasonNounPairs.add(`${scenario.sourceRule}||${scenario.baseNoun}||${scenario.preferredNoun}`);
+	used.reasonBaseNouns.add(`${scenario.sourceRule}||${scenario.baseNoun}`);
+	used.reasonPreferredNouns.add(`${scenario.sourceRule}||${scenario.preferredNoun}`);
 	used.framePairs.add(`${scenario.baseFrameId}||${scenario.preferredFrameId}`);
 	used.reasonAdjectives.add(`${scenario.sourceRule}||${scenario.adjective}`);
 }
@@ -5280,6 +5327,9 @@ function buildComparisonActionPreferenceSentenceScenarios(limit = 18) {
 		pairs: new Set(),
 		baseActions: new Set(),
 		preferredActions: new Set(),
+		reasonNounPairs: new Set(),
+		reasonBaseNouns: new Set(),
+		reasonPreferredNouns: new Set(),
 		framePairs: new Set(),
 		reasonAdjectives: new Set()
 	};
@@ -5287,11 +5337,13 @@ function buildComparisonActionPreferenceSentenceScenarios(limit = 18) {
 	for (let round = 0; round < perReasonLimit && scenarios.length < limit; round += 1) {
 		for (const bucket of buckets) {
 			if (scenarios.length >= limit || !bucket.candidates.length) continue;
+			if (bucket.rule.maxScenarios && bucket.selectedCount >= bucket.rule.maxScenarios) continue;
 			const best = bucket.candidates
 				.map((candidate) => ({ candidate, score: comparisonActionPreferenceDiversityScore(candidate, used) }))
 				.sort((a, b) => b.score - a.score || a.candidate.order - b.candidate.order)[0].candidate;
 			bucket.candidates = bucket.candidates.filter((candidate) => candidate !== best);
 			scenarios.push(best.scenario);
+			bucket.selectedCount += 1;
 			comparisonMarkActionPreferenceScenarioUsed(best.scenario, used);
 		}
 	}
