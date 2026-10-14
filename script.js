@@ -1943,8 +1943,21 @@ const comparisonQuestionTemplates = {
 	]
 };
 
+function grammarTextPlaceholder({ band = "", prompt = "", answer = "", accepted = [], placeholder = "" }) {
+	const answers = [answer, ...accepted].map(normalizeJapaneseAnswer).filter(Boolean);
+	const normalizedPlaceholder = normalizeJapaneseAnswer(placeholder);
+	if (!placeholder || answers.includes(normalizedPlaceholder)) {
+		const clue = `${band} ${prompt}`.toLowerCase();
+		if (/full|whole|sentence|rewrite|build/.test(clue)) return "例: 日本語で答えてください。";
+		if (/two|both|forms|3 forms|three/.test(clue)) return "例: より / のほうが";
+		return "例: 正しい部分";
+	}
+	return placeholder;
+}
+
 function makeTextQuestion({ kind, prompt, subprompt, band, answer, accepted, explanation, placeholder }) {
-	return { kind, mode: "text", prompt, subprompt, band, answer, accepted: accepted || [answer], explanation, placeholder };
+	const acceptedAnswers = accepted || [answer];
+	return { kind, mode: "text", prompt, subprompt, band, answer, accepted: acceptedAnswers, explanation, placeholder: grammarTextPlaceholder({ band, prompt, answer, accepted: acceptedAnswers, placeholder }) };
 }
 
 const nagaraScenarios = [
@@ -5312,21 +5325,6 @@ const comparisonActionPreferencePatterns = [
 
 const comparisonActionPreferenceQuestionSurfaces = [
 	{
-		id: "complete-hou-side",
-		build(item) {
-			return makeTextQuestion({
-				kind: "generated action preference · comparison chunk blank",
-				prompt: `理由: ${item.reason}。\n${item.baseAction}より＿＿＿＿。`,
-				subprompt: item.meaning,
-				band: "Complete the のほうが side of the comparison.",
-				answer: `${item.preferredAction}ほうが${item.adjective}です。`,
-				accepted: comparisonAnswerVariants(`${item.preferredAction}ほうが${item.adjective}です。`),
-				explanation: `${item.reason} makes ${item.preferredAction} the better side for ${item.adjective}: ${comparisonActionPreferenceForms(item).yoriHou}`,
-				placeholder: `${item.preferredAction}ほうが${item.adjective}です。`
-			});
-		}
-	},
-	{
 		id: "rewrite-same-hodo",
 		build(item) {
 			const forms = comparisonActionPreferenceForms(item);
@@ -5715,21 +5713,6 @@ const comparisonBecauseQuestionSurfaces = [
 				answer: forms.yori,
 				options: [forms.yori, reverseForms.yori, reverseForms.hodo, `${item.greater}は${item.lesser}ほど${item.neg}ありません。`],
 				explanation: `${forms.yori} gives the correct reason for choosing ${item.greater}.`
-			});
-		}
-	},
-	{
-		id: "complete-hou-reason",
-		build(item) {
-			return makeTextQuestion({
-				kind: "generated because comparison · comparison chunk blank",
-				prompt: `今日は${item.greater}にします。\n理由: ${item.lesser}より＿＿＿＿。`,
-				subprompt: item.meaning,
-				band: "Complete the のほうが reason.",
-				answer: `${item.greater}のほうが${item.adj}です。`,
-				accepted: comparisonAnswerVariants(`${item.greater}のほうが${item.adj}です。`),
-				explanation: `${item.greater} is the stronger side, so it takes のほうが: ${item.lesser}より${item.greater}のほうが${item.adj}です。`,
-				placeholder: `${item.greater}のほうが${item.adj}です。`
 			});
 		}
 	}
