@@ -1338,6 +1338,18 @@ const comparisonNounPools = {
 		{ ja: "説明会", en: "the information session" },
 		{ ja: "会議", en: "the meeting" },
 		{ ja: "映画", en: "the movie" }
+	],
+	people: [
+		{ ja: "先生", en: "the teacher" },
+		{ ja: "友だち", en: "my friend" },
+		{ ja: "母", en: "my mother" },
+		{ ja: "父", en: "my father" },
+		{ ja: "兄", en: "my older brother" },
+		{ ja: "姉", en: "my older sister" },
+		{ ja: "祖母", en: "my grandmother" },
+		{ ja: "駅員", en: "the station attendant" },
+		{ ja: "店員", en: "the store clerk" },
+		{ ja: "医者", en: "the doctor" }
 	]
 };
 
@@ -4633,6 +4645,7 @@ function makeComparisonErrorChoice(item) {
 // Layer 1: adjectives describe which semantic feature must be stronger or weaker.
 const comparisonActionPreferenceAdjectiveRules = [
 	{ feature: "safety", direction: "higher", adj: "安全", neg: "安全では", base: "safe", comparative: "safer" },
+	{ feature: "cost", direction: "lower", adj: "安い", neg: "安く", base: "cheap", comparative: "cheaper" },
 	{ feature: "effort", direction: "lower", adj: "楽", neg: "楽では", base: "easy", comparative: "easier" },
 	{ feature: "effort", direction: "lower", adj: "簡単", neg: "簡単では", base: "easy", comparative: "easier" },
 	{ feature: "convenience", direction: "higher", adj: "便利", neg: "便利では", base: "convenient", comparative: "more convenient" },
@@ -4641,7 +4654,8 @@ const comparisonActionPreferenceAdjectiveRules = [
 	{ feature: "rainExposure", direction: "lower", adj: "ぬれにくい", neg: "ぬれにくく", base: "unlikely to get wet", comparative: "less likely to get wet" },
 	{ feature: "importance", direction: "higher", adj: "大切", neg: "大切では", base: "important", comparative: "more important" },
 	{ feature: "necessity", direction: "higher", adj: "必要", neg: "必要では", base: "necessary", comparative: "more necessary" },
-	{ feature: "clarity", direction: "higher", adj: "分かりやすい", neg: "分かりやすく", base: "easy to understand", comparative: "easier to understand" }
+	{ feature: "clarity", direction: "higher", adj: "分かりやすい", neg: "分かりやすく", base: "easy to understand", comparative: "easier to understand" },
+	{ feature: "readability", direction: "higher", adj: "読みやすい", neg: "読みやすく", base: "easy to read", comparative: "easier to read" }
 ];
 
 // Layer 2: action frames turn noun and verb pools into reusable candidate actions.
@@ -4651,6 +4665,13 @@ const comparisonActionPreferenceActionFrames = {
 		verbTag: "places",
 		verbRoles: ["destination", "path"],
 		allowedVerbs: ["歩く", "走る", "行く"],
+		particle: "まで"
+	},
+	"walk-to-place-outside": {
+		nounTag: "places",
+		verbTag: "places",
+		verbRoles: ["path"],
+		allowedVerbs: ["歩く"],
 		particle: "まで"
 	},
 	"take-transit": {
@@ -4733,6 +4754,125 @@ const comparisonActionPreferenceActionFrames = {
 		nounTag: "transport",
 		allowedNouns: ["自転車"],
 		allowedVerbs: ["乗る", "使う"]
+	},
+	"go-to-building": {
+		nounTag: "buildings",
+		allowedNouns: ["学校", "図書館", "病院", "駅", "ホテル", "レストラン", "スーパー"],
+		allowedVerbs: ["行く"],
+		particle: "に"
+	},
+	"walk-to-building": {
+		nounTag: "buildings",
+		verbTag: "places",
+		allowedNouns: ["学校", "図書館", "病院", "駅", "スーパー"],
+		allowedVerbs: ["歩く", "走る"],
+		particle: "まで"
+	},
+	"walk-to-errand-building": {
+		nounTag: "buildings",
+		verbTag: "places",
+		allowedNouns: ["図書館", "駅", "スーパー"],
+		allowedVerbs: ["歩く", "走る"],
+		particle: "まで"
+	},
+	"walk-nature-route": {
+		nounTag: "nature",
+		allowedNouns: ["道", "橋", "公園", "川"],
+		allowedVerbs: ["歩く", "走る"],
+		particle: "を"
+	},
+	"wait-for-transport": {
+		nounTag: "transport",
+		allowedNouns: ["バス", "電車", "地下鉄", "タクシー"],
+		allowedVerbs: ["待つ"]
+	},
+	"buy-food": {
+		nounTag: "food",
+		allowedNouns: ["昼ご飯", "カレー", "スープ", "コーヒー", "ジュース"],
+		allowedVerbs: ["買う"]
+	},
+	"make-food": {
+		nounTag: "food",
+		allowedNouns: ["昼ご飯", "カレー", "スープ"],
+		allowedVerbs: ["作る"]
+	},
+	"eat-simple-food": {
+		nounTag: "food",
+		allowedNouns: ["昼ご飯", "カレー", "スープ", "りんご", "みかん"],
+		allowedVerbs: ["食べる"]
+	},
+	"drink-beverage": {
+		nounTag: "food",
+		allowedNouns: ["お茶", "コーヒー", "ジュース", "水", "牛乳"],
+		allowedVerbs: ["飲む"]
+	},
+	"use-paper-study-material": {
+		nounTag: "objects",
+		allowedNouns: ["辞書", "ノート"],
+		allowedVerbs: ["使う"]
+	},
+	"read-paper-study-material": {
+		nounTag: "objects",
+		allowedNouns: ["紙の本", "教科書"],
+		allowedVerbs: ["読む"]
+	},
+	"use-digital-study-material": {
+		nounTag: "objects",
+		allowedNouns: ["スマホ"],
+		allowedVerbs: ["使う"]
+	},
+	"read-digital-study-material": {
+		nounTag: "objects",
+		allowedNouns: ["電子書籍"],
+		allowedVerbs: ["読む"]
+	},
+	"buy-study-object": {
+		nounTag: "objects",
+		allowedNouns: ["辞書", "教科書", "紙の本", "電子書籍", "ノート"],
+		allowedVerbs: ["買う"]
+	},
+	"borrow-study-object": {
+		nounTag: "objects",
+		allowedNouns: ["辞書", "教科書", "紙の本", "ノート"],
+		allowedVerbs: ["借りる"]
+	},
+	"call-person": {
+		nounTag: "people",
+		allowedNouns: ["先生", "友だち", "母", "父", "兄", "姉"],
+		allowedVerbs: ["電話する"]
+	},
+	"talk-to-person": {
+		nounTag: "people",
+		allowedNouns: ["先生", "友だち", "母", "父", "兄", "姉"],
+		allowedVerbs: ["話す"]
+	},
+	"study-at-quiet-place": {
+		nounTag: "buildings",
+		verbTag: "study",
+		allowedNouns: ["図書館", "学校"],
+		allowedVerbs: ["勉強する", "読む"],
+		particle: "で",
+		features: { clarity: 2, effort: 1 }
+	},
+	"study-at-room": {
+		nounTag: "rooms",
+		verbTag: "study",
+		allowedNouns: ["教室", "会議室", "私の部屋", "兄の部屋"],
+		allowedVerbs: ["勉強する", "読む", "書く"],
+		particle: "で"
+	},
+	"study-at-home-room": {
+		nounTag: "rooms",
+		verbTag: "study",
+		allowedNouns: ["私の部屋", "兄の部屋"],
+		allowedVerbs: ["勉強する", "読む", "書く"],
+		particle: "で",
+		features: { clarity: -1, convenience: 1 }
+	},
+	"practice-study-skill": {
+		nounTag: "study",
+		allowedNouns: ["漢字", "文法", "会話の練習"],
+		allowedVerbs: ["練習する"]
 	}
 };
 
@@ -4745,6 +4885,27 @@ const comparisonActionPreferenceFeatureProfiles = {
 		タクシー: { speed: 4, effort: 1, safety: 4, rainExposure: 1, convenience: 5 },
 		車: { speed: 4, effort: 2, safety: 3, rainExposure: 1, convenience: 4 },
 		自転車: { speed: 3, effort: 3, safety: 2, rainExposure: 4, convenience: 3 },
+		新幹線: { speed: 5, effort: 1, safety: 5, rainExposure: 1, convenience: 3, cost: 5 },
+		普通電車: { speed: 3, effort: 1, safety: 5, rainExposure: 1, convenience: 3, cost: 2 },
+		飛行機: { speed: 5, effort: 2, safety: 4, rainExposure: 1, convenience: 2, cost: 5 },
+		船: { speed: 2, effort: 2, safety: 3, rainExposure: 2, convenience: 2, cost: 3 },
+		お茶: { cost: 2, effort: 1, convenience: 4 },
+		コーヒー: { cost: 3, effort: 1, convenience: 5 },
+		ジュース: { cost: 3, effort: 1, convenience: 5 },
+		水: { cost: 1, effort: 1, convenience: 5 },
+		牛乳: { cost: 2, effort: 1, convenience: 4 },
+		カレー: { cost: 3, effort: 2, convenience: 3 },
+		スープ: { cost: 2, effort: 2, convenience: 3 },
+		りんご: { cost: 2, effort: 1, convenience: 4 },
+		みかん: { cost: 2, effort: 1, convenience: 4 },
+		昼ご飯: { cost: 3, effort: 2, convenience: 3 },
+		ノート: { cost: 1, effort: 1, convenience: 4, readability: 3 },
+		辞書: { cost: 4, effort: 3, convenience: 3, clarity: 5, readability: 4 },
+		教科書: { cost: 4, effort: 3, convenience: 3, clarity: 3, readability: 3 },
+		雑誌: { cost: 2, effort: 1, convenience: 4, readability: 4 },
+		紙の本: { cost: 3, effort: 3, convenience: 2, readability: 4 },
+		電子書籍: { cost: 2, effort: 1, convenience: 5, readability: 3 },
+		スマホ: { cost: 5, effort: 1, convenience: 5, clarity: 4, readability: 3 },
 		漢字: { importance: 5, necessity: 5, effort: 4 },
 		文法: { importance: 5, necessity: 5, effort: 4 },
 		宿題: { importance: 5, necessity: 5, effort: 3 },
@@ -4754,7 +4915,19 @@ const comparisonActionPreferenceFeatureProfiles = {
 		会話の練習: { clarity: 4, importance: 4, effort: 3 },
 		映画: { importance: 1, necessity: 1, effort: 1 },
 		会議: { importance: 2, necessity: 2, effort: 3 },
-		説明会: { importance: 2, necessity: 2, effort: 3 }
+		説明会: { importance: 2, necessity: 2, effort: 3 },
+		先生: { clarity: 5, speed: 3, effort: 2, convenience: 3 },
+		友だち: { clarity: 3, speed: 4, effort: 1, convenience: 4 },
+		母: { clarity: 3, speed: 4, effort: 1, convenience: 4 },
+		父: { clarity: 3, speed: 4, effort: 1, convenience: 4 },
+		兄: { clarity: 3, speed: 4, effort: 1, convenience: 4 },
+		姉: { clarity: 3, speed: 4, effort: 1, convenience: 4 },
+		図書館: { clarity: 5, effort: 2, convenience: 3 },
+		学校: { clarity: 4, effort: 3, convenience: 3 },
+		教室: { clarity: 4, effort: 2, convenience: 3 },
+		会議室: { clarity: 4, effort: 2, convenience: 3 },
+		私の部屋: { clarity: 2, effort: 1, convenience: 5 },
+		兄の部屋: { clarity: 2, effort: 2, convenience: 3 }
 	},
 	verbs: {
 		歩く: { speed: 2, effort: 4, safety: 2, rainExposure: 5, convenience: 2 },
@@ -4769,7 +4942,16 @@ const comparisonActionPreferenceFeatureProfiles = {
 		読む: { clarity: 2, speed: 2, effort: 4, importance: 4 },
 		書く: { importance: 5, necessity: 4, effort: 4 },
 		する: { importance: 5, necessity: 5, effort: 3 },
-		勉強する: { importance: 5, necessity: 5, effort: 4 }
+		勉強する: { importance: 5, necessity: 5, effort: 4, clarity: 3 },
+		練習する: { importance: 5, necessity: 4, effort: 3, clarity: 3 },
+		電話する: { speed: 5, effort: 1, convenience: 5, clarity: 3 },
+		話す: { speed: 3, effort: 2, convenience: 3, clarity: 5 },
+		待つ: { speed: 1, effort: 3, convenience: 2 },
+		買う: { cost: 4, effort: 1, convenience: 5 },
+		作る: { cost: 1, effort: 4, convenience: 2 },
+		食べる: { effort: 1, convenience: 3 },
+		飲む: { effort: 1, convenience: 3 },
+		借りる: { cost: 1, effort: 2, convenience: 3 }
 	}
 };
 
@@ -4819,6 +5001,64 @@ const comparisonActionPreferenceReasonFrames = [
 		baseFrameIds: ["drive-road-vehicle", "take-road-vehicle"],
 		preferredFrameIds: ["take-rail-vehicle", "take-bicycle"],
 		tags: ["transport"]
+	},
+	{
+		id: "no-time-contact",
+		reason: "時間がない",
+		reasonEn: "there is no time",
+		pressures: ["speed", "effort", "convenience"],
+		framePairs: [
+			["talk-to-person", "call-person"]
+		],
+		matchNounTags: ["people"],
+		tags: ["time", "communication"]
+	},
+	{
+		id: "little-money-choice",
+		reason: "お金が少ない",
+		reasonEn: "money is limited",
+		pressures: ["cost", "effort", "convenience"],
+		framePairs: [
+			["buy-food", "make-food"],
+			["buy-study-object", "borrow-study-object"],
+			["take-transit", "walk-to-place-outside"]
+		],
+		matchNounTags: ["food", "objects"],
+		tags: ["money", "daily-life"]
+	},
+	{
+		id: "many-kanji-help",
+		reason: "漢字が多い",
+		reasonEn: "there are many kanji",
+		pressures: ["clarity", "readability", "speed", "effort"],
+		framePairs: [
+			["read-long-study-text", "ask-teacher-explanation"],
+			["read-paper-study-material", "read-digital-study-material"],
+			["use-paper-study-material", "use-digital-study-material"]
+		],
+		tags: ["study", "tools"]
+	},
+	{
+		id: "tired-after-school",
+		reason: "学校のあとで疲れている",
+		reasonEn: "I am tired after school",
+		pressures: ["effort", "convenience"],
+		framePairs: [
+			["walk-to-errand-building", "study-at-home-room"],
+			["read-paper-study-material", "read-digital-study-material"]
+		],
+		tags: ["daily-life", "study"]
+	},
+	{
+		id: "noisy-home-study",
+		reason: "家がうるさい",
+		reasonEn: "home is noisy",
+		pressures: ["clarity", "effort"],
+		framePairs: [
+			["study-at-home-room", "study-at-quiet-place"],
+			["read-long-study-text", "ask-teacher-explanation"]
+		],
+		tags: ["study", "places"]
 	}
 ];
 
@@ -4879,6 +5119,11 @@ function comparisonActionSlotsForFrameIds(frameIds) {
 	});
 }
 
+function comparisonActionFrameSlot(frameId) {
+	const frame = comparisonActionPreferenceActionFrames[frameId];
+	return frame ? { ...frame, frameId } : null;
+}
+
 function comparisonActionSlotOptions(slot) {
 	const choices = slot.choices || [slot];
 	return choices.flatMap((choice) => {
@@ -4887,6 +5132,34 @@ function comparisonActionSlotOptions(slot) {
 		const verbs = comparisonVerbsForActionSlot(merged);
 		return nouns.flatMap((noun) => verbs.map((verb) => ({ noun, verb, slot: merged })));
 	});
+}
+
+function comparisonActionOptionPairsForRule(rule) {
+	if (rule.framePairs) {
+		return rule.framePairs.flatMap(([baseFrameId, preferredFrameId]) => {
+			const baseSlot = comparisonActionFrameSlot(baseFrameId);
+			const preferredSlot = comparisonActionFrameSlot(preferredFrameId);
+			if (!baseSlot || !preferredSlot) return [];
+			const baseOptions = comparisonActionSlotOptions(baseSlot);
+			const preferredOptions = comparisonActionSlotOptions(preferredSlot);
+			return baseOptions.flatMap((baseOption) => preferredOptions.map((preferredOption) => ({ baseOption, preferredOption })));
+		});
+	}
+	const baseOptions = comparisonActionSlotsForFrameIds(rule.baseFrameIds).flatMap(comparisonActionSlotOptions);
+	const preferredOptions = comparisonActionSlotsForFrameIds(rule.preferredFrameIds).flatMap(comparisonActionSlotOptions);
+	return baseOptions.flatMap((baseOption) => preferredOptions.map((preferredOption) => ({ baseOption, preferredOption })));
+}
+
+function comparisonActionPairAllowedForRule(rule, baseOption, preferredOption) {
+	const matchNounTags = rule.matchNounTags || [];
+	if (
+		baseOption.slot.nounTag === preferredOption.slot.nounTag &&
+		matchNounTags.includes(baseOption.slot.nounTag) &&
+		baseOption.noun.ja !== preferredOption.noun.ja
+	) {
+		return false;
+	}
+	return true;
 }
 
 function comparisonActionPhrase(noun, verb, slot) {
@@ -4913,54 +5186,116 @@ const comparisonVerbEnglishGerunds = {
 	write: "writing",
 	do: "doing",
 	study: "studying",
-	practice: "practicing"
+	practice: "practicing",
+	call: "calling",
+	talk: "talking with",
+	"wait for": "waiting for",
+	buy: "buying",
+	eat: "eating",
+	drink: "drinking",
+	make: "making",
+	borrow: "borrowing"
 };
 
 function comparisonActionEnglishPhrase(noun, verb, slot) {
 	const verbEn = verb.ja === "乗る" && noun.ja !== "自転車" ? "taking" : comparisonVerbEnglishGerunds[verb.en] || verb.en;
+	if (slot.particle === "で") {
+		return `${verbEn} at ${noun.en}`;
+	}
 	if (slot.particle === "まで" || verb.objectRole === "destination" || verb.objectRole === "path") {
 		return `${verbEn} to ${noun.en}`;
 	}
 	return `${verbEn} ${noun.en}`;
 }
 
+function comparisonBuildActionPreferenceScenario(rule, baseOption, preferredOption, adjective, compatibility) {
+	const baseAction = comparisonActionPhrase(baseOption.noun, baseOption.verb, baseOption.slot);
+	const preferredAction = comparisonActionPhrase(preferredOption.noun, preferredOption.verb, preferredOption.slot);
+	const baseActionEn = comparisonActionEnglishPhrase(baseOption.noun, baseOption.verb, baseOption.slot);
+	const preferredActionEn = comparisonActionEnglishPhrase(preferredOption.noun, preferredOption.verb, preferredOption.slot);
+	return {
+		reason: rule.reason,
+		baseAction,
+		preferredAction,
+		adjective: adjective.adj,
+		neg: adjective.neg,
+		meaning: `Because ${rule.reasonEn}, ${preferredActionEn} is ${adjective.comparative} than ${baseActionEn}.`,
+		baseVerb: baseOption.verb.ja,
+		preferredVerb: preferredOption.verb.ja,
+		baseNoun: baseOption.noun.ja,
+		preferredNoun: preferredOption.noun.ja,
+		semanticFeature: adjective.feature,
+		baseFrameId: baseOption.slot.frameId,
+		preferredFrameId: preferredOption.slot.frameId,
+		baseFeatures: compatibility.baseFeatures,
+		preferredFeatures: compatibility.preferredFeatures,
+		tags: rule.tags,
+		sourceRule: rule.id
+	};
+}
+
+function comparisonActionPreferenceCandidateBuckets() {
+	return comparisonActionPreferenceReasonFrames.map((rule, ruleIndex) => {
+		const optionPairs = comparisonActionOptionPairsForRule(rule);
+		const candidates = [];
+		optionPairs.forEach(({ baseOption, preferredOption }, pairIndex) => {
+			if (!comparisonActionPairAllowedForRule(rule, baseOption, preferredOption)) return;
+			const compatibility = comparisonCompatibleActionAdjectives(rule, baseOption, preferredOption);
+			compatibility.adjectives.forEach((adjective, adjectiveIndex) => {
+				candidates.push({
+					scenario: comparisonBuildActionPreferenceScenario(rule, baseOption, preferredOption, adjective, compatibility),
+					order: (ruleIndex * 100000) + (pairIndex * 10) + adjectiveIndex
+				});
+			});
+		});
+		return { rule, candidates };
+	});
+}
+
+function comparisonActionPreferenceDiversityScore(candidate, used) {
+	const scenario = candidate.scenario;
+	const pairKey = `${scenario.baseAction}||${scenario.preferredAction}`;
+	const framePairKey = `${scenario.baseFrameId}||${scenario.preferredFrameId}`;
+	let score = 0;
+	if (!used.pairs.has(pairKey)) score += 12;
+	if (!used.baseActions.has(scenario.baseAction)) score += 8;
+	if (!used.preferredActions.has(scenario.preferredAction)) score += 8;
+	if (!used.framePairs.has(framePairKey)) score += 4;
+	if (!used.reasonAdjectives.has(`${scenario.sourceRule}||${scenario.adjective}`)) score += 2;
+	return score;
+}
+
+function comparisonMarkActionPreferenceScenarioUsed(scenario, used) {
+	used.pairs.add(`${scenario.baseAction}||${scenario.preferredAction}`);
+	used.baseActions.add(scenario.baseAction);
+	used.preferredActions.add(scenario.preferredAction);
+	used.framePairs.add(`${scenario.baseFrameId}||${scenario.preferredFrameId}`);
+	used.reasonAdjectives.add(`${scenario.sourceRule}||${scenario.adjective}`);
+}
+
 function buildComparisonActionPreferenceSentenceScenarios(limit = 18) {
 	const scenarios = [];
-	comparisonActionPreferenceReasonFrames.forEach((rule, ruleIndex) => {
-		const baseOptions = comparisonActionSlotsForFrameIds(rule.baseFrameIds).flatMap(comparisonActionSlotOptions);
-		const preferredOptions = comparisonActionSlotsForFrameIds(rule.preferredFrameIds).flatMap(comparisonActionSlotOptions);
-		const comboCount = Math.min(4, baseOptions.length, preferredOptions.length);
-		for (let comboIndex = 0; comboIndex < comboCount; comboIndex += 1) {
-			const baseOption = comparisonPickFromPool(baseOptions, comboIndex, ruleIndex);
-			const preferredOption = comparisonPickFromPool(preferredOptions, comboIndex, ruleIndex + 1);
-			if (!baseOption || !preferredOption) continue;
-			const compatibility = comparisonCompatibleActionAdjectives(rule, baseOption, preferredOption);
-			const adjective = comparisonPickFromPool(compatibility.adjectives, comboIndex, ruleIndex);
-			if (!adjective) continue;
-			const baseAction = comparisonActionPhrase(baseOption.noun, baseOption.verb, baseOption.slot);
-			const preferredAction = comparisonActionPhrase(preferredOption.noun, preferredOption.verb, preferredOption.slot);
-			const baseActionEn = comparisonActionEnglishPhrase(baseOption.noun, baseOption.verb, baseOption.slot);
-			const preferredActionEn = comparisonActionEnglishPhrase(preferredOption.noun, preferredOption.verb, preferredOption.slot);
-			scenarios.push({
-				reason: rule.reason,
-				baseAction,
-				preferredAction,
-				adjective: adjective.adj,
-				neg: adjective.neg,
-				meaning: `Because ${rule.reasonEn}, ${preferredActionEn} is ${adjective.comparative} than ${baseActionEn}.`,
-				baseVerb: baseOption.verb.ja,
-				preferredVerb: preferredOption.verb.ja,
-				baseNoun: baseOption.noun.ja,
-				preferredNoun: preferredOption.noun.ja,
-				semanticFeature: adjective.feature,
-				baseFeatures: compatibility.baseFeatures,
-				preferredFeatures: compatibility.preferredFeatures,
-				tags: rule.tags,
-				sourceRule: rule.id
-			});
+	const buckets = comparisonActionPreferenceCandidateBuckets();
+	const used = {
+		pairs: new Set(),
+		baseActions: new Set(),
+		preferredActions: new Set(),
+		framePairs: new Set(),
+		reasonAdjectives: new Set()
+	};
+	const perReasonLimit = 4;
+	for (let round = 0; round < perReasonLimit && scenarios.length < limit; round += 1) {
+		for (const bucket of buckets) {
+			if (scenarios.length >= limit || !bucket.candidates.length) continue;
+			const best = bucket.candidates
+				.map((candidate) => ({ candidate, score: comparisonActionPreferenceDiversityScore(candidate, used) }))
+				.sort((a, b) => b.score - a.score || a.candidate.order - b.candidate.order)[0].candidate;
+			bucket.candidates = bucket.candidates.filter((candidate) => candidate !== best);
+			scenarios.push(best.scenario);
+			comparisonMarkActionPreferenceScenarioUsed(best.scenario, used);
 		}
-	});
-	return scenarios.slice(0, limit);
+	}
+	return scenarios;
 }
 
 const comparisonActionPreferencePatterns = [
