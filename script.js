@@ -290,6 +290,7 @@ function renderJapaneseWithFurigana(example) {
 }
 
 const furiganaAutoEntries = [
+	...TimePractice.readings.filter(([word]) => word.length > 1 && /[一-龯]/.test(word)),
 	["自習室", "じしゅうしつ"], ["問題集", "もんだいしゅう"], ["旅館", "りょかん"], ["会議室", "かいぎしつ"], ["説明会", "せつめいかい"],
 	["集中", "しゅうちゅう"], ["暖かい", "あたたかい"], ["暖かく", "あたたかく"], ["楽では", "らくでは"], ["楽です", "らくです"],
 	["午前", "ごぜん"], ["先月", "せんげつ"], ["今月", "こんげつ"], ["今週", "こんしゅう"], ["先週", "せんしゅう"], ["平日", "へいじつ"],
@@ -2964,13 +2965,30 @@ function selectComparisonReview(bank, count) {
 }
 
 function buildTimePracticeBank() {
-	return [
-		...nagaraScenarios.flatMap((item) => timeQuestionTemplates.nagara.map((template) => template(item))),
-		...tokoroScenarios.flatMap((item) => timeQuestionTemplates.tokoro.map((template) => template(item))),
-		...limitScenarios.flatMap((item) => timeQuestionTemplates.limit.map((template) => template(item))),
-		...buildTimePitfallQuestions(),
-		...buildTimeVarietyQuestions()
-	];
+	return getTimePracticeEngine().buildBank();
+}
+
+let timePracticeEngine;
+function getTimePracticeEngine() {
+	if (!timePracticeEngine) timePracticeEngine = TimePractice.create({ nounPools: comparisonNounPools, verbPool: grammarVerbPool, aliases: comparisonKanaAnswerAliases });
+	return timePracticeEngine;
+}
+
+function timeReviewHistory() {
+	try {
+		const value = JSON.parse(localStorage.getItem("time-review-history-v1") || "[]");
+		return Array.isArray(value) ? value.filter((key) => typeof key === "string").slice(-100) : [];
+	} catch { return []; }
+}
+
+function selectTimeReview(bank, count) {
+	return TimePractice.selectQueue(bank, count, { recent: timeReviewHistory() });
+}
+
+function generatedGrammarEngine(question) {
+	if (question.meta?.engine === ComparisonPractice.version) return getComparisonPracticeEngine();
+	if (question.meta?.engine === TimePractice.version) return getTimePracticeEngine();
+	return null;
 }
 
 function buildInvitationPracticeBank() {
@@ -4051,8 +4069,8 @@ const grammarPracticeRuleNotes = {
 				heading: "までに means by",
 				pattern: "五時までに出してください。",
 				points: [
-					"までに marks a deadline for a short action or completion.",
-					"The action can happen any time before the deadline.",
+					"までに marks a completion deadline, even when the activity itself takes a long time.",
+					"Completion can be earlier than the deadline or exactly at it; the starting time is not specified.",
 					"It often pairs with verbs like 出す, 帰る, 終わる, 送る, 払う."
 				],
 				examples: ["金曜日までにレポートを出します。", "八時までに帰ってください。"]
@@ -4060,8 +4078,9 @@ const grammarPracticeRuleNotes = {
 		],
 		pitfalls: [
 			"Do not say 聞きますながら. Drop ます before ながら.",
-			"Do not use までに for something that continues the whole time.",
-			"Do not use まで for a deadline if the action only needs to be completed once."
+			"Choose from the meaning, not the verb alone: 本を読む can continue until a time or be completed by a deadline.",
+			"For ながら, check the actor and overlap. Both clause orders can be grammatical, but the main focus changes.",
+			"For ところ, preserve the action and distinguish not yet started, in progress, and immediately completed."
 		]
 	},
 	invitation: {
@@ -7149,13 +7168,14 @@ function buildGenericAdvancedGrammarQuestions(sessionId, baseBank) {
 }
 
 function buildAdvancedGrammarPracticeBank(sessionId, baseBank) {
-	const generatedComparisonOnly = sessionId === "comparison";
+	// Generated units must never be mixed with legacy hard, correction, or generic packs.
+	if (["comparison", "time"].includes(sessionId)) return baseBank.map((q) => withGrammarPracticeMetadata(q, sessionId));
 	const advanced = [
 		...(advancedGrammarPracticePacks[sessionId] || []),
-		...(generatedComparisonOnly ? [] : (grammarCorrectionPacks[sessionId] || [])),
-		...(generatedComparisonOnly ? [] : (grammarSessionBossPacks[sessionId] || [])),
-		...(generatedComparisonOnly ? [] : (grammarReadingIntegrationPacks[sessionId] || [])),
-		...(sessionId === "comparison" ? [] : buildGenericAdvancedGrammarQuestions(sessionId, baseBank))
+		...(grammarCorrectionPacks[sessionId] || []),
+		...(grammarSessionBossPacks[sessionId] || []),
+		...(grammarReadingIntegrationPacks[sessionId] || []),
+		...buildGenericAdvancedGrammarQuestions(sessionId, baseBank)
 	];
 	const seen = new Set();
 	return [...baseBank, ...advanced].filter((question) => {
@@ -7342,6 +7362,7 @@ function buildBossBlockGrammarQueue(sessionId, bank, questionCount = 25) {
 	const buckets = bossBlock.sessions
 		.map((sourceSessionId) => {
 			const sourceBank = bank.filter((question) => question.meta?.sourceSessionId === sourceSessionId);
+			if (sourceSessionId === "time") return selectTimeReview(sourceBank, Math.ceil(questionCount / bossBlock.sessions.length));
 			return sourceSessionId === "comparison" ? selectComparisonReview(sourceBank, Math.ceil(questionCount / bossBlock.sessions.length)) : shuffled(sourceBank);
 		})
 		.filter((bucket) => bucket.length);
@@ -7358,6 +7379,7 @@ function buildBossBlockGrammarQueue(sessionId, bank, questionCount = 25) {
 
 function buildFocusedGrammarQueue(sessionId, bank, focus, questionCount) {
 	if (sessionId === "comparison") return selectComparisonReview(bank, questionCount);
+	if (sessionId === "time") return selectTimeReview(bank, questionCount);
 	if (focus === "review") {
 		const targets = bank.filter((question) => (
 			question.meta?.difficulty !== "core" ||
@@ -7411,6 +7433,10 @@ function startGrammarPractice(sessionId = "comparison", questionCount = Number(g
 	if (comparisonKeys.length) {
 		try { localStorage.setItem("comparison-review-history-v2", JSON.stringify([...comparisonReviewHistory(), ...comparisonKeys].slice(-100))); } catch { /* Practice also works when browser storage is unavailable. */ }
 	}
+	const timeKeys = gpState.queue.filter((q) => q.meta?.engine === TimePractice.version).map((q) => q.meta.familyKey);
+	if (timeKeys.length) {
+		try { localStorage.setItem("time-review-history-v1", JSON.stringify([...timeReviewHistory(), ...timeKeys].slice(-100))); } catch { /* Freshness history is optional, not adaptive grading. */ }
+	}
 	gpState.index = 0;
 	gpState.correct = 0;
 	gpState.missed = [];
@@ -7438,7 +7464,7 @@ function showGrammarPracticeQuestion() {
 	gpEls.session.scrollTop = 0;
 	gpEls.hero.className = "gp-hero";
 	gpEls.hero.classList.toggle("is-ordering", question.kind === "sentence ordering");
-	gpEls.hero.classList.toggle("is-comparison", question.meta?.engine === ComparisonPractice.version);
+	gpEls.hero.classList.toggle("is-contextual", Boolean(generatedGrammarEngine(question)));
 	gpEls.type.textContent = `${gpState.sessionLabel || "GRAMMAR PRACTICE"} · ${question.kind}`;
 	gpEls.prompt.innerHTML = renderJapaneseTextWithFurigana(question.prompt);
 	gpEls.subprompt.innerHTML = renderJapaneseTextWithFurigana(question.subprompt);
@@ -7488,6 +7514,11 @@ function showGrammarPracticeQuestion() {
 
 function findGrammarRetryCandidate(question) {
 	if (!question?.meta || !gpState.bank?.length) return null;
+	if (question.meta.engine === TimePractice.version) {
+		const used = new Set(gpState.queue.filter((q) => q.meta?.engine === TimePractice.version).map((q) => q.meta.familyKey));
+		const candidates = gpState.bank.filter((q) => q.meta?.engine === TimePractice.version && q.meta.task === question.meta.task && !used.has(q.meta.familyKey));
+		return TimePractice.selectQueue(candidates, 1, { recent: timeReviewHistory() })[0] || null;
+	}
 	if (question.meta.engine === ComparisonPractice.version) {
 		const used = new Set(gpState.queue.filter((q) => q.meta?.engine === ComparisonPractice.version).map((q) => q.meta.familyKey));
 		return gpState.bank.find((q) => q.meta?.engine === ComparisonPractice.version && q.meta.task === question.meta.task && !used.has(q.meta.familyKey)) || null;
@@ -7551,7 +7582,7 @@ function answerGrammarPractice(value) {
 	gpState.answered = true;
 	const normalized = normalizeJapaneseAnswer(value);
 	const accepted = question.accepted || [question.answer];
-	const grading = question.meta?.engine === ComparisonPractice.version ? getComparisonPracticeEngine().grade(question, value) : null;
+	const grading = generatedGrammarEngine(question)?.grade(question, value) || null;
 	const isCorrect = grading ? grading.correct : accepted.some((answer) => normalized === normalizeJapaneseAnswer(answer));
 	if (isCorrect) gpState.correct += 1;
 	else gpState.missed.push(question);

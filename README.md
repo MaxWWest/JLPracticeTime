@@ -35,3 +35,9 @@ Chromium; `COMPARISON_TEST_URL` can point the browser checks at a deployed site.
 
 See [COMPARISON_DESIGN.md](COMPARISON_DESIGN.md) for the comparison generator's
 teaching rules, architecture, and extension checklist.
+
+Run `node --test time-practice.test.js` for the Time unit's temporal reasoning,
+grading, semantic constraints, diversity, and routing checks. The browser harness
+also supports `GRAMMAR_TEST_UNIT=time node comparison-browser-test.js` and an
+optional `GRAMMAR_TEST_URL` for deployment checks. See [TIME_DESIGN.md](TIME_DESIGN.md)
+for this unit's grammar rules and extension requirements.
