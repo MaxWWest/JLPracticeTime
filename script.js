@@ -5311,17 +5311,17 @@ const comparisonActionPreferencePatterns = [
 
 const comparisonActionPreferenceQuestionSurfaces = [
 	{
-		id: "fill-adjective",
+		id: "complete-hou-side",
 		build(item) {
 			return makeTextQuestion({
-				kind: "generated action preference · context blank",
-				prompt: `理由: ${item.reason}。\n${item.baseAction}より${item.preferredAction}ほうが＿＿＿＿です。`,
+				kind: "generated action preference · comparison chunk blank",
+				prompt: `理由: ${item.reason}。\n${item.baseAction}より＿＿＿＿。`,
 				subprompt: item.meaning,
-				band: "Type the adjective that fits the context.",
-				answer: item.adjective,
-				accepted: comparisonAnswerVariants(item.adjective),
+				band: "Complete the のほうが side of the comparison.",
+				answer: `${item.preferredAction}ほうが${item.adjective}です。`,
+				accepted: comparisonAnswerVariants(`${item.preferredAction}ほうが${item.adjective}です。`),
 				explanation: `${item.reason} makes ${item.preferredAction} the better side for ${item.adjective}: ${comparisonActionPreferenceForms(item).yoriHou}`,
-				placeholder: item.adjective
+				placeholder: `${item.preferredAction}ほうが${item.adjective}です。`
 			});
 		}
 	},
@@ -5718,17 +5718,17 @@ const comparisonBecauseQuestionSurfaces = [
 		}
 	},
 	{
-		id: "fill-adjective",
+		id: "complete-hou-reason",
 		build(item) {
 			return makeTextQuestion({
-				kind: "generated because comparison · adjective blank",
-				prompt: `${item.greater}は${item.lesser}より＿＿＿＿ですから、今日は${item.greater}にします。`,
+				kind: "generated because comparison · comparison chunk blank",
+				prompt: `今日は${item.greater}にします。\n理由: ${item.lesser}より＿＿＿＿。`,
 				subprompt: item.meaning,
-				band: "Type the adjective.",
-				answer: item.adj,
-				accepted: comparisonAnswerVariants(item.adj),
-				explanation: `${item.adj} is the quality that explains choosing ${item.greater}.`,
-				placeholder: item.adj
+				band: "Complete the のほうが reason.",
+				answer: `${item.greater}のほうが${item.adj}です。`,
+				accepted: comparisonAnswerVariants(`${item.greater}のほうが${item.adj}です。`),
+				explanation: `${item.greater} is the stronger side, so it takes のほうが: ${item.lesser}より${item.greater}のほうが${item.adj}です。`,
+				placeholder: `${item.greater}のほうが${item.adj}です。`
 			});
 		}
 	}
