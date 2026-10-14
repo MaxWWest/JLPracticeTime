@@ -327,7 +327,7 @@ function auditHardPracticeQueues(api, sessionBanks, findings) {
 
 function buildSessionBanks(api, requestedSessionIds) {
 	const allSessionIds = Object.keys(api.grammarPracticeSessions)
-		.filter((id) => !id.startsWith("family-") && !["adaptive-review", "mixed-boss", "mock-test"].includes(id))
+		.filter((id) => !id.startsWith("family-") && !["mixed-boss", "mock-test"].includes(id))
 		.slice(0, coreSessionLimit);
 	const sessionIds = requestedSessionIds.length ? requestedSessionIds : allSessionIds;
 	return sessionIds.map((sessionId) => {

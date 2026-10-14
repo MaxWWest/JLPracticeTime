@@ -4466,23 +4466,7 @@ function renderGrammarPracticeRuleNotes(sessionId) {
 					<ul>
 						<li>Find the grammar job first: viewpoint, evidence, condition, purpose, or speaker intent.</li>
 						<li>Do not choose a pattern just because it is grammatical; choose the one that matches the situation.</li>
-						<li>${isMock ? "Missed items are saved into Adaptive Review after the test." : "Expect nearby patterns from different sessions to appear in the same passage."}</li>
-					</ul>
-				</div>
-			`;
-		}
-		if (sessionId === "adaptive-review") {
-			return `
-				<div class="gp-note-head">
-					<span>Adaptive review</span>
-					<h5>Missed-pattern review</h5>
-					<p>This round pulls from grammar questions missed in earlier sessions. If there are no saved misses yet, it starts with core mixed review.</p>
-				</div>
-				<div class="gp-note-pitfalls">
-					<strong>What to watch</strong>
-					<ul>
-						<li>Do not memorize only the answer; reread the cue that made the other options wrong.</li>
-						<li>Misses from the same family can also reappear inside normal sessions as warm-up review.</li>
+						<li>${isMock ? "Answer feedback is held until the test is complete." : "Expect nearby patterns from different sessions to appear in the same passage."}</li>
 					</ul>
 				</div>
 			`;
@@ -6870,7 +6854,6 @@ function inferGrammarPracticeDifficulty(question, sessionId) {
 function inferGrammarPracticePattern(question, metadata) {
 	const text = `${question.kind || ""} ${question.prompt || ""} ${question.subprompt || ""} ${question.answer || ""}`;
 	const cleanKind = String(question.kind || "")
-		.replace(/^adaptive review ·\s*/i, "")
 		.replace(/^MIXED · [^·]+ ·\s*/i, "")
 		.split("·")[0]
 		.trim();
@@ -6910,149 +6893,9 @@ function normalizeGrammarPracticeBank(bank, sessionId, extra = {}) {
 	return bank.map((question) => withGrammarPracticeMetadata(question, sessionId, extra));
 }
 
-const grammarMissedStorageKey = "kotoba-grammar-missed-v1";
-
-function getStoredGrammarMisses() {
-	try {
-		const parsed = JSON.parse(localStorage.getItem(grammarMissedStorageKey) || "[]");
-		return Array.isArray(parsed) ? parsed : [];
-	} catch {
-		return [];
-	}
-}
-
-function storeGrammarMisses(misses) {
-	try {
-		localStorage.setItem(grammarMissedStorageKey, JSON.stringify(misses.slice(0, 100)));
-	} catch {
-		// Practice still works if storage is unavailable.
-	}
-}
-
-function normalizeGrammarMemorySessionId(sessionId) {
-	const normalized = String(sessionId || "").trim().toLowerCase();
-	if (["1", "01", "session-1", "session-01", "grammar-1", "grammar-01"].includes(normalized)) return "comparison";
-	return normalized;
-}
-
-function resetStoredGrammarMissesForSession(sessionId) {
-	const targetSessionId = normalizeGrammarMemorySessionId(sessionId);
-	if (!targetSessionId) return 0;
-	const stored = getStoredGrammarMisses();
-	const kept = stored.filter((question) => {
-		const primarySessionId = normalizeGrammarMemorySessionId(question.sessionId);
-		const sourceSessionId = normalizeGrammarMemorySessionId(question.meta?.sourceSessionId);
-		return primarySessionId !== targetSessionId && sourceSessionId !== targetSessionId;
-	});
-	storeGrammarMisses(kept);
-	return stored.length - kept.length;
-}
-
-function applyGrammarMemoryResetFromUrl() {
-	const SearchParams = window.URLSearchParams || (typeof URLSearchParams === "function" ? URLSearchParams : null);
-	if (!SearchParams || !window.location?.search) return;
-	const params = new SearchParams(window.location.search);
-	const requestedSessionId = params.get("resetGrammarMemory") || params.get("resetGrammarSession");
-	if (!requestedSessionId) return;
-	const removed = resetStoredGrammarMissesForSession(requestedSessionId);
-	try {
-		sessionStorage.setItem("kotoba-grammar-reset-result", JSON.stringify({
-			sessionId: normalizeGrammarMemorySessionId(requestedSessionId),
-			removed
-		}));
-	} catch {
-		// The reset itself already ran; storing the confirmation is optional.
-	}
-	params.delete("resetGrammarMemory");
-	params.delete("resetGrammarSession");
-	const query = params.toString();
-	window.history?.replaceState?.(null, "", `${window.location.pathname}${query ? `?${query}` : ""}${window.location.hash}`);
-}
-
-window.resetGrammarMemoryForSession = resetStoredGrammarMissesForSession;
-applyGrammarMemoryResetFromUrl();
-
-function serializableGrammarQuestion(question, sessionId) {
-	const enriched = withGrammarPracticeMetadata(question, sessionId);
-	return {
-		sessionId,
-		kind: enriched.kind,
-		mode: enriched.mode,
-		prompt: enriched.prompt,
-		subprompt: enriched.subprompt,
-		band: enriched.band,
-		options: enriched.options,
-		answer: enriched.answer,
-		accepted: enriched.accepted,
-		explanation: enriched.explanation,
-		placeholder: enriched.placeholder,
-		meta: enriched.meta,
-		missedAt: Date.now()
-	};
-}
-
-function hydrateStoredGrammarQuestion(question) {
-	if (!question || !question.prompt) return null;
-	const sessionId = question.sessionId || question.meta?.sourceSessionId || "comparison";
-	const refreshedQuestion = refreshGrammarTrapDiagnosisQuestion(question, sessionId);
-	return withGrammarPracticeMetadata(refreshedQuestion, sessionId, {
-		sourceSessionId: question.meta?.sourceSessionId || sessionId,
-		familyId: question.meta?.familyId,
-		familyLabel: question.meta?.familyLabel,
-		pattern: question.meta?.pattern,
-		pitfall: question.meta?.pitfall,
-		difficulty: question.meta?.difficulty,
-		format: question.meta?.format
-	});
-}
-
-function countGrammarWeaknesses(stored, selector) {
-	const map = new Map();
-	stored.forEach((question) => {
-		const id = selector(question);
-		if (!id) return;
-		const current = map.get(id) || { id, label: id, count: 0, recent: 0 };
-		current.count += 1;
-		current.recent = Math.max(current.recent, question.missedAt || 0);
-		if (question.meta?.familyLabel && id === question.meta.familyId) current.label = question.meta.familyLabel.replace(/^MIXED ·\s*/, "");
-		if (question.meta?.pattern && id === question.meta.pattern) current.label = question.meta.pattern;
-		map.set(id, current);
-	});
-	return [...map.values()].sort((a, b) => (b.count - a.count) || (b.recent - a.recent));
-}
-
-function getGrammarWeaknessSummary(stored = getStoredGrammarMisses().map(hydrateStoredGrammarQuestion).filter(Boolean)) {
-	return {
-		families: countGrammarWeaknesses(stored, (question) => question.meta?.familyId),
-		patterns: countGrammarWeaknesses(stored, (question) => question.meta?.pattern),
-		pitfalls: countGrammarWeaknesses(stored, (question) => question.meta?.pitfall)
-	};
-}
-
-function scoreStoredGrammarMiss(question, weakestFamilies = [], weakestPatterns = []) {
-	const ageHours = question.missedAt ? (Date.now() - question.missedAt) / 36e5 : 999;
-	const recencyScore = Math.max(0, 20 - Math.min(20, ageHours / 12));
-	const familyScore = weakestFamilies.includes(question.meta?.familyId) ? 16 : 0;
-	const patternScore = weakestPatterns.includes(question.meta?.pattern) ? 14 : 0;
-	const difficultyScore = question.meta?.difficulty === "boss" ? 10 : question.meta?.difficulty === "hard" ? 7 : question.meta?.difficulty === "medium" ? 4 : 1;
-	return recencyScore + familyScore + patternScore + difficultyScore;
-}
-
 function renderGrammarReviewSummary() {
 	if (!gpEls["review-summary"]) return;
-	const stored = getStoredGrammarMisses().map(hydrateStoredGrammarQuestion).filter(Boolean);
-	if (!stored.length) {
-		gpEls["review-summary"].innerHTML = "<strong>Adaptive Review:</strong> no saved misses yet, so the review round starts with core mixed N4 control.";
-		return;
-	}
-	const summary = getGrammarWeaknessSummary(stored);
-	const families = summary.families.slice(0, 3).map((item) => `<span>${escapeHtml(item.label)} · ${item.count}</span>`).join("");
-	const patterns = summary.patterns.slice(0, 3).map((item) => `<span>${escapeHtml(item.label)} · ${item.count}</span>`).join("");
-	gpEls["review-summary"].innerHTML = `<strong>Targeting ${stored.length} saved miss${stored.length === 1 ? "" : "es"}:</strong> ${families}${patterns}`;
-}
-
-function getGrammarSessionMissCount(sessionId, stored = getStoredGrammarMisses().map(hydrateStoredGrammarQuestion).filter(Boolean)) {
-	return stored.filter((question) => question.sessionId === sessionId || question.meta?.sourceSessionId === sessionId).length;
+	gpEls["review-summary"].innerHTML = "<strong>Review:</strong> choose one grammar pattern at a time. <span>25 sessions</span><span>no adaptive mixing</span>";
 }
 
 function updateGrammarPracticeCardActions() {
@@ -7074,7 +6917,6 @@ function updateGrammarPracticeCardActions() {
 }
 
 function hydrateGrammarPracticeCards() {
-	const stored = getStoredGrammarMisses().map(hydrateStoredGrammarQuestion).filter(Boolean);
 	document.querySelectorAll("[data-gp-session-card]").forEach((card) => {
 		const sessionId = card.dataset.gpSessionCard;
 		if (!sessionId || card.dataset.gpHydrated === "true") return;
@@ -7083,7 +6925,6 @@ function hydrateGrammarPracticeCards() {
 		const controls = card.querySelector(".gp-session-controls");
 		const startButton = controls?.querySelector("[data-gp-start]");
 		const metadata = getGrammarPracticeSessionMetadata(sessionId);
-		const missCount = getGrammarSessionMissCount(sessionId, stored);
 		if (content) {
 			const chips = document.createElement("div");
 			chips.className = "gp-session-meta";
@@ -7094,7 +6935,7 @@ function hydrateGrammarPracticeCards() {
 				`<span>${escapeHtml(cardType)}</span>`,
 				`<span>${escapeHtml(familyLabel)}</span>`,
 				`<span>${patternCount} pattern${patternCount === 1 ? "" : "s"}</span>`,
-				missCount ? `<span class="is-hot">${missCount} saved miss${missCount === 1 ? "" : "es"}</span>` : `<span>ready</span>`
+				`<span>ready</span>`
 			].join("");
 			content.append(chips);
 		}
@@ -7117,52 +6958,6 @@ function hydrateGrammarPracticeCards() {
 		controls.append(actionRow);
 	});
 	updateGrammarPracticeCardActions();
-}
-
-function recordGrammarPracticeMisses(sessionId, questions) {
-	if (!questions.length || sessionId === "adaptive-review") return;
-	const stored = getStoredGrammarMisses();
-	const next = [...questions.map((question) => serializableGrammarQuestion(question, sessionId)), ...stored];
-	const seen = new Set();
-	storeGrammarMisses(next.filter((question) => {
-		const key = `${question.sessionId}|${question.prompt}|${question.answer}`;
-		if (seen.has(key)) return false;
-		seen.add(key);
-		return true;
-	}));
-}
-
-function getAdaptiveGrammarPracticeQuestions(sessionId, limit = 6) {
-	const stored = getStoredGrammarMisses().map(hydrateStoredGrammarQuestion).filter(Boolean);
-	const family = Object.values(grammarPracticeFamilyConfigs).find((config) => config.sessions.includes(sessionId));
-	const priority = stored.filter((question) => question.sessionId === sessionId);
-	const related = family ? stored.filter((question) => family.sessions.includes(question.sessionId) && question.sessionId !== sessionId) : [];
-	return [...priority, ...related]
-		.slice(0, limit)
-		.map((question) => withGrammarPracticeMetadata({ ...question, kind: `adaptive review · ${question.kind}` }, sessionId));
-}
-
-function buildAdaptiveGrammarPracticeBank() {
-	const stored = getStoredGrammarMisses().map(hydrateStoredGrammarQuestion).filter(Boolean);
-	if (stored.length) {
-		const weakness = getGrammarWeaknessSummary(stored);
-		const weakestFamilies = weakness.families.slice(0, 2).map((item) => item.id);
-		const weakestPatterns = weakness.patterns.slice(0, 4).map((item) => item.id);
-		const prioritizedMisses = [...stored].sort((a, b) => scoreStoredGrammarMiss(b, weakestFamilies, weakestPatterns) - scoreStoredGrammarMiss(a, weakestFamilies, weakestPatterns));
-		const related = weakestFamilies.flatMap((familyId) => buildGrammarFamilyPracticeBank(familyId))
-			.filter((question) => weakestPatterns.includes(question.meta?.pattern) || weakestFamilies.includes(question.meta?.familyId));
-		const seen = new Set();
-		return [...prioritizedMisses, ...related]
-			.filter((question) => {
-				const key = `${question.prompt}|${question.answer}`;
-				if (seen.has(key)) return false;
-				seen.add(key);
-				return true;
-			})
-			.slice(0, 80)
-			.map((question) => withGrammarPracticeMetadata({ ...question, kind: `adaptive review · ${question.kind}` }, question.meta?.sourceSessionId || question.sessionId || "adaptive-review"));
-	}
-	return buildGrammarFamilyPracticeBank("family-core");
 }
 
 function buildGrammarFamilyPracticeBank(familyId) {
@@ -7512,11 +7307,6 @@ const grammarPracticeSessions = {
 		label: config.label,
 		buildBank: () => buildGrammarFamilyPracticeBank(id)
 	}])),
-	"adaptive-review": {
-		title: "Adaptive Review · Missed grammar",
-		label: "ADAPTIVE · MISSED",
-		buildBank: buildAdaptiveGrammarPracticeBank
-	},
 	"mixed-boss": {
 		title: "Mixed Boss · Cross-family challenge",
 		label: "MIXED · BOSS",
@@ -7599,10 +7389,7 @@ function startGrammarPractice(sessionId = "comparison", questionCount = Number(g
 	if (focusedQueue) {
 		gpState.queue = focusedQueue.slice(0, Math.min(questionCount, focusedQueue.length));
 	} else {
-		const adaptiveReview = sessionId === "adaptive-review" ? getAdaptiveGrammarPracticeQuestions(sessionId) : [];
-		const adaptiveKeys = new Set(adaptiveReview.map((question) => `${question.prompt}|${question.answer}`));
-		const baseQueue = shuffled(gpState.bank.filter((question) => !adaptiveKeys.has(`${question.prompt}|${question.answer}`)));
-		gpState.queue = [...adaptiveReview, ...baseQueue].slice(0, Math.min(questionCount, gpState.bank.length + adaptiveReview.length));
+		gpState.queue = shuffled(gpState.bank).slice(0, Math.min(questionCount, gpState.bank.length));
 	}
 	gpState.index = 0;
 	gpState.correct = 0;
@@ -7866,10 +7653,6 @@ function finishGrammarPractice() {
 	const answered = Math.min(gpState.responses?.length || gpState.index + (gpState.answered ? 1 : 0), gpState.queue.length);
 	const total = answered || gpState.queue.length;
 	const accuracy = total ? Math.round((gpState.correct / total) * 100) : 0;
-	if (!gpState.recorded) {
-		recordGrammarPracticeMisses(gpState.sessionId, gpState.missed);
-		gpState.recorded = true;
-	}
 	renderGrammarReviewSummary();
 	gpEls.session.hidden = true;
 	gpEls.complete.hidden = false;
