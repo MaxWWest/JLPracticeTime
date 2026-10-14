@@ -5443,11 +5443,385 @@ const comparisonActionPreferenceQuestionSurfaces = [
 	}
 ];
 
+function comparisonGeneratedScenarioCandidates({ tags, limit = 24, predicate } = {}) {
+	const tagSet = tags ? new Set(tags) : null;
+	const seen = new Set();
+	const candidates = [];
+	for (const sourceItem of comparisonScenarios) {
+		const item = comparisonDisplayItem(sourceItem);
+		if (tagSet && !(sourceItem.tags || []).some((tag) => tagSet.has(tag))) continue;
+		if (predicate && !predicate(sourceItem, item)) continue;
+		const key = `${item.lesser}|${item.greater}|${item.adj}`;
+		if (seen.has(key)) continue;
+		seen.add(key);
+		candidates.push({ ...sourceItem, ...item });
+		if (candidates.length >= limit) break;
+	}
+	return candidates;
+}
+
+function comparisonContextForms(item) {
+	return comparisonSentences(item);
+}
+
+function comparisonContextEnglish(item) {
+	return sentenceCase(`${item.greaterEn} is ${item.comparative} than ${item.lesserEn}.`);
+}
+
+function comparisonQuestionOptions(item) {
+	const forms = comparisonContextForms(item);
+	const reverseForms = comparisonSentences(comparisonReverseItem(item));
+	return { forms, reverseForms };
+}
+
+function buildComparisonObservationScenarios(limit = 18) {
+	return comparisonGeneratedScenarioCandidates({
+		tags: ["buildings", "places", "rooms", "transport", "food", "objects", "clothing", "nature", "study"],
+		limit
+	}).map((item) => ({
+		...item,
+		context: `昨日、${item.lesser}と${item.greater}を比べました。${item.lesser}も${item.adj}ですが、${item.greater}のほうがもっと${item.adj}です。`,
+		meaning: comparisonContextEnglish(item)
+	}));
+}
+
+const comparisonObservationQuestionSurfaces = [
+	{
+		id: "same-meaning-yori",
+		build(item) {
+			const { forms, reverseForms } = comparisonQuestionOptions(item);
+			return makeChoiceQuestion({
+				kind: "generated observation comparison · equivalent より",
+				prompt: item.context,
+				subprompt: "Which sentence says the same comparison?",
+				band: "Choose the より sentence.",
+				answer: forms.yori,
+				options: [forms.yori, reverseForms.yori, reverseForms.hodo, forms.question],
+				explanation: `${item.greater}のほうがもっと${item.adj} means ${forms.yori}`
+			});
+		}
+	},
+	{
+		id: "rewrite-hou",
+		build(item) {
+			const forms = comparisonContextForms(item);
+			return makeTextQuestion({
+				kind: "generated observation comparison · rewrite のほう",
+				prompt: `${item.context}\n${forms.yori}`,
+				subprompt: "Rewrite the last sentence with より...のほうが.",
+				band: "Type the full Japanese sentence.",
+				answer: forms.hou,
+				accepted: comparisonHouAnswers(item),
+				explanation: `The stronger side is ${item.greater}, so it can be placed before のほうが: ${forms.hou}`,
+				placeholder: forms.hou
+			});
+		}
+	},
+	{
+		id: "meaning-check",
+		build(item) {
+			const forms = comparisonContextForms(item);
+			return makeChoiceQuestion({
+				kind: "generated observation comparison · meaning check",
+				prompt: forms.hou,
+				subprompt: "Which item has more of the quality?",
+				band: "Track which side のほうが marks.",
+				answer: item.greater,
+				options: uniqueGrammarOptions([item.greater, item.lesser, item.adj, "どちらも同じです"], [item.greater]),
+				explanation: `のほうが marks the stronger side here: ${item.greater}.`
+			});
+		}
+	}
+];
+
+function comparisonConditionForItem(item, index) {
+	const tags = item.tags || [];
+	if (tags.includes("transport")) return index % 2 ? "急いでいるときは" : "旅行に行くなら";
+	if (tags.includes("food")) return index % 2 ? "昼ご飯を選ぶなら" : "暑い日は";
+	if (tags.includes("study")) return index % 2 ? "試験の前なら" : "一人で勉強するときは";
+	if (tags.includes("objects")) return index % 2 ? "毎日使うなら" : "かばんに入れるなら";
+	if (tags.includes("rooms") || tags.includes("buildings") || tags.includes("places")) return index % 2 ? "友だちと行くなら" : "静かに勉強したいなら";
+	return "比べるなら";
+}
+
+function buildComparisonConditionScenarios(limit = 18) {
+	return comparisonGeneratedScenarioCandidates({ limit }).map((item, index) => ({
+		...item,
+		condition: comparisonConditionForItem(item, index),
+		context: `${comparisonConditionForItem(item, index)}、${item.lesser}より${item.greater}のほうが${item.adj}です。`,
+		meaning: `${comparisonConditionForItem(item, index)}, ${item.greaterEn} is ${item.comparative} than ${item.lesserEn}.`
+	}));
+}
+
+const comparisonConditionQuestionSurfaces = [
+	{
+		id: "complete-stronger",
+		build(item) {
+			const forms = comparisonContextForms(item);
+			return makeTextQuestion({
+				kind: "generated condition comparison · contextual blank",
+				prompt: `${item.condition}、${item.lesser}より＿＿＿＿。`,
+				subprompt: item.meaning,
+				band: "Complete the comparison.",
+				answer: `${item.greater}のほうが${item.adj}です。`,
+				accepted: comparisonAnswerVariants(`${item.greater}のほうが${item.adj}です。`),
+				explanation: `${item.lesser} is the base after より; ${item.greater} takes のほうが: ${forms.hou}`,
+				placeholder: `${item.greater}のほうが${item.adj}です。`
+			});
+		}
+	},
+	{
+		id: "rewrite-hodo",
+		build(item) {
+			const forms = comparisonContextForms(item);
+			return makeTextQuestion({
+				kind: "generated condition comparison · hodo rewrite",
+				prompt: `${item.condition}、${forms.hou}`,
+				subprompt: "Rewrite the comparison with ほど...ありません.",
+				band: "Type the full Japanese sentence.",
+				answer: forms.hodo,
+				accepted: comparisonHodoAnswers(item),
+				explanation: `${forms.hodo} keeps ${item.greater} as the stronger benchmark.`,
+				placeholder: forms.hodo
+			});
+		}
+	},
+	{
+		id: "choose-equivalent",
+		build(item) {
+			const { forms, reverseForms } = comparisonQuestionOptions(item);
+			return makeChoiceQuestion({
+				kind: "generated condition comparison · equivalent choice",
+				prompt: `${item.condition}、${forms.hodo}`,
+				subprompt: "Which sentence keeps the same meaning?",
+				band: "Match ほど...ありません to より.",
+				answer: forms.yori,
+				options: [forms.yori, reverseForms.yori, reverseForms.hou, `${item.lesser}は${item.greater}ほど${item.adj}です。`],
+				explanation: `${forms.hodo} means the same comparison as ${forms.yori}.`
+			});
+		}
+	}
+];
+
+function comparisonUseVerbForItem(item) {
+	const tags = item.tags || [];
+	if (tags.includes("transport")) return "使う";
+	if (tags.includes("food")) return "選ぶ";
+	if (tags.includes("study")) return "勉強する";
+	if (tags.includes("objects") || tags.includes("clothing")) return "使う";
+	return "選ぶ";
+}
+
+function buildComparisonChangeScenarios(limit = 18) {
+	return comparisonGeneratedScenarioCandidates({
+		tags: ["transport", "food", "study", "objects", "clothing"],
+		limit
+	}).map((item) => {
+		const verb = comparisonUseVerbForItem(item);
+		return {
+			...item,
+			verb,
+			context: `前は${item.lesser}を${verb}ことが多かったですが、最近は${item.greater}を${verb}ことが多いです。`,
+			meaning: `I used to use or choose ${item.lesserEn} more often, but recently ${item.greaterEn} is ${item.comparative}.`
+		};
+	});
+}
+
+const comparisonChangeQuestionSurfaces = [
+	{
+		id: "finish-yori",
+		build(item) {
+			const forms = comparisonContextForms(item);
+			return makeTextQuestion({
+				kind: "generated change comparison · finish より",
+				prompt: `${item.context}\n最近気づいたこと: ＿＿＿＿。`,
+				subprompt: item.meaning,
+				band: "Write a より comparison.",
+				answer: forms.yori,
+				accepted: comparisonAnswerVariants(forms.yori),
+				explanation: `The newer/common choice is the stronger side: ${forms.yori}`,
+				placeholder: forms.yori
+			});
+		}
+	},
+	{
+		id: "choose-hou",
+		build(item) {
+			const { forms, reverseForms } = comparisonQuestionOptions(item);
+			return makeChoiceQuestion({
+				kind: "generated change comparison · choose のほう",
+				prompt: item.context,
+				subprompt: `Say that ${item.greaterEn} is ${item.comparative}.`,
+				band: "Choose the natural のほうが sentence.",
+				answer: forms.hou,
+				options: [forms.hou, reverseForms.hou, reverseForms.hodo, forms.question],
+				explanation: `${item.greater} is the side with more of the quality, so ${forms.hou}`
+			});
+		}
+	},
+	{
+		id: "opposite-meaning",
+		build(item) {
+			const reverseForms = comparisonSentences(comparisonReverseItem(item));
+			return makeTextQuestion({
+				kind: "generated change comparison · opposite meaning",
+				prompt: `${item.context}\n反対の意味を より で書いてください: ＿＿＿＿。`,
+				subprompt: `Make it say ${item.lesserEn} is ${item.comparative}.`,
+				band: "Type the full Japanese sentence.",
+				answer: reverseForms.yori,
+				accepted: comparisonAnswerVariants(reverseForms.yori),
+				explanation: `To reverse the meaning, ${item.lesser} becomes the topic and ${item.greater} becomes the base: ${reverseForms.yori}`,
+				placeholder: reverseForms.yori
+			});
+		}
+	}
+];
+
+function buildComparisonBecauseScenarios(limit = 18) {
+	return comparisonGeneratedScenarioCandidates({ limit }).map((item) => ({
+		...item,
+		context: `${item.greater}は${item.lesser}より${item.adj}ですから、今日は${item.greater}にします。`,
+		meaning: `Because ${item.greaterEn} is ${item.comparative} than ${item.lesserEn}, I will go with ${item.greaterEn} today.`
+	}));
+}
+
+const comparisonBecauseQuestionSurfaces = [
+	{
+		id: "reason-to-hou",
+		build(item) {
+			const forms = comparisonContextForms(item);
+			return makeTextQuestion({
+				kind: "generated because comparison · rewrite のほう",
+				prompt: item.context,
+				subprompt: "Rewrite the comparison part with のほうが.",
+				band: "Type only the comparison sentence.",
+				answer: forms.hou,
+				accepted: comparisonHouAnswers(item),
+				explanation: `${forms.yori} can become ${forms.hou} without changing the meaning.`,
+				placeholder: forms.hou
+			});
+		}
+	},
+	{
+		id: "choose-reason",
+		build(item) {
+			const { forms, reverseForms } = comparisonQuestionOptions(item);
+			return makeChoiceQuestion({
+				kind: "generated because comparison · reason choice",
+				prompt: `今日は${item.greater}にします。`,
+				subprompt: `Choose a reason that means: ${item.meaning}`,
+				band: "Choose the sentence with the right direction.",
+				answer: forms.yori,
+				options: [forms.yori, reverseForms.yori, reverseForms.hodo, `${item.greater}は${item.lesser}ほど${item.neg}ありません。`],
+				explanation: `${forms.yori} gives the correct reason for choosing ${item.greater}.`
+			});
+		}
+	},
+	{
+		id: "fill-adjective",
+		build(item) {
+			return makeTextQuestion({
+				kind: "generated because comparison · adjective blank",
+				prompt: `${item.greater}は${item.lesser}より＿＿＿＿ですから、今日は${item.greater}にします。`,
+				subprompt: item.meaning,
+				band: "Type the adjective.",
+				answer: item.adj,
+				accepted: comparisonAnswerVariants(item.adj),
+				explanation: `${item.adj} is the quality that explains choosing ${item.greater}.`,
+				placeholder: item.adj
+			});
+		}
+	}
+];
+
+function buildComparisonDochiraScenarios(limit = 18) {
+	return comparisonGeneratedScenarioCandidates({
+		tags: ["transport", "food", "objects", "clothing", "study", "places", "rooms"],
+		limit
+	}).map((item) => ({
+		...item,
+		meaning: comparisonContextEnglish(item)
+	}));
+}
+
+const comparisonDochiraQuestionSurfaces = [
+	{
+		id: "adjective-response",
+		build(item) {
+			const { forms, reverseForms } = comparisonQuestionOptions(item);
+			return makeChoiceQuestion({
+				kind: "generated どちら comparison · adjective response",
+				prompt: forms.question,
+				subprompt: `Answer that ${item.greaterEn} is ${item.comparative}.`,
+				band: "Choose the natural short answer.",
+				answer: forms.response,
+				options: [forms.response, reverseForms.response, forms.hodo, `${item.lesser}より${item.greater}です。`],
+				explanation: `A どちらが question can be answered with the chosen side + のほうが: ${forms.response}`
+			});
+		}
+	},
+	{
+		id: "want-to-choose",
+		build(item) {
+			const forms = comparisonContextForms(item);
+			return makeChoiceQuestion({
+				kind: "generated どちら comparison · choice response",
+				prompt: forms.taiQuestion,
+				subprompt: `You want to choose ${item.greaterEn}.`,
+				band: "Use のほうを with 選びたい.",
+				answer: forms.taiAnswer,
+				options: [forms.taiAnswer, forms.response, forms.hoshiiAnswer, `${item.lesser}のほうを選びたいです。`],
+				explanation: `選びたい takes the chosen thing as an object, so のほうを is natural: ${forms.taiAnswer}`
+			});
+		}
+	},
+	{
+		id: "wanted-object",
+		build(item) {
+			const forms = comparisonContextForms(item);
+			return makeChoiceQuestion({
+				kind: "generated どちら comparison · ほしい response",
+				prompt: forms.hoshiiQuestion,
+				subprompt: `You want ${item.greaterEn}.`,
+				band: "Use のほうが with ほしい.",
+				answer: forms.hoshiiAnswer,
+				options: [forms.hoshiiAnswer, forms.taiAnswer, forms.response, `${item.lesser}のほうがほしいです。`],
+				explanation: `ほしい marks the wanted thing with が: ${forms.hoshiiAnswer}`
+			});
+		}
+	}
+];
+
 const comparisonGeneratedSentenceStructures = [
 	{
 		id: "action-preference",
 		buildSentenceUnits: buildComparisonActionPreferenceSentenceScenarios,
 		questionSurfaces: comparisonActionPreferenceQuestionSurfaces
+	},
+	{
+		id: "observation-comparison",
+		buildSentenceUnits: buildComparisonObservationScenarios,
+		questionSurfaces: comparisonObservationQuestionSurfaces
+	},
+	{
+		id: "condition-comparison",
+		buildSentenceUnits: buildComparisonConditionScenarios,
+		questionSurfaces: comparisonConditionQuestionSurfaces
+	},
+	{
+		id: "change-comparison",
+		buildSentenceUnits: buildComparisonChangeScenarios,
+		questionSurfaces: comparisonChangeQuestionSurfaces
+	},
+	{
+		id: "because-comparison",
+		buildSentenceUnits: buildComparisonBecauseScenarios,
+		questionSurfaces: comparisonBecauseQuestionSurfaces
+	},
+	{
+		id: "dochira-comparison",
+		buildSentenceUnits: buildComparisonDochiraScenarios,
+		questionSurfaces: comparisonDochiraQuestionSurfaces
 	}
 ];
 
