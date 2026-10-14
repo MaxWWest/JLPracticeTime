@@ -188,7 +188,7 @@ let conjugationQuestionNumber = 1;
 let conjugationStats = null;
 let activeConjugationConfig = null;
 const gpEls = Object.fromEntries(["setup", "count", "start", "status", "session", "session-notes", "session-note-panel", "home", "correct", "progress", "hero", "type", "prompt", "subprompt", "band", "body", "complete", "complete-title", "result", "final-accuracy", "final-correct", "final-bank", "missed", "again", "review-summary"].map((id) => [id, document.querySelector(`#gp-${id}`)]));
-const gpState = { bank: [], queue: [], index: 0, correct: 0, missed: [], answered: false, responses: [], isMockTest: false, roundKind: "easy" };
+const gpState = { bank: [], queue: [], index: 0, correct: 0, missed: [], answered: false, responses: [], isMockTest: false, roundKind: "review" };
 const furiganaStorageKey = "kotoba-show-furigana";
 let showFurigana = localStorage.getItem(furiganaStorageKey) !== "false";
 
@@ -4418,6 +4418,23 @@ const grammarPracticeRuleNotes = {
 function renderGrammarPracticeRuleNotes(sessionId) {
 	const note = grammarPracticeRuleNotes[sessionId];
 	if (!note) {
+		const bossBlock = typeof getGrammarBossBlockConfig !== "undefined" ? getGrammarBossBlockConfig(sessionId) : null;
+		if (bossBlock) {
+			const blockSessions = bossBlock.sessions.map((id) => grammarPracticeSessions[id]?.title || id);
+			return `
+				<div class="gp-note-head">
+					<span>${escapeHtml(bossBlock.label)}</span>
+					<h5>${escapeHtml(bossBlock.title)}</h5>
+					<p>${escapeHtml(bossBlock.description)}</p>
+				</div>
+				<div class="gp-note-pitfalls">
+					<strong>Patterns in this block</strong>
+					<ul>
+						${blockSessions.map((title) => `<li>${escapeHtml(title)}</li>`).join("")}
+					</ul>
+				</div>
+			`;
+		}
 		const family = typeof grammarPracticeFamilyConfigs !== "undefined" ? grammarPracticeFamilyConfigs[sessionId] : null;
 		if (family) {
 			return `
@@ -4521,8 +4538,8 @@ function toggleGrammarPracticeNotes(button) {
 	button.setAttribute("aria-expanded", String(willOpen));
 }
 
-function setGrammarPracticeMode(mode = "practice") {
-	const nextMode = ["practice", "boss"].includes(mode) ? mode : "practice";
+function setGrammarPracticeMode(mode = "review") {
+	const nextMode = ["review", "boss"].includes(mode) ? mode : "review";
 	gpEls.setup.dataset.gpMode = nextMode;
 	gpEls.setup.querySelectorAll("[data-gp-filter]").forEach((button) => {
 		const selected = button.dataset.gpFilter === nextMode;
@@ -4531,7 +4548,7 @@ function setGrammarPracticeMode(mode = "practice") {
 		button.tabIndex = selected ? 0 : -1;
 	});
 	updateGrammarPracticeCardActions();
-	if (nextMode === "practice") renderGrammarReviewSummary();
+	if (nextMode === "review") renderGrammarReviewSummary();
 }
 
 function makeGrammarOrderQuestion({ kind = "sentence ordering", prompt, fragments, answer, explanation }) {
@@ -6809,6 +6826,19 @@ function getGrammarPracticeFamilyForSession(sessionId) {
 
 function getGrammarPracticeSessionMetadata(sessionId) {
 	const extension = extensionGrammarPracticeConfigs.find((config) => config.id === sessionId);
+	const bossBlock = typeof getGrammarBossBlockConfig !== "undefined" ? getGrammarBossBlockConfig(sessionId) : null;
+	if (bossBlock) {
+		return {
+			familyId: bossBlock.id,
+			familyLabel: bossBlock.label,
+			patterns: bossBlock.sessions.flatMap((id) => {
+				const base = grammarPracticeBaseSessionMetadata[id]?.patterns;
+				const extensionConfig = extensionGrammarPracticeConfigs.find((config) => config.id === id);
+				return extensionConfig ? extensionConfig.patterns.map((pattern) => pattern.label) : (base || [id]);
+			}),
+			pitfalls: ["cross-pattern contrast", "mixed grammar cue", "nearby answer trap"]
+		};
+	}
 	const family = getGrammarPracticeFamilyForSession(sessionId);
 	return {
 		familyId: family.id,
@@ -7026,19 +7056,19 @@ function getGrammarSessionMissCount(sessionId, stored = getStoredGrammarMisses()
 }
 
 function updateGrammarPracticeCardActions() {
-	const mode = gpEls.setup?.dataset.gpMode || "practice";
+	const mode = gpEls.setup?.dataset.gpMode || "review";
 	document.querySelectorAll("[data-gp-session-card]").forEach((card) => {
 		const startButton = card.querySelector("[data-gp-start]");
 		if (!startButton) return;
 		const category = card.dataset.gpCategory;
-		if (category === "practice") {
-			startButton.innerHTML = mode === "boss" ? "Hard practice <span aria-hidden=\"true\">→</span>" : "Easy practice <span aria-hidden=\"true\">→</span>";
+		if (category === "review") {
+			startButton.innerHTML = "Review <span aria-hidden=\"true\">→</span>";
 		} else if (card.dataset.gpSessionCard === "mock-test") {
 			startButton.innerHTML = "Mock test <span aria-hidden=\"true\">→</span>";
 		} else if (category === "boss") {
-			startButton.innerHTML = "Hard round <span aria-hidden=\"true\">→</span>";
+			startButton.innerHTML = "Boss <span aria-hidden=\"true\">→</span>";
 		} else {
-			startButton.innerHTML = "Easy review <span aria-hidden=\"true\">→</span>";
+			startButton.innerHTML = "Review <span aria-hidden=\"true\">→</span>";
 		}
 	});
 }
@@ -7059,7 +7089,7 @@ function hydrateGrammarPracticeCards() {
 			chips.className = "gp-session-meta";
 			const familyLabel = metadata.familyLabel.replace(/^MIXED ·\s*/, "");
 			const patternCount = metadata.patterns.length;
-			const cardType = card.dataset.gpSessionCard === "mock-test" ? "Mock test" : card.dataset.gpCategory === "review" ? "Easy review" : card.dataset.gpCategory === "boss" ? "Hard challenge" : "Pattern";
+			const cardType = card.dataset.gpSessionCard === "mock-test" ? "Mock test" : card.dataset.gpCategory === "boss" ? "Boss block" : "Review";
 			chips.innerHTML = [
 				`<span>${escapeHtml(cardType)}</span>`,
 				`<span>${escapeHtml(familyLabel)}</span>`,
@@ -7073,12 +7103,13 @@ function hydrateGrammarPracticeCards() {
 		actionRow.className = "gp-action-row";
 		const noteButton = controls.querySelector("[data-gp-notes]");
 		startButton.classList.add("gp-card-action", "is-primary");
-		if (card.dataset.gpCategory === "practice") {
+		if (card.dataset.gpCategory === "review") {
+			startButton.innerHTML = "Review <span aria-hidden=\"true\">→</span>";
 			if (noteButton) actionRow.append(noteButton);
 			actionRow.append(startButton);
 		} else {
 			if (card.dataset.gpSessionCard === "mock-test") startButton.innerHTML = "Mock test <span aria-hidden=\"true\">→</span>";
-			else if (card.dataset.gpCategory === "boss") startButton.innerHTML = "Start <span aria-hidden=\"true\">→</span>";
+			else if (card.dataset.gpCategory === "boss") startButton.innerHTML = "Boss <span aria-hidden=\"true\">→</span>";
 			else startButton.innerHTML = "Review <span aria-hidden=\"true\">→</span>";
 			if (noteButton) actionRow.append(noteButton);
 			actionRow.append(startButton);
@@ -7328,6 +7359,92 @@ function buildAdvancedGrammarPracticeBank(sessionId, baseBank) {
 	}).map((question) => withGrammarPracticeMetadata(question, sessionId));
 }
 
+const grammarPracticeSessionOrder = [
+	"comparison",
+	"time",
+	"invitation",
+	"ability",
+	"experience",
+	"permission",
+	"desire",
+	"appearance",
+	"reason",
+	"purpose",
+	...extensionGrammarPracticeConfigs.map((config) => config.id)
+];
+
+const grammarPracticeBossBlockConfigs = [
+	{
+		id: "boss-01-05",
+		number: "01-05",
+		title: "Boss Block 01-05",
+		label: "BOSS · 01-05",
+		description: "Comparisons, time, invitations, ability, and experience.",
+		sessions: grammarPracticeSessionOrder.slice(0, 5)
+	},
+	{
+		id: "boss-06-10",
+		number: "06-10",
+		title: "Boss Block 06-10",
+		label: "BOSS · 06-10",
+		description: "Permission, desire, appearance, reasons, and purpose.",
+		sessions: grammarPracticeSessionOrder.slice(5, 10)
+	},
+	{
+		id: "boss-11-15",
+		number: "11-15",
+		title: "Boss Block 11-15",
+		label: "BOSS · 11-15",
+		description: "Listing, possibility, advice, conditionals, and たら／なら.",
+		sessions: grammarPracticeSessionOrder.slice(10, 15)
+	},
+	{
+		id: "boss-16-20",
+		number: "16-20",
+		title: "Boss Block 16-20",
+		label: "BOSS · 16-20",
+		description: "Concession, quotation, intention, hearsay, and change.",
+		sessions: grammarPracticeSessionOrder.slice(15, 20)
+	},
+	{
+		id: "boss-21-25",
+		number: "21-25",
+		title: "Boss Block 21-25",
+		label: "BOSS · 21-25",
+		description: "Decisions, て auxiliaries, giving and receiving, passive, and causative.",
+		sessions: grammarPracticeSessionOrder.slice(20, 25)
+	}
+];
+
+function getGrammarBossBlockConfig(sessionId) {
+	return grammarPracticeBossBlockConfigs.find((config) => config.id === sessionId) || null;
+}
+
+function buildGrammarBossBlockPracticeBank(config) {
+	const seen = new Set();
+	return config.sessions.flatMap((sourceSessionId) => {
+		const sourceSession = grammarPracticeSessions[sourceSessionId];
+		if (!sourceSession) return [];
+		return buildAdvancedGrammarPracticeBank(sourceSessionId, sourceSession.buildBank()).map((question) => {
+			const key = `${sourceSessionId}|${question.kind}|${question.prompt}|${question.subprompt}|${question.answer}`;
+			if (seen.has(key)) return null;
+			seen.add(key);
+			return withGrammarPracticeMetadata({
+				...question,
+				kind: `boss block · ${question.kind}`
+			}, config.id, {
+				sourceSessionId,
+				familyId: question.meta?.familyId,
+				familyLabel: question.meta?.familyLabel,
+				pattern: question.meta?.pattern,
+				pitfall: question.meta?.pitfall,
+				difficulty: question.meta?.difficulty === "core" ? "hard" : question.meta?.difficulty,
+				format: question.meta?.format
+			});
+		}).filter(Boolean);
+	});
+}
+
 const grammarPracticeSessions = {
 	comparison: {
 		title: "Session 01 · Comparison patterns",
@@ -7384,6 +7501,12 @@ const grammarPracticeSessions = {
 		label: `SESSION ${config.number} · ${config.label}`,
 		buildBank: () => buildExtensionGrammarPracticeBank(config)
 	}])),
+	...Object.fromEntries(grammarPracticeBossBlockConfigs.map((config) => [config.id, {
+		title: config.title,
+		label: config.label,
+		isBossBlock: true,
+		buildBank: () => buildGrammarBossBlockPracticeBank(config)
+	}])),
 	...Object.fromEntries(Object.entries(grammarPracticeFamilyConfigs).map(([id, config]) => [id, {
 		title: config.title,
 		label: config.label,
@@ -7408,7 +7531,24 @@ const grammarPracticeSessions = {
 
 function buildGrammarPracticeBank(sessionId = gpState.sessionId || "comparison") {
 	const session = grammarPracticeSessions[sessionId] || grammarPracticeSessions.comparison;
-	return buildAdvancedGrammarPracticeBank(sessionId, session.buildBank());
+	return session.isBossBlock ? session.buildBank() : buildAdvancedGrammarPracticeBank(sessionId, session.buildBank());
+}
+
+function buildBossBlockGrammarQueue(sessionId, bank) {
+	const bossBlock = getGrammarBossBlockConfig(sessionId);
+	if (!bossBlock) return shuffled(bank);
+	const buckets = bossBlock.sessions
+		.map((sourceSessionId) => shuffled(bank.filter((question) => question.meta?.sourceSessionId === sourceSessionId)))
+		.filter((bucket) => bucket.length);
+	const queue = [];
+	let cursor = 0;
+	while (buckets.some((bucket) => bucket.length > cursor)) {
+		buckets.forEach((bucket) => {
+			if (bucket[cursor]) queue.push(bucket[cursor]);
+		});
+		cursor += 1;
+	}
+	return queue;
 }
 
 function buildFocusedGrammarQueue(sessionId, bank, focus, questionCount) {
@@ -7423,6 +7563,7 @@ function buildFocusedGrammarQueue(sessionId, bank, focus, questionCount) {
 		return [...adaptiveReview, ...shuffled(targets)];
 	}
 	if (focus === "boss") {
+		if (getGrammarBossBlockConfig(sessionId)) return buildBossBlockGrammarQueue(sessionId, bank);
 		const directBoss = normalizeGrammarPracticeBank([
 			...(sessionId === "comparison" ? [] : (grammarSessionBossPacks[sessionId] || [])),
 			...(sessionId === "comparison" ? [] : (grammarReadingIntegrationPacks[sessionId] || [])),
@@ -7448,19 +7589,20 @@ function buildFocusedGrammarQueue(sessionId, bank, focus, questionCount) {
 
 function startGrammarPractice(sessionId = "comparison", questionCount = Number(gpEls.count.value), options = {}) {
 	const session = grammarPracticeSessions[sessionId] || grammarPracticeSessions.comparison;
-	const isReviewRound = options.focus === "review" || sessionId === "adaptive-review" || sessionId.startsWith("family-");
-	const isHardRound = options.focus === "boss" || sessionId === "mixed-boss" || sessionId === "mock-test";
+	const isBossBlock = Boolean(getGrammarBossBlockConfig(sessionId));
+	const isReviewRound = options.focus === "review" || (!isBossBlock && !["mixed-boss", "mock-test"].includes(sessionId));
+	const isBossRound = options.focus === "boss" || isBossBlock || sessionId === "mixed-boss" || sessionId === "mock-test";
 	gpState.sessionId = sessionId;
-	gpState.sessionTitle = options.focus === "review" ? `${session.title} · Targeted review` : options.focus === "boss" ? `${session.title} · Boss round` : session.title;
-	gpState.sessionLabel = options.focus === "review" ? `REVIEW · ${session.label.replace(/^SESSION \d+ ·\s*/, "")}` : options.focus === "boss" ? `BOSS · ${session.label.replace(/^SESSION \d+ ·\s*/, "")}` : session.label;
-	gpState.bank = buildAdvancedGrammarPracticeBank(sessionId, session.buildBank());
 	gpState.isMockTest = sessionId === "mock-test";
-	gpState.roundKind = gpState.isMockTest ? "mock" : isHardRound ? "hard" : isReviewRound ? "review" : "easy";
+	gpState.sessionTitle = gpState.isMockTest ? session.title : isBossRound ? `${session.title} · Boss round` : `${session.title} · Review`;
+	gpState.sessionLabel = isBossRound ? `BOSS · ${session.label.replace(/^SESSION \d+ ·\s*/, "").replace(/^BOSS ·\s*/, "")}` : `REVIEW · ${session.label.replace(/^SESSION \d+ ·\s*/, "")}`;
+	gpState.bank = buildGrammarPracticeBank(sessionId);
+	gpState.roundKind = gpState.isMockTest ? "mock" : isBossRound ? "boss" : isReviewRound ? "review" : "review";
 	const focusedQueue = buildFocusedGrammarQueue(sessionId, gpState.bank, options.focus, questionCount);
 	if (focusedQueue) {
 		gpState.queue = focusedQueue.slice(0, Math.min(questionCount, focusedQueue.length));
 	} else {
-		const adaptiveReview = sessionId.startsWith("family-") || sessionId === "adaptive-review" || sessionId === "mixed-boss" || sessionId === "mock-test" ? [] : getAdaptiveGrammarPracticeQuestions(sessionId);
+		const adaptiveReview = session.isBossBlock || sessionId.startsWith("family-") || sessionId === "adaptive-review" || sessionId === "mixed-boss" || sessionId === "mock-test" ? [] : getAdaptiveGrammarPracticeQuestions(sessionId);
 		const adaptiveKeys = new Set(adaptiveReview.map((question) => `${question.prompt}|${question.answer}`));
 		const baseQueue = shuffled(gpState.bank.filter((question) => !adaptiveKeys.has(`${question.prompt}|${question.answer}`)));
 		gpState.queue = [...adaptiveReview, ...baseQueue].slice(0, Math.min(questionCount, gpState.bank.length + adaptiveReview.length));
@@ -7734,7 +7876,7 @@ function finishGrammarPractice() {
 	renderGrammarReviewSummary();
 	gpEls.session.hidden = true;
 	gpEls.complete.hidden = false;
-	const resultTitle = gpState.roundKind === "mock" ? "Mock test stats" : gpState.roundKind === "hard" ? "Hard practice stats" : gpState.roundKind === "review" ? "Review stats" : "Easy practice stats";
+	const resultTitle = gpState.roundKind === "mock" ? "Mock test stats" : gpState.roundKind === "boss" ? "Boss stats" : "Review stats";
 	if (gpEls["complete-title"]) gpEls["complete-title"].textContent = resultTitle;
 	gpEls.result.textContent = `${gpState.sessionTitle || "Grammar session"} · ${gpState.correct} of ${total} correct${gpState.isMockTest ? " · feedback held until completion" : ""}`;
 	gpEls["final-accuracy"].textContent = `${accuracy}%`;
@@ -8911,9 +9053,8 @@ gpEls.setup.addEventListener("click", (event) => {
 	if (!startButton) return;
 	const card = startButton.closest("[data-gp-session-card]");
 	const count = Number(card?.querySelector("select")?.value || gpEls.count.value);
-	const mode = gpEls.setup.dataset.gpMode || "practice";
-	const hardPatternCard = mode === "boss" && card?.dataset.gpCategory === "practice";
-	startGrammarPractice(startButton.dataset.gpStart, hardPatternCard ? Math.min(count, 25) : count, hardPatternCard ? { focus: "boss" } : {});
+	const isBossCard = card?.dataset.gpCategory === "boss";
+	startGrammarPractice(startButton.dataset.gpStart, count, isBossCard ? { focus: "boss" } : { focus: "review" });
 });
 document.addEventListener("click", (event) => {
 	if (event.target.closest("[data-gp-notes], [data-gp-note-tip], #gp-session-note-panel")) return;

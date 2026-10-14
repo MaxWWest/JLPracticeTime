@@ -732,7 +732,8 @@ body.practice-fullscreen { overflow: hidden; }
 .gp-review-summary { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 10px 12px; border: 1px solid #d9dfd4; border-radius: 10px; background: #f9f8f2; color: #596158; font-size: 11px; line-height: 1.45; }
 .gp-review-summary strong { color: #315e4b; }
 .gp-review-summary span { display: inline-flex; align-items: center; min-height: 24px; padding: 4px 8px; border: 1px solid #d8e4d8; border-radius: 999px; background: #fff; color: #315e4b; font-weight: 700; }
-.gp-layout[data-gp-mode="practice"] [data-gp-category="boss"],
+.gp-layout [data-gp-category="legacy"],
+.gp-layout[data-gp-mode="review"] [data-gp-category="boss"],
 .gp-layout[data-gp-mode="boss"] [data-gp-category="review"] { display: none; }
 .gp-session-card { position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 12px; align-items: start; padding: 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--white); }
 .gp-session-card:hover { border-color: #c9d8ca; box-shadow: 0 10px 26px rgba(49, 63, 55, .06); }
