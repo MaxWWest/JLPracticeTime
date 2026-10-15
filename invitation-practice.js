@@ -28,7 +28,8 @@
 		["行き", "いき"], ["食べ", "たべ"], ["飲み", "のみ"], ["見", "み"], ["勉強し", "べんきょうし"], ["練習し", "れんしゅうし"], ["作り", "つくり"], ["書き", "かき"], ["読み", "よみ"], ["運び", "はこび"], ["開け", "あけ"], ["貸し", "かし"], ["送り", "おくり"],
 		["誘い", "さそい"], ["返事", "へんじ"], ["提案", "ていあん"], ["相談", "そうだん"], ["予定", "よてい"], ["自分で", "じぶんで"], ["代わりに", "かわりに"], ["お願い", "おねがい"],
 		["大丈夫", "だいじょうぶ"], ["都合", "つごう"], ["準備", "じゅんび"], ["授業", "じゅぎょう"], ["仕事", "しごと"], ["受付", "うけつけ"], ["連絡", "れんらく"], ["資料", "しりょう"], ["必要", "ひつよう"],
-		["音読", "おんどく"], ["声", "こえ"], ["出して", "だして"], ["内容", "ないよう"], ["最後", "さいご"], ["確認", "かくにん"], ["手", "て"], ["空いて", "あいて"], ["時間", "じかん"]
+		["音読", "おんどく"], ["声", "こえ"], ["出して", "だして"], ["内容", "ないよう"], ["最後", "さいご"], ["確認", "かくにん"], ["手", "て"], ["空いて", "あいて"], ["時間", "じかん"],
+		["動作", "どうさ"], ["行動", "こうどう"], ["眼鏡", "めがね"], ["申し出", "もうしで"], ["賛成", "さんせい"], ["参加", "さんか"], ["相手", "あいて"], ["役に立ち", "やくにたち"]
 	];
 	const tasks = [
 		{ id: "invite-message", label: "Invite someone", topic: "invitation", count: 2 },
@@ -36,7 +37,7 @@
 		{ id: "offer-message", label: "Offer to take over", topic: "offer", count: 2 },
 		{ id: "change-actor", label: "Change who will act", topic: "roles", count: 2 },
 		{ id: "two-intents", label: "Two messages, different intentions", topic: "roles", count: 3 },
-		{ id: "context-pair", label: "Same ending, different actors", topic: "roles", count: 2 },
+		{ id: "context-pair", label: "One ending, two contexts", topic: "roles", count: 2 },
 		{ id: "choose-reply", label: "Keep the shared plan", topic: "proposal", count: 2 },
 		{ id: "reply-meaning", label: "Read the response in context", topic: "offer", count: 2 },
 		{ id: "final-plan", label: "Track the final agreement", topic: "proposal", count: 2 },
@@ -64,6 +65,13 @@
 	const dayEnglish = { "土曜日": "on Saturday", "日曜日": "on Sunday", "金曜日": "on Friday", "明日": "tomorrow", "あさって": "the day after tomorrow" };
 	const atDay = (day) => day.endsWith("曜日") ? day + "に" : day;
 	const preparationEdges = { outing: ["地図", "メール"], study: ["資料", "メール"], practice: ["資料", "メール"], write: ["資料", "メール"], "read-aloud": ["資料", "メール"], send: ["資料", "メール"] };
+	const otherHelpContexts = {
+		cook: "Aは料理のしかたが分からず、Bは作り方を知っています。Aは食卓の準備をしています。",
+		write: "Aは別の仕事をしなければなりません。書く内容は、もうBにも伝えてあります。",
+		"read-aloud": "Aはのどが痛くて、声が出ません。Bには声に出して読むことができます。",
+		carry: "Aは足をけがしていて、歩くのが大変です。Bは物を移すのを手伝えます。",
+		send: "Aは送り方が分かりません。Bは送り方を知っていて、同じデータも持っています。"
+	};
 	function random(seed) { let n = seed >>> 0; return () => { n += 0x6D2B79F5; let t = Math.imul(n ^ n >>> 15, n | 1); t ^= t + Math.imul(t ^ t >>> 7, t | 61); return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 	function shuffle(values, rng) { const a = [...values]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(rng() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
 	const pick = (values, rng) => values[Math.floor(rng() * values.length)];
@@ -156,7 +164,7 @@
 			const fields = shuffle(["offer", "invite"], rng);
 			const toSolo = variant % 2 === 0;
 			const contexts = [["solo", "joint"], ["joint", "solo"], ["solo", "solo"], ["joint", "joint"]][variant];
-			const context = (kind, index) => kind === "solo" ? `${a.problem}\nA：${index ? "私は今できません。代わりにしてもらえると助かります。" : "今は自分ではできないので、お願いできますか。"}\nB：${a.stem}ましょうか。` : `${a.setting}\nA：${index ? "私もします。二人で一緒にするのはどうですか。" : "一人でするより、二人で一緒にしたいです。"}\nB：では、${a.stem}ましょうか。`;
+			const context = (kind, index) => kind === "solo" ? `${index ? otherHelpContexts[a.frame] : a.problem}\nA：${index ? "私は今できません。代わりにしてもらえると助かります。" : "今は自分ではできないので、お願いできますか。"}\nB：${a.stem}ましょうか。` : `${index ? "AもBも時間があり、これからすることを相談しています。" : a.setting}\nA：${index ? "私もします。二人で一緒にするのはどうですか。" : "一人でするより、二人で一緒にしたいです。"}\nB：では、${a.stem}ましょうか。`;
 			const pairFacts = [["solo", "joint"], ["joint", "solo"], ["solo", "solo"], ["joint", "joint"]];
 			const pairText = (f) => f.map((r, i) => `${i + 1}：${r === "solo" ? "Bが自分の行動を申し出ている。" : "BがAと一緒にすることを提案している。"}`).join("\n");
 			results.push(

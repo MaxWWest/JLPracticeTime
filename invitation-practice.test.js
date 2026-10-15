@@ -28,6 +28,7 @@ test("lexical frames use conjugated verbs, compatible objects and appropriate so
 test("all text tasks test intention or participants, supply vocabulary, and never leak complete answers", () => {
 	for (const q of bank) {
 		assert.equal(q.meta.engine, invitation.version);
+		assert.ok(!q.prompt.includes("undefined"), q.meta.id);
 		assert.ok(!q.placeholder);
 		assert.ok(!/adaptive|verb stem|negative adjective/i.test(q.kind));
 		assert.ok(!/[一-龯]/.test(q.english), q.english);
@@ -105,6 +106,8 @@ test("two-message fields independently accept kana and diagnose swapped roles", 
 });
 
 test("context answers and missing turns cannot be solved by a fixed role or keyword", () => {
+	assert.match(runtime.renderJapaneseTextWithFurigana("動作"), /どうさ/);
+	assert.match(runtime.renderJapaneseTextWithFurigana("行動"), /こうどう/);
 	assert.equal(new Set(bank.filter((q) => q.meta.task === "context-pair").map((q) => q.meta.facts.contexts.join("/"))).size, 4);
 	assert.equal(new Set(bank.filter((q) => q.meta.task === "missing-turn").map((q) => q.meta.facts.actors)).size, 2);
 	for (const task of ["scope-reading", "reply-meaning"]) assert.equal(new Set(bank.filter((q) => q.meta.task === task).map((q) => q.meta.facts.status)).size, 4);
