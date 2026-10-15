@@ -3,9 +3,13 @@ const path = require("node:path");
 const { pathToFileURL } = require("node:url");
 const { chromium } = require("playwright");
 const unit = process.env.GRAMMAR_TEST_UNIT || "comparison";
-assert.ok(["comparison", "time"].includes(unit));
-const engineVersion = unit === "time" ? "time-v1" : "comparison-v2";
-const splitTask = unit === "time" ? "two-limits" : "paired-blanks";
+const units = {
+	comparison: { engineVersion: "comparison-v2", splitTask: "paired-blanks" },
+	time: { engineVersion: "time-v1", splitTask: "two-limits" },
+	invitation: { engineVersion: "invitation-v1", splitTask: "two-intents" }
+};
+assert.ok(units[unit]);
+const { engineVersion, splitTask } = units[unit];
 
 async function main() {
 	const browser = await chromium.launch({ headless: true, ...(process.env.PLAYWRIGHT_CHANNEL ? { channel: process.env.PLAYWRIGHT_CHANNEL } : {}) });
@@ -47,6 +51,7 @@ async function main() {
 		for (const source of ["comparison", "time", "invitation", "ability", "experience"]) assert.equal(boss.filter((q) => q.source === source).length, 5);
 		assert.ok(boss.filter((q) => q.source === "comparison").every((q) => q.engine === "comparison-v2"));
 		assert.ok(boss.filter((q) => q.source === "time").every((q) => q.engine === "time-v1"));
+		assert.ok(boss.filter((q) => q.source === "invitation").every((q) => q.engine === "invitation-v1"));
 
 		// Isolate every presentation shape, including the longest passage, at narrow widths.
 		await page.evaluate((unit) => startGrammarPractice(unit, 25, { focus: "review" }), unit);
@@ -68,7 +73,7 @@ async function main() {
 					}).map((el) => el.id || el.className);
 				});
 				assert.deepEqual(overflow, [], `${width}px ${task} overflow`);
-				if (["paired-blanks", "tradeoff", "three-forms", "two-limits", "two-updates", "overlap-report"].includes(task) && width !== 320) {
+				if (["paired-blanks", "tradeoff", "three-forms", "two-limits", "two-updates", "overlap-report", "two-intents", "context-pair", "final-plan"].includes(task) && width !== 320) {
 					await page.screenshot({ path: `/tmp/kotoba-${unit}-${width}-${task}.png` });
 				}
 			}

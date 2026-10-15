@@ -41,3 +41,8 @@ grading, semantic constraints, diversity, and routing checks. The browser harnes
 also supports `GRAMMAR_TEST_UNIT=time node comparison-browser-test.js` and an
 optional `GRAMMAR_TEST_URL` for deployment checks. See [TIME_DESIGN.md](TIME_DESIGN.md)
 for this unit's grammar rules and extension requirements.
+
+Session 03 has equivalent checks: `node --test invitation-practice.test.js` and
+`GRAMMAR_TEST_UNIT=invitation node comparison-browser-test.js`. See
+[INVITATION_DESIGN.md](INVITATION_DESIGN.md) for its intention/actor model,
+accepted alternatives, twelve task formats, and compatibility constraints.

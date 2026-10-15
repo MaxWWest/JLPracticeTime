@@ -51,6 +51,7 @@ globalThis.__grammarAuditApi = {
 	buildGrammarPracticeBank,
 	getComparisonPracticeEngine,
 	getTimePracticeEngine,
+	getInvitationPracticeEngine,
 	comparisonNounPools,
 	comparisonAdjectivePool,
 	grammarVerbPool,
@@ -69,6 +70,7 @@ globalThis.__grammarAuditApi = {
 		console,
 		ComparisonPractice: require("./comparison-practice.js"),
 		TimePractice: require("./time-practice.js"),
+		InvitationPractice: require("./invitation-practice.js"),
 		document,
 		window: {
 			addEventListener() {},

@@ -290,6 +290,7 @@ function renderJapaneseWithFurigana(example) {
 }
 
 const furiganaAutoEntries = [
+	...InvitationPractice.readings.filter(([word]) => word.length > 1 && /[一-龯]/.test(word)),
 	...TimePractice.readings.filter(([word]) => word.length > 1 && /[一-龯]/.test(word)),
 	["自習室", "じしゅうしつ"], ["問題集", "もんだいしゅう"], ["旅館", "りょかん"], ["会議室", "かいぎしつ"], ["説明会", "せつめいかい"],
 	["集中", "しゅうちゅう"], ["暖かい", "あたたかい"], ["暖かく", "あたたかく"], ["楽では", "らくでは"], ["楽です", "らくです"],
@@ -2988,17 +2989,29 @@ function selectTimeReview(bank, count) {
 function generatedGrammarEngine(question) {
 	if (question.meta?.engine === ComparisonPractice.version) return getComparisonPracticeEngine();
 	if (question.meta?.engine === TimePractice.version) return getTimePracticeEngine();
+	if (question.meta?.engine === InvitationPractice.version) return getInvitationPracticeEngine();
 	return null;
 }
 
 function buildInvitationPracticeBank() {
-	return [
-		...invitationScenarios.flatMap((item) => invitationQuestionTemplates.masenka.map((template) => template(item))),
-		...sharedSuggestionScenarios.flatMap((item) => invitationQuestionTemplates.mashou.map((template) => template(item))),
-		...offerScenarios.flatMap((item) => invitationQuestionTemplates.offer.map((template) => template(item))),
-		...buildInvitationPitfallQuestions(),
-		...buildInvitationVarietyQuestions()
-	];
+	return getInvitationPracticeEngine().buildBank();
+}
+
+let invitationPracticeEngine;
+function getInvitationPracticeEngine() {
+	if (!invitationPracticeEngine) invitationPracticeEngine = InvitationPractice.create({ nounPools: comparisonNounPools, verbPool: grammarVerbPool, aliases: comparisonKanaAnswerAliases });
+	return invitationPracticeEngine;
+}
+
+function invitationReviewHistory() {
+	try {
+		const value = JSON.parse(localStorage.getItem("invitation-review-history-v1") || "[]");
+		return Array.isArray(value) ? value.filter((key) => typeof key === "string").slice(-50) : [];
+	} catch { return []; }
+}
+
+function selectInvitationReview(bank, count) {
+	return InvitationPractice.selectQueue(bank, count, { recent: invitationReviewHistory() });
 }
 
 function buildAbilityPracticeBank() {
@@ -4101,8 +4114,8 @@ const grammarPracticeRuleNotes = {
 				heading: "ましょう for direct shared action",
 				pattern: "行きましょう。",
 				points: [
-					"ましょう means let's do it.",
-					"It is more direct than ませんか and assumes the shared action is basically agreed on.",
+					"For a shared activity, ましょう proposes let's do it. It can introduce a new suggestion, not only confirm an existing agreement.",
+					"It can also express the speaker's willingness to act. Read the participants and context rather than assuming it always means we.",
 					"It also appears as a natural accepting response to an invitation."
 				],
 				examples: ["A: コーヒーを飲みませんか。 B: いいですね。飲みましょう。", "時間ですから、帰りましょう。"]
@@ -4120,8 +4133,10 @@ const grammarPracticeRuleNotes = {
 		],
 		pitfalls: [
 			"Do not translate ませんか as a simple refusal in invitation dialogues.",
-			"Do not answer an offer of help with いいですね when お願いします is the natural acceptance.",
-			"Do not use ましょう when you need to politely ask whether the listener wants to do it."
+			"Read the whole construction: てくれませんか asks the listener to do something for the speaker; it is not automatically an invitation to act together.",
+			"An offer or invitation is not an accepted plan until the other person's response establishes agreement. A counterproposal still needs a reply.",
+			"ませんか and shared-action ましょうか can both be appropriate invitations. A question-form task differs from a task requesting a direct ましょう statement; that does not make other forms universally bad Japanese.",
+			"お願いします commonly accepts help, but no opening phrase is a universal answer key. Read the whole reply: 大丈夫です can accept or decline depending on context."
 		]
 	},
 	ability: {
@@ -7169,7 +7184,7 @@ function buildGenericAdvancedGrammarQuestions(sessionId, baseBank) {
 
 function buildAdvancedGrammarPracticeBank(sessionId, baseBank) {
 	// Generated units must never be mixed with legacy hard, correction, or generic packs.
-	if (["comparison", "time"].includes(sessionId)) return baseBank.map((q) => withGrammarPracticeMetadata(q, sessionId));
+	if (["comparison", "time", "invitation"].includes(sessionId)) return baseBank.map((q) => withGrammarPracticeMetadata(q, sessionId));
 	const advanced = [
 		...(advancedGrammarPracticePacks[sessionId] || []),
 		...(grammarCorrectionPacks[sessionId] || []),
@@ -7363,6 +7378,7 @@ function buildBossBlockGrammarQueue(sessionId, bank, questionCount = 25) {
 		.map((sourceSessionId) => {
 			const sourceBank = bank.filter((question) => question.meta?.sourceSessionId === sourceSessionId);
 			if (sourceSessionId === "time") return selectTimeReview(sourceBank, Math.ceil(questionCount / bossBlock.sessions.length));
+			if (sourceSessionId === "invitation") return selectInvitationReview(sourceBank, Math.ceil(questionCount / bossBlock.sessions.length));
 			return sourceSessionId === "comparison" ? selectComparisonReview(sourceBank, Math.ceil(questionCount / bossBlock.sessions.length)) : shuffled(sourceBank);
 		})
 		.filter((bucket) => bucket.length);
@@ -7380,6 +7396,7 @@ function buildBossBlockGrammarQueue(sessionId, bank, questionCount = 25) {
 function buildFocusedGrammarQueue(sessionId, bank, focus, questionCount) {
 	if (sessionId === "comparison") return selectComparisonReview(bank, questionCount);
 	if (sessionId === "time") return selectTimeReview(bank, questionCount);
+	if (sessionId === "invitation") return selectInvitationReview(bank, questionCount);
 	if (focus === "review") {
 		const targets = bank.filter((question) => (
 			question.meta?.difficulty !== "core" ||
@@ -7436,6 +7453,10 @@ function startGrammarPractice(sessionId = "comparison", questionCount = Number(g
 	const timeKeys = gpState.queue.filter((q) => q.meta?.engine === TimePractice.version).map((q) => q.meta.familyKey);
 	if (timeKeys.length) {
 		try { localStorage.setItem("time-review-history-v1", JSON.stringify([...timeReviewHistory(), ...timeKeys].slice(-100))); } catch { /* Freshness history is optional, not adaptive grading. */ }
+	}
+	const invitationKeys = gpState.queue.filter((q) => q.meta?.engine === InvitationPractice.version).map((q) => q.meta.familyKey);
+	if (invitationKeys.length) {
+		try { localStorage.setItem("invitation-review-history-v1", JSON.stringify([...invitationReviewHistory(), ...invitationKeys].slice(-50))); } catch { /* Freshness history is optional, not adaptive grading. */ }
 	}
 	gpState.index = 0;
 	gpState.correct = 0;
@@ -7514,6 +7535,11 @@ function showGrammarPracticeQuestion() {
 
 function findGrammarRetryCandidate(question) {
 	if (!question?.meta || !gpState.bank?.length) return null;
+	if (question.meta.engine === InvitationPractice.version) {
+		const used = new Set(gpState.queue.filter((q) => q.meta?.engine === InvitationPractice.version).map((q) => q.meta.familyKey));
+		const candidates = gpState.bank.filter((q) => q.meta?.engine === InvitationPractice.version && q.meta.task === question.meta.task && !used.has(q.meta.familyKey));
+		return InvitationPractice.selectQueue(candidates, 1, { recent: invitationReviewHistory() })[0] || null;
+	}
 	if (question.meta.engine === TimePractice.version) {
 		const used = new Set(gpState.queue.filter((q) => q.meta?.engine === TimePractice.version).map((q) => q.meta.familyKey));
 		const candidates = gpState.bank.filter((q) => q.meta?.engine === TimePractice.version && q.meta.task === question.meta.task && !used.has(q.meta.familyKey));
