@@ -290,6 +290,7 @@ function renderJapaneseWithFurigana(example) {
 }
 
 const furiganaAutoEntries = [
+	...BossPractice.readings.filter(([word]) => word.length > 1 && /[一-龯]/.test(word)),
 	...AbilityPractice.readings.filter(([word]) => word.length > 1 && /[一-龯]/.test(word)),
 	...ExperiencePractice.readings.filter(([word]) => word.length > 1 && /[一-龯]/.test(word)),
 	...InvitationPractice.readings.filter(([word]) => word.length > 1 && /[一-龯]/.test(word)),
@@ -2989,6 +2990,7 @@ function selectTimeReview(bank, count) {
 }
 
 function generatedGrammarEngine(question) {
+	if (question.meta?.engine === BossPractice.version) return getBossPracticeEngine();
 	if (question.meta?.engine === AbilityPractice.version) return getAbilityPracticeEngine();
 	if (question.meta?.engine === ExperiencePractice.version) return getExperiencePracticeEngine();
 	if (question.meta?.engine === ComparisonPractice.version) return getComparisonPracticeEngine();
@@ -3040,6 +3042,15 @@ function contextualReviewHistory(unit) {
 }
 function selectAbilityReview(bank, count) { return AbilityPractice.selectQueue(bank, count, { recent: contextualReviewHistory("ability") }); }
 function selectExperienceReview(bank, count) { return ExperiencePractice.selectQueue(bank, count, { recent: contextualReviewHistory("experience") }); }
+
+let bossPracticeEngine;
+function getBossPracticeEngine() {
+	if (!bossPracticeEngine) bossPracticeEngine = BossPractice.create({ nounPools: comparisonNounPools, verbPool: grammarVerbPool, aliases: comparisonKanaAnswerAliases });
+	return bossPracticeEngine;
+}
+function selectBossPilot(bank, count) {
+	return BossPractice.selectQueue(bank, count, { recent: contextualReviewHistory("boss-01-05").slice(-30) });
+}
 
 function buildPermissionPracticeBank() {
 	return [
@@ -7272,6 +7283,7 @@ function getGrammarBossBlockConfig(sessionId) {
 }
 
 function buildGrammarBossBlockPracticeBank(config) {
+	if (config.id === "boss-01-05") return getBossPracticeEngine().buildBank().map((question) => withGrammarPracticeMetadata(question, config.id));
 	const seen = new Set();
 	return config.sessions.flatMap((sourceSessionId) => {
 		const sourceSession = grammarPracticeSessions[sourceSessionId];
@@ -7381,6 +7393,7 @@ function buildGrammarPracticeBank(sessionId = gpState.sessionId || "comparison")
 }
 
 function buildBossBlockGrammarQueue(sessionId, bank, questionCount = 25) {
+	if (sessionId === "boss-01-05") return selectBossPilot(bank, questionCount);
 	const bossBlock = getGrammarBossBlockConfig(sessionId);
 	if (!bossBlock) return shuffled(bank);
 	const buckets = bossBlock.sessions
@@ -7405,6 +7418,7 @@ function buildBossBlockGrammarQueue(sessionId, bank, questionCount = 25) {
 }
 
 function buildFocusedGrammarQueue(sessionId, bank, focus, questionCount) {
+	if (sessionId === "boss-01-05") return selectBossPilot(bank, questionCount);
 	if (sessionId === "ability") return selectAbilityReview(bank, questionCount);
 	if (sessionId === "experience") return selectExperienceReview(bank, questionCount);
 	if (sessionId === "comparison") return selectComparisonReview(bank, questionCount);
@@ -7460,6 +7474,10 @@ function startGrammarPractice(sessionId = "comparison", questionCount = Number(g
 		gpState.queue = shuffled(gpState.bank).slice(0, Math.min(questionCount, gpState.bank.length));
 	}
 	const comparisonKeys = gpState.queue.filter((q) => q.meta?.engine === ComparisonPractice.version).map((q) => q.meta.familyKey);
+	const bossKeys = gpState.queue.filter((q) => q.meta?.engine === BossPractice.version).map((q) => q.meta.sceneKey);
+	if (bossKeys.length) {
+		try { localStorage.setItem("boss-01-05-review-history-v1", JSON.stringify([...contextualReviewHistory("boss-01-05"), ...bossKeys].slice(-30))); } catch { /* Variant freshness only; no adaptive question insertion. */ }
+	}
 	for (const [unit, engine] of [["ability", AbilityPractice], ["experience", ExperiencePractice]]) {
 		const keys = gpState.queue.filter((q) => q.meta?.engine === engine.version).map((q) => q.meta.familyKey);
 		if (keys.length) {
@@ -7484,6 +7502,7 @@ function startGrammarPractice(sessionId = "comparison", questionCount = Number(g
 	gpState.answered = false;
 	gpState.recorded = false;
 	gpEls["session-notes"].dataset.gpNotes = sessionId;
+	gpEls["session-notes"].hidden = sessionId === "boss-01-05";
 	gpEls["session-notes"].setAttribute("aria-expanded", "false");
 	gpEls["session-note-panel"].innerHTML = renderGrammarPracticeRuleNotes(sessionId);
 	gpEls["session-note-panel"].hidden = true;
@@ -7554,6 +7573,11 @@ function showGrammarPracticeQuestion() {
 
 function findGrammarRetryCandidate(question) {
 	if (!question?.meta || !gpState.bank?.length) return null;
+	if (question.meta.engine === BossPractice.version) {
+		const used = new Set(gpState.queue.map((q) => q.meta.familyKey));
+		const candidates = gpState.bank.filter((q) => q.meta.engine === BossPractice.version && q.meta.sourceSessionId === question.meta.sourceSessionId && !used.has(q.meta.familyKey));
+		return selectBossPilot(candidates, 1)[0] || null;
+	}
 	for (const [unit, engine] of [["ability", AbilityPractice], ["experience", ExperiencePractice]]) {
 		if (question.meta.engine !== engine.version) continue;
 		const used = new Set(gpState.queue.filter((q) => q.meta?.engine === engine.version).map((q) => q.meta.familyKey));

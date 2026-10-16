@@ -50,15 +50,13 @@ async function main() {
 		await page.locator('[data-gp-filter="boss"]').click();
 		await page.locator('[data-gp-start="boss-01-05"]').click();
 		const boss = await page.evaluate(() => gpState.queue.map((q) => ({ source: q.meta.sourceSessionId, engine: q.meta.engine })));
-		for (const source of ["comparison", "time", "invitation", "ability", "experience"]) assert.equal(boss.filter((q) => q.source === source).length, 5);
-		assert.ok(boss.filter((q) => q.source === "comparison").every((q) => q.engine === "comparison-v2"));
-		assert.ok(boss.filter((q) => q.source === "time").every((q) => q.engine === "time-v1"));
-		assert.ok(boss.filter((q) => q.source === "invitation").every((q) => q.engine === "invitation-v1"));
-		assert.ok(boss.filter((q) => q.source === "ability").every((q) => q.engine === "ability-v1"));
-		assert.ok(boss.filter((q) => q.source === "experience").every((q) => q.engine === "experience-v1"));
+		assert.equal(boss.length, 10);
+		for (const source of ["comparison", "time", "invitation", "ability", "experience"]) assert.equal(boss.filter((q) => q.source === source).length, 2);
+		assert.ok(boss.every((q) => q.engine === "boss-01-05-v1"));
 
 		// Isolate every presentation shape, including the longest passage, at narrow widths.
 		await page.evaluate((unit) => startGrammarPractice(unit, 25, { focus: "review" }), unit);
+		assert.equal(await page.locator("#gp-session-notes").isVisible(), true, "Review notes are restored after Boss");
 		for (const width of [1440, 390, 320]) {
 			await page.setViewportSize({ width, height: width === 1440 ? 1000 : 844 });
 			for (const task of [...new Set(overview.map((q) => q.task))]) {

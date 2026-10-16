@@ -1,6 +1,7 @@
 # Session 03: Invitations and Offers
 
-Session 03 Review and its contribution to Boss 01-05 use `invitation-practice.js`.
+Session 03 Review uses `invitation-practice.js`. Boss 01-05 now has a separate
+[cross-unit pilot](BOSS_PILOT_DESIGN.md).
 The older invitation, advanced, correction, and pitfall banks are not appended.
 Adaptive review remains disabled. No new dependencies or build step are needed.
 
@@ -65,8 +66,8 @@ phrases express the distinct intentions.
 One noun-action family appears at most once per round, even if another adapter
 or a different reason/date could reuse it. Selection penalizes repeated domains,
 vocabulary, adjacent task types, and the last 50 families seen. Correct-choice
-positions are balanced and cannot form a three-position streak. Boss uses five
-new-engine questions, covering all four intention/role topics.
+positions are balanced and cannot form a three-position streak. Boss no longer
+takes a five-question slice from this Review bank.
 
 ## Grading and Boundaries
 

@@ -33,9 +33,9 @@ of 選びます, not たい predicates where either particle can be possible.
    balances tasks and avoids recycled underlying situations.
 
 The engine is a pure browser/CommonJS module. `script.js` handles rendering,
-navigation, and history; the same engine supplies Review and the comparison
-portion of Boss 01-05. Legacy comparison banks remain unreachable from those
-paths. Other grammar units are not rewritten by this change.
+navigation, and history. This engine supplies focused Review; Boss 01-05 now has
+a separate [cross-unit pilot](BOSS_PILOT_DESIGN.md). Neither path appends legacy
+comparison questions.
 
 ## Session Mix
 

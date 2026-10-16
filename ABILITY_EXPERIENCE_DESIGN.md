@@ -1,7 +1,8 @@
 # Units 04 and 05
 
-These modules replace the old question banks for Review and their portions of
-Boss 01-05. Adaptive insertion remains disabled. No answer is prefilled or shown
+These modules replace the old question banks for focused Review. Boss 01-05 now
+has a separate [cross-unit pilot](BOSS_PILOT_DESIGN.md). Adaptive insertion remains
+disabled. No answer is prefilled or shown
 as a placeholder; multipart responses use independently graded fields.
 
 ## Four layers
@@ -53,7 +54,7 @@ Underlying action families cannot repeat within a round. The selector penalizes
 recent families, adjacent formats, repeated domains, and repeated vocabulary.
 The last 50 families persist locally for freshness only, not adaptive scoring.
 Question count alone is not a measure of diversity: tests inspect the 25-item mix,
-four positive/negative combinations, domain spread, and five-item Boss slices.
+four positive/negative combinations, domain spread, and shorter queue lengths.
 
 ## Grading and feedback
 
@@ -80,7 +81,6 @@ Teaching references, not copied question banks:
 - [Official JLPT test structure](https://www.jlpt.jp/e/guideline/testsections.html)
 
 Automated invariants do not certify native naturalness or prove JLPT difficulty.
-Actual learner feedback still matters. Next planned work is richer answer-specific
-feedback across earlier modules and Boss tasks requiring grammar selection;
-cross-unit integrated passages, listening, and a mistake notebook are not part
-of this release.
+Actual learner feedback still matters. The separate Boss pilot now includes
+cross-unit passages and selected-answer feedback. Richer answer-specific feedback
+across earlier Review modules, listening, and a mistake notebook remain future work.

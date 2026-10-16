@@ -152,7 +152,7 @@ test("all round lengths, fresh seeds, and five-item Boss slices retain topic cov
 	}
 });
 
-test("actual Review and Boss routes exclude every legacy Time bank and retain Comparison", () => {
+test("focused Time routes exclude every legacy bank", () => {
 	const current = runtime.buildGrammarPracticeBank("time");
 	assert.ok(current.every((q) => q.meta.engine === time.version));
 	for (const focus of ["review", "boss", undefined]) {
@@ -160,11 +160,6 @@ test("actual Review and Boss routes exclude every legacy Time bank and retain Co
 		assert.equal(queue.length, 25);
 		assert.ok(queue.every((q) => q.meta.engine === time.version));
 	}
-	const boss = runtime.buildGrammarPracticeBank("boss-01-05");
-	const queue = runtime.buildFocusedGrammarQueue("boss-01-05", boss, "boss", 25).slice(0, 25);
-	for (const source of ["comparison", "time", "invitation", "ability", "experience"]) assert.equal(queue.filter((q) => q.meta.sourceSessionId === source).length, 5);
-	assert.ok(queue.filter((q) => q.meta.sourceSessionId === "time").every((q) => q.meta.engine === time.version));
-	assert.ok(queue.filter((q) => q.meta.sourceSessionId === "comparison").every((q) => q.meta.engine === "comparison-v2"));
 	assert.equal(runtime.grammarPracticeSessions["adaptive-review"], undefined);
 	const html = fs.readFileSync(path.join(__dirname, "main.html"), "utf8");
 	assert.ok(html.indexOf('src="time-practice.js') < html.indexOf('src="script.js'));

@@ -135,17 +135,13 @@ test("freshly generated banks keep full rounds and grammar variety across seeds"
 	}
 });
 
-test("actual Review and Boss paths use only the new comparison engine", () => {
+test("focused comparison routes use only the new comparison engine", () => {
 	const current = runtime.buildGrammarPracticeBank("comparison");
 	for (const focus of ["review", "boss", undefined]) {
 		const queue = runtime.buildFocusedGrammarQueue("comparison", current, focus, 25);
 		assert.equal(queue.length, 25);
 		assert.ok(queue.every((q) => q.meta.engine === comparison.version));
 	}
-	const boss = runtime.buildGrammarPracticeBank("boss-01-05");
-	const queue = runtime.buildFocusedGrammarQueue("boss-01-05", boss, "boss", 25).slice(0, 25);
-	for (const id of ["comparison", "time", "invitation", "ability", "experience"]) assert.equal(queue.filter((q) => q.meta.sourceSessionId === id).length, 5);
-	assert.ok(queue.filter((q) => q.meta.sourceSessionId === "comparison").every((q) => q.meta.engine === comparison.version));
 	assert.equal(runtime.grammarPracticeSessions["adaptive-review"], undefined);
 	const html = fs.readFileSync(path.join(__dirname, "main.html"), "utf8");
 	assert.ok(html.indexOf('src="comparison-practice.js') < html.indexOf('src="script.js'));

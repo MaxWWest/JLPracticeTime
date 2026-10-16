@@ -145,7 +145,7 @@ test("five-item Boss slices and all review lengths cover intentions with fresh s
 	}
 });
 
-test("actual Review/Boss routes exclude old invitation banks; adaptive remains disabled", () => {
+test("focused invitation routes exclude old banks; adaptive remains disabled", () => {
 	const current = runtime.buildGrammarPracticeBank("invitation");
 	assert.ok(current.every((q) => q.meta.engine === invitation.version));
 	for (const focus of ["review", "boss", undefined]) {
@@ -153,10 +153,6 @@ test("actual Review/Boss routes exclude old invitation banks; adaptive remains d
 		assert.equal(queue.length, 25);
 		assert.ok(queue.every((q) => q.meta.engine === invitation.version));
 	}
-	const boss = runtime.buildGrammarPracticeBank("boss-01-05");
-	const queue = runtime.buildFocusedGrammarQueue("boss-01-05", boss, "boss", 25).slice(0, 25);
-	for (const source of ["comparison", "time", "invitation", "ability", "experience"]) assert.equal(queue.filter((q) => q.meta.sourceSessionId === source).length, 5);
-	for (const [source, engine] of [["comparison", "comparison-v2"], ["time", "time-v1"], ["invitation", invitation.version]]) assert.ok(queue.filter((q) => q.meta.sourceSessionId === source).every((q) => q.meta.engine === engine));
 	assert.equal(runtime.grammarPracticeSessions["adaptive-review"], undefined);
 	const html = fs.readFileSync(path.join(__dirname, "main.html"), "utf8");
 	assert.ok(html.indexOf('src="invitation-practice.js') < html.indexOf('src="script.js'));

@@ -756,6 +756,7 @@ body.practice-fullscreen { overflow: hidden; }
 .gp-note-button { display: grid; width: 34px; height: 34px; place-items: center; border: 1px solid #cfe0d3; border-radius: 7px; background: #f6faf6; color: #315e4b; font-size: 13px; font-weight: 800; cursor: pointer; }
 .gp-note-button:hover, .gp-note-button[aria-expanded="true"] { border-color: #6f9c82; background: #e5eee6; }
 .gp-session-note-button { display: grid; width: 30px; height: 30px; place-items: center; border: 1px solid rgba(49, 94, 75, .22); border-radius: 50%; background: rgba(255, 255, 255, .55); color: #315e4b; font-size: 12px; font-weight: 800; cursor: pointer; }
+.gp-session-note-button[hidden] { display: none; }
 .gp-session-note-button:hover, .gp-session-note-button[aria-expanded="true"] { background: #fff; border-color: #6f9c82; }
 .gp-note-tip { grid-column: 1 / -1; padding: 16px; border: 1px solid #cfe0d3; border-radius: 10px; background: #fbfdf9; box-shadow: 0 16px 34px rgba(49, 63, 55, .1); }
 .gp-note-tip[hidden] { display: none; }

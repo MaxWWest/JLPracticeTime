@@ -171,7 +171,7 @@ test("experience: never and occasional omission cannot normalize to the same ans
 	for (const q of bank.filter((q) => q.meta.task === "timeline-update")) assert.equal(q.meta.facts.meaning, q.meta.facts.actual ? "ever" : "never");
 });
 
-test("actual Review and Boss 01-05 now exclusively use the five contextual engines", () => {
+test("focused ability and experience routes exclusively use their contextual engines", () => {
 	for (const { id, api } of lessons) {
 		const bank = runtime.buildGrammarPracticeBank(id);
 		assert.ok(bank.every((q) => q.meta.engine === api.version));
@@ -180,15 +180,6 @@ test("actual Review and Boss 01-05 now exclusively use the five contextual engin
 			assert.equal(queue.length, 25);
 			assert.ok(queue.every((q) => q.meta.engine === api.version));
 		}
-	}
-	const versions = { comparison: "comparison-v2", time: "time-v1", invitation: "invitation-v1", ability: ability.version, experience: experience.version };
-	const boss = runtime.buildGrammarPracticeBank("boss-01-05");
-	const queue = runtime.buildFocusedGrammarQueue("boss-01-05", boss, "boss", 25);
-	assert.equal(queue.length, 25);
-	for (const [id, version] of Object.entries(versions)) {
-		const items = queue.filter((q) => q.meta.sourceSessionId === id);
-		assert.equal(items.length, 5);
-		assert.ok(items.every((q) => q.meta.engine === version));
 	}
 	assert.equal(runtime.grammarPracticeSessions["adaptive-review"], undefined);
 	const html = fs.readFileSync(path.join(__dirname, "main.html"), "utf8");

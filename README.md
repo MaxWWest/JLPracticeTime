@@ -49,7 +49,24 @@ accepted alternatives, twelve task formats, and compatibility constraints.
 
 Units 04 and 05 now use contextual ability/perception and experience/recurrence
 engines. Run `node --test ability-experience.test.js`; the browser harness accepts
-`GRAMMAR_TEST_UNIT=ability` and `GRAMMAR_TEST_UNIT=experience`. All five sources
-in Boss 01-05 now bypass the legacy banks. See
+`GRAMMAR_TEST_UNIT=ability` and `GRAMMAR_TEST_UNIT=experience`. See
 [ABILITY_EXPERIENCE_DESIGN.md](ABILITY_EXPERIENCE_DESIGN.md) for teaching rules,
 grading boundaries, diversity checks, and follow-on work.
+
+## Boss 01-05 pilot
+
+Boss 01-05 is now a ten-question cross-unit pilot, separate from focused Review.
+It tests contextual choices without giving the target grammar away in the heading
+or instructions. Ten situation families each have four fact variants; a round
+uses every family once. Longer rounds are unavailable until more distinct cases
+are added. Other Boss blocks and Review question counts are unchanged.
+
+Inspect [BOSS_PILOT_SAMPLE.md](BOSS_PILOT_SAMPLE.md) for Japanese questions with
+English passages and an answer key. Regenerate it with
+`node boss-pilot-preview.js --write`. See
+[BOSS_PILOT_DESIGN.md](BOSS_PILOT_DESIGN.md) for coverage, limits, and extension rules.
+
+Run `node --test boss-practice.test.js` and, with Playwright available,
+`PLAYWRIGHT_CHANNEL=chrome node boss-browser-test.js`. The browser test supports
+`GRAMMAR_TEST_URL` and checks scoring, selected-answer feedback, hidden hints,
+variant freshness, and every pilot item at desktop and mobile widths.

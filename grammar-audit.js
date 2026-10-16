@@ -54,6 +54,7 @@ globalThis.__grammarAuditApi = {
 	getInvitationPracticeEngine,
 	getAbilityPracticeEngine,
 	getExperiencePracticeEngine,
+	getBossPracticeEngine,
 	comparisonNounPools,
 	comparisonAdjectivePool,
 	grammarVerbPool,
@@ -75,6 +76,7 @@ globalThis.__grammarAuditApi = {
 		InvitationPractice: require("./invitation-practice.js"),
 		AbilityPractice: require("./ability-practice.js"),
 		ExperiencePractice: require("./experience-practice.js"),
+		BossPractice: require("./boss-practice.js"),
 		document,
 		window: {
 			addEventListener() {},
@@ -281,6 +283,14 @@ function auditFurigana(api, findings) {
 
 function auditHardPracticeQueues(api, sessionBanks, findings) {
 	for (const { sessionId, bank } of sessionBanks) {
+		if (sessionId === "boss-01-05") {
+			const boss = require("./boss-practice.js");
+			const queue = api.buildFocusedGrammarQueue(sessionId, bank, "boss", boss.roundSize) || [];
+			if (queue.length !== boss.roundSize || queue.some((q) => q.meta?.engine !== boss.version) || new Set(queue.map((q) => q.meta?.familyKey)).size !== boss.roundSize) {
+				addFinding(findings, "high", "invalid-boss-pilot", sessionId, 0, queue[0] || {}, "Boss pilot must contain ten different new-engine situations.", "Keep one item per pilot family, without padding with Review or legacy questions.");
+			}
+			continue;
+		}
 		const hardQueue = api.buildFocusedGrammarQueue(sessionId, bank, "boss", 25) || [];
 		if (hardQueue.length < 25) {
 			addFinding(
@@ -336,12 +346,13 @@ function buildSessionBanks(api, requestedSessionIds) {
 	const allSessionIds = Object.keys(api.grammarPracticeSessions)
 		.filter((id) => !id.startsWith("family-") && !["mixed-boss", "mock-test"].includes(id))
 		.slice(0, coreSessionLimit);
-	const sessionIds = requestedSessionIds.length ? requestedSessionIds : allSessionIds;
+	const sessionIds = requestedSessionIds.length ? requestedSessionIds : [...new Set([...allSessionIds, "boss-01-05"])];
 	return sessionIds.map((sessionId) => {
 		const session = api.grammarPracticeSessions[sessionId];
 		if (!session) throw new Error(`Unknown grammar session: ${sessionId}`);
-		const baseBank = session.buildBank();
-		const bank = api.buildAdvancedGrammarPracticeBank(sessionId, baseBank);
+		const bank = sessionId === "boss-01-05"
+			? api.buildGrammarPracticeBank(sessionId)
+			: api.buildAdvancedGrammarPracticeBank(sessionId, session.buildBank());
 		return { sessionId, title: session.title, bank };
 	});
 }
@@ -400,4 +411,4 @@ function main() {
 }
 
 if (require.main === module) main();
-module.exports = { loadGrammarRuntime, auditQuestion };
+module.exports = { loadGrammarRuntime, auditQuestion, auditHardPracticeQueues, buildSessionBanks };

@@ -2,8 +2,8 @@
 
 ## Scope
 
-Session 02 Review and the Time portion of Boss 01-05 now use `time-practice.js`.
-Both routes bypass the old stem quizzes, generic transformations, correction
+Session 02 Review uses `time-practice.js`. Boss 01-05 now has a separate
+[cross-unit pilot](BOSS_PILOT_DESIGN.md). Both bypass the old stem quizzes, generic transformations, correction
 packs, and reading packs. Adaptive review remains disabled. Recent-family history
 only helps avoid repeated situations; it does not inject easier remediation.
 
