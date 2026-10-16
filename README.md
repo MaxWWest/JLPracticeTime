@@ -46,3 +46,10 @@ Session 03 has equivalent checks: `node --test invitation-practice.test.js` and
 `GRAMMAR_TEST_UNIT=invitation node comparison-browser-test.js`. See
 [INVITATION_DESIGN.md](INVITATION_DESIGN.md) for its intention/actor model,
 accepted alternatives, twelve task formats, and compatibility constraints.
+
+Units 04 and 05 now use contextual ability/perception and experience/recurrence
+engines. Run `node --test ability-experience.test.js`; the browser harness accepts
+`GRAMMAR_TEST_UNIT=ability` and `GRAMMAR_TEST_UNIT=experience`. All five sources
+in Boss 01-05 now bypass the legacy banks. See
+[ABILITY_EXPERIENCE_DESIGN.md](ABILITY_EXPERIENCE_DESIGN.md) for teaching rules,
+grading boundaries, diversity checks, and follow-on work.

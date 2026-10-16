@@ -52,6 +52,8 @@ globalThis.__grammarAuditApi = {
 	getComparisonPracticeEngine,
 	getTimePracticeEngine,
 	getInvitationPracticeEngine,
+	getAbilityPracticeEngine,
+	getExperiencePracticeEngine,
 	comparisonNounPools,
 	comparisonAdjectivePool,
 	grammarVerbPool,
@@ -71,6 +73,8 @@ globalThis.__grammarAuditApi = {
 		ComparisonPractice: require("./comparison-practice.js"),
 		TimePractice: require("./time-practice.js"),
 		InvitationPractice: require("./invitation-practice.js"),
+		AbilityPractice: require("./ability-practice.js"),
+		ExperiencePractice: require("./experience-practice.js"),
 		document,
 		window: {
 			addEventListener() {},

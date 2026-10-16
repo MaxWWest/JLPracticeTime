@@ -290,6 +290,8 @@ function renderJapaneseWithFurigana(example) {
 }
 
 const furiganaAutoEntries = [
+	...AbilityPractice.readings.filter(([word]) => word.length > 1 && /[一-龯]/.test(word)),
+	...ExperiencePractice.readings.filter(([word]) => word.length > 1 && /[一-龯]/.test(word)),
 	...InvitationPractice.readings.filter(([word]) => word.length > 1 && /[一-龯]/.test(word)),
 	...TimePractice.readings.filter(([word]) => word.length > 1 && /[一-龯]/.test(word)),
 	["自習室", "じしゅうしつ"], ["問題集", "もんだいしゅう"], ["旅館", "りょかん"], ["会議室", "かいぎしつ"], ["説明会", "せつめいかい"],
@@ -2987,6 +2989,8 @@ function selectTimeReview(bank, count) {
 }
 
 function generatedGrammarEngine(question) {
+	if (question.meta?.engine === AbilityPractice.version) return getAbilityPracticeEngine();
+	if (question.meta?.engine === ExperiencePractice.version) return getExperiencePracticeEngine();
 	if (question.meta?.engine === ComparisonPractice.version) return getComparisonPracticeEngine();
 	if (question.meta?.engine === TimePractice.version) return getTimePracticeEngine();
 	if (question.meta?.engine === InvitationPractice.version) return getInvitationPracticeEngine();
@@ -3014,24 +3018,28 @@ function selectInvitationReview(bank, count) {
 	return InvitationPractice.selectQueue(bank, count, { recent: invitationReviewHistory() });
 }
 
-function buildAbilityPracticeBank() {
-	return [
-		...potentialScenarios.flatMap((item) => abilityQuestionTemplates.potential.map((template) => template(item))),
-		...dekiruScenarios.flatMap((item) => abilityQuestionTemplates.dekiru.map((template) => template(item))),
-		...perceptionScenarios.flatMap((item) => abilityQuestionTemplates.perception.map((template) => template(item))),
-		...buildAbilityPitfallQuestions(),
-		...buildAbilityVarietyQuestions()
-	];
+let abilityPracticeEngine;
+function getAbilityPracticeEngine() {
+	if (!abilityPracticeEngine) abilityPracticeEngine = AbilityPractice.create({ nounPools: comparisonNounPools, verbPool: grammarVerbPool, aliases: comparisonKanaAnswerAliases });
+	return abilityPracticeEngine;
 }
 
-function buildExperiencePracticeBank() {
-	return [
-		...pastExperienceScenarios.flatMap((item) => experienceQuestionTemplates.past.map((template) => template(item))),
-		...occasionalEventScenarios.flatMap((item) => experienceQuestionTemplates.occasional.map((template) => template(item))),
-		...buildExperiencePitfallQuestions(),
-		...buildExperienceVarietyQuestions()
-	];
+let experiencePracticeEngine;
+function getExperiencePracticeEngine() {
+	if (!experiencePracticeEngine) experiencePracticeEngine = ExperiencePractice.create({ nounPools: comparisonNounPools, verbPool: grammarVerbPool, aliases: comparisonKanaAnswerAliases });
+	return experiencePracticeEngine;
 }
+
+function buildAbilityPracticeBank() { return getAbilityPracticeEngine().buildBank(); }
+function buildExperiencePracticeBank() { return getExperiencePracticeEngine().buildBank(); }
+function contextualReviewHistory(unit) {
+	try {
+		const value = JSON.parse(localStorage.getItem(`${unit}-review-history-v1`) || "[]");
+		return Array.isArray(value) ? value.filter((key) => typeof key === "string").slice(-50) : [];
+	} catch { return []; }
+}
+function selectAbilityReview(bank, count) { return AbilityPractice.selectQueue(bank, count, { recent: contextualReviewHistory("ability") }); }
+function selectExperienceReview(bank, count) { return ExperiencePractice.selectQueue(bank, count, { recent: contextualReviewHistory("experience") }); }
 
 function buildPermissionPracticeBank() {
 	return [
@@ -4148,7 +4156,7 @@ const grammarPracticeRuleNotes = {
 				pattern: "日本語が話せます。 / 漢字が読めません。",
 				points: [
 					"Potential forms express can do: 話す becomes 話せます, 食べる becomes 食べられます, する becomes できます.",
-					"Object-like nouns often change from を to が with potential verbs.",
+					"Both が and を can mark the object of many transitive potential verbs. Do not treat every を as an error.",
 					"Potential is about ability or possibility, not just doing the action."
 				],
 				examples: ["ジョーさんは中国語が話せます。", "妹はまだ一人で服が着られません。"]
@@ -4200,7 +4208,7 @@ const grammarPracticeRuleNotes = {
 				points: [
 					"Use this for life experience: has done before.",
 					"It often appears with 一度, 何度か, 何度も, or questions like したことがありますか.",
-					"It is not for a normal recent past event with a clear time like yesterday."
+					"Use an ordinary past form when directly reporting a specific event. Time expressions can occur with experience statements too; the intended focus matters."
 				],
 				examples: ["日本で納豆を食べたことがあります。", "歌舞伎を見たことがありません。"]
 			},
@@ -4226,9 +4234,10 @@ const grammarPracticeRuleNotes = {
 			}
 		],
 		pitfalls: [
-			"Do not use たことがあります for a specific event like 昨日映画を見ました.",
+			"A direct report of yesterday's event and a statement of past experience have different focuses; do not reject every experience sentence merely because it includes a time expression.",
 			"Do not use dictionary form + ことがあります when you mean past experience.",
-			"Do not pair いつも with ことがあります; use ときどき or たまに."
+			"A usual habit can be contrasted with an occasional exception: いつもはしますが、しないこともあります. Read the scope of each clause.",
+			"A record showing no occurrences over a few days is not enough evidence to say someone has never done it in their life."
 		]
 	},
 	permission: {
@@ -7184,7 +7193,7 @@ function buildGenericAdvancedGrammarQuestions(sessionId, baseBank) {
 
 function buildAdvancedGrammarPracticeBank(sessionId, baseBank) {
 	// Generated units must never be mixed with legacy hard, correction, or generic packs.
-	if (["comparison", "time", "invitation"].includes(sessionId)) return baseBank.map((q) => withGrammarPracticeMetadata(q, sessionId));
+	if (["comparison", "time", "invitation", "ability", "experience"].includes(sessionId)) return baseBank.map((q) => withGrammarPracticeMetadata(q, sessionId));
 	const advanced = [
 		...(advancedGrammarPracticePacks[sessionId] || []),
 		...(grammarCorrectionPacks[sessionId] || []),
@@ -7377,6 +7386,8 @@ function buildBossBlockGrammarQueue(sessionId, bank, questionCount = 25) {
 	const buckets = bossBlock.sessions
 		.map((sourceSessionId) => {
 			const sourceBank = bank.filter((question) => question.meta?.sourceSessionId === sourceSessionId);
+			if (sourceSessionId === "ability") return selectAbilityReview(sourceBank, Math.ceil(questionCount / bossBlock.sessions.length));
+			if (sourceSessionId === "experience") return selectExperienceReview(sourceBank, Math.ceil(questionCount / bossBlock.sessions.length));
 			if (sourceSessionId === "time") return selectTimeReview(sourceBank, Math.ceil(questionCount / bossBlock.sessions.length));
 			if (sourceSessionId === "invitation") return selectInvitationReview(sourceBank, Math.ceil(questionCount / bossBlock.sessions.length));
 			return sourceSessionId === "comparison" ? selectComparisonReview(sourceBank, Math.ceil(questionCount / bossBlock.sessions.length)) : shuffled(sourceBank);
@@ -7394,6 +7405,8 @@ function buildBossBlockGrammarQueue(sessionId, bank, questionCount = 25) {
 }
 
 function buildFocusedGrammarQueue(sessionId, bank, focus, questionCount) {
+	if (sessionId === "ability") return selectAbilityReview(bank, questionCount);
+	if (sessionId === "experience") return selectExperienceReview(bank, questionCount);
 	if (sessionId === "comparison") return selectComparisonReview(bank, questionCount);
 	if (sessionId === "time") return selectTimeReview(bank, questionCount);
 	if (sessionId === "invitation") return selectInvitationReview(bank, questionCount);
@@ -7447,6 +7460,12 @@ function startGrammarPractice(sessionId = "comparison", questionCount = Number(g
 		gpState.queue = shuffled(gpState.bank).slice(0, Math.min(questionCount, gpState.bank.length));
 	}
 	const comparisonKeys = gpState.queue.filter((q) => q.meta?.engine === ComparisonPractice.version).map((q) => q.meta.familyKey);
+	for (const [unit, engine] of [["ability", AbilityPractice], ["experience", ExperiencePractice]]) {
+		const keys = gpState.queue.filter((q) => q.meta?.engine === engine.version).map((q) => q.meta.familyKey);
+		if (keys.length) {
+			try { localStorage.setItem(`${unit}-review-history-v1`, JSON.stringify([...contextualReviewHistory(unit), ...keys].slice(-50))); } catch { /* Freshness only; performance does not alter the queue. */ }
+		}
+	}
 	if (comparisonKeys.length) {
 		try { localStorage.setItem("comparison-review-history-v2", JSON.stringify([...comparisonReviewHistory(), ...comparisonKeys].slice(-100))); } catch { /* Practice also works when browser storage is unavailable. */ }
 	}
@@ -7535,6 +7554,12 @@ function showGrammarPracticeQuestion() {
 
 function findGrammarRetryCandidate(question) {
 	if (!question?.meta || !gpState.bank?.length) return null;
+	for (const [unit, engine] of [["ability", AbilityPractice], ["experience", ExperiencePractice]]) {
+		if (question.meta.engine !== engine.version) continue;
+		const used = new Set(gpState.queue.filter((q) => q.meta?.engine === engine.version).map((q) => q.meta.familyKey));
+		const candidates = gpState.bank.filter((q) => q.meta?.engine === engine.version && q.meta.task === question.meta.task && !used.has(q.meta.familyKey));
+		return engine.selectQueue(candidates, 1, { recent: contextualReviewHistory(unit) })[0] || null;
+	}
 	if (question.meta.engine === InvitationPractice.version) {
 		const used = new Set(gpState.queue.filter((q) => q.meta?.engine === InvitationPractice.version).map((q) => q.meta.familyKey));
 		const candidates = gpState.bank.filter((q) => q.meta?.engine === InvitationPractice.version && q.meta.task === question.meta.task && !used.has(q.meta.familyKey));
@@ -7580,6 +7605,7 @@ function renderGrammarAnswerCoaching(question, value, isCorrect) {
 		</p>
 	`;
 	const explanation = question.explanation || "The correct answer matches the grammar cue in the prompt.";
+	const feedback = isCorrect ? [] : (generatedGrammarEngine(question)?.grade(question, value).feedback || []);
 	const nextLabel = isFinalGrammarPracticeQuestion() ? "Finish & see stats" : "Next";
 	return `
 		<div class="gp-coaching">
@@ -7592,6 +7618,7 @@ function renderGrammarAnswerCoaching(question, value, isCorrect) {
 			</div>
 			<div class="gp-coaching-card">
 				<h5>Why it works</h5>
+				${feedback.map((message) => `<p>${renderJapaneseTextWithFurigana(message)}</p>`).join("")}
 				<p>${renderJapaneseTextWithFurigana(explanation)}</p>
 			</div>
 			<div class="gp-coaching-actions">

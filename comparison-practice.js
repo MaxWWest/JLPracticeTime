@@ -327,7 +327,8 @@
 			return `${scope === "default" ? "" : `Use the comparison for ${scope}. `}${relationEnglish(more, less, dimension)} ${scene.structure === "chain" ? "Follow both comparisons through the middle item. " : ""}The item immediately before より is the comparison base; the item before ほうが has more of the named quality. In a ほど negative comparison, the benchmark immediately before ほど has more of that quality.`;
 		}
 		function vocabulary(scene, targetOnly = false) {
-			const entities = targetOnly ? scene.entities.filter((e) => [scene.target.more.ja, scene.target.less.ja].includes(e.ja)) : scene.entities;
+			const used = new Set([scene.target.more.ja, scene.target.less.ja, ...(targetOnly ? [] : scene.facts.flatMap((f) => [f.more, f.less]))]);
+			const entities = scene.entities.filter((e) => used.has(e.ja));
 			return [...entities.map((e) => `${e.ja} (${e.en})`), `${scene.target.dimension.adj} (${scene.target.dimension.base})`].join(" / ");
 		}
 		function contextInForm(scene, form) {

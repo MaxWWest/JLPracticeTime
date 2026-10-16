@@ -6,7 +6,9 @@ const unit = process.env.GRAMMAR_TEST_UNIT || "comparison";
 const units = {
 	comparison: { engineVersion: "comparison-v2", splitTask: "paired-blanks" },
 	time: { engineVersion: "time-v1", splitTask: "two-limits" },
-	invitation: { engineVersion: "invitation-v1", splitTask: "two-intents" }
+	invitation: { engineVersion: "invitation-v1", splitTask: "two-intents" },
+	ability: { engineVersion: "ability-v1", splitTask: "two-people" },
+	experience: { engineVersion: "experience-v1", splitTask: "two-meanings" }
 };
 assert.ok(units[unit]);
 const { engineVersion, splitTask } = units[unit];
@@ -52,6 +54,8 @@ async function main() {
 		assert.ok(boss.filter((q) => q.source === "comparison").every((q) => q.engine === "comparison-v2"));
 		assert.ok(boss.filter((q) => q.source === "time").every((q) => q.engine === "time-v1"));
 		assert.ok(boss.filter((q) => q.source === "invitation").every((q) => q.engine === "invitation-v1"));
+		assert.ok(boss.filter((q) => q.source === "ability").every((q) => q.engine === "ability-v1"));
+		assert.ok(boss.filter((q) => q.source === "experience").every((q) => q.engine === "experience-v1"));
 
 		// Isolate every presentation shape, including the longest passage, at narrow widths.
 		await page.evaluate((unit) => startGrammarPractice(unit, 25, { focus: "review" }), unit);
@@ -73,7 +77,7 @@ async function main() {
 					}).map((el) => el.id || el.className);
 				});
 				assert.deepEqual(overflow, [], `${width}px ${task} overflow`);
-				if (["paired-blanks", "tradeoff", "three-forms", "two-limits", "two-updates", "overlap-report", "two-intents", "context-pair", "final-plan"].includes(task) && width !== 320) {
+				if (["paired-blanks", "tradeoff", "three-forms", "two-limits", "two-updates", "overlap-report", "two-intents", "context-pair", "final-plan", "two-people", "access-perception", "two-meanings", "two-records"].includes(task) && width !== 320) {
 					await page.screenshot({ path: `/tmp/kotoba-${unit}-${width}-${task}.png` });
 				}
 			}
@@ -91,6 +95,15 @@ async function main() {
 		await page.locator('#gp-answer-form button[type="submit"]').click();
 		assert.equal(await page.locator(".gp-field.is-incorrect").count(), 1);
 		assert.equal(await page.locator(".gp-field.is-correct").count(), 1);
+		if (["ability", "experience"].includes(unit)) {
+			assert.match(await page.locator(".gp-coaching-card").textContent(), /not automatically bad Japanese/);
+			await page.evaluate(() => showGrammarPracticeQuestion());
+			const knownMistake = await page.evaluate(() => gpState.queue[gpState.index].fields[0].contrasts[0]);
+			await page.locator('[data-gp-part="0"]').fill(knownMistake.accepted[0]);
+			await page.locator('[data-gp-part="1"]').fill(correctSecond);
+			await page.locator('#gp-answer-form button[type="submit"]').click();
+			assert.ok((await page.locator(".gp-coaching-card").textContent()).includes(knownMistake.message));
+		}
 		const original = await page.evaluate(() => gpState.queue[0].meta.familyKey);
 		await page.locator("#gp-retry-pattern").click();
 		assert.notEqual(await page.evaluate(() => gpState.queue[gpState.index].meta.familyKey), original);
