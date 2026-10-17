@@ -71,6 +71,7 @@ globalThis.__grammarAuditApi = {
 	};
 	const context = {
 		console,
+		GrammarPracticeCore: require("./grammar-practice-core.js"),
 		ComparisonPractice: require("./comparison-practice.js"),
 		TimePractice: require("./time-practice.js"),
 		InvitationPractice: require("./invitation-practice.js"),

@@ -1,9 +1,8 @@
 /* Compatible actions -> conversational intentions -> Japanese turns -> assessment. */
 (function (root, factory) {
-	const api = factory();
-	if (typeof module === "object" && module.exports) module.exports = api;
-	else root.InvitationPractice = api;
-})(typeof globalThis === "object" ? globalThis : this, function () {
+	if (typeof module === "object" && module.exports) module.exports = factory(require("./grammar-practice-core.js"));
+	else root.InvitationPractice = factory(root.GrammarPracticeCore);
+})(typeof globalThis === "object" ? globalThis : this, function (core) {
 	"use strict";
 	const version = "invitation-v1";
 	const extraNouns = [
@@ -114,6 +113,19 @@
 			q.mode = q.fields ? "text" : "choice";
 			if (q.fields) q.answer = q.fields.map((f) => f.answer).join(" / ");
 			else if (!q.options.includes(q.answer) || unique(q.options).length !== q.options.length) throw new Error(`Invalid choices: ${q.meta.id}`);
+			if (q.fields) {
+				const intents = taskId === "two-intents" ? facts.intents : [taskId === "offer-message" || (taskId === "change-actor" && facts.actors === "speaker") ? "offer" : taskId === "accept-plan" ? "plan" : "invite"];
+				const rows = intents.map((intent, i) => {
+					const label = q.fields[i].label, segments = [];
+					if (taskId === "accept-plan") segments.push(core.gap("Agreed day", [facts.next], [facts.first, facts.next]), "、");
+					else if (taskId === "invite-message") segments.push(facts.first + "、");
+					segments.push(core.gap(`${label}: participants`, intent === "offer" ? ["私が", "私が一人で"] : ["一緒に", "二人で"], ["私が", "一緒に", "あなたが"]), a.stem,
+						core.gap(`${label}: ending`, intent === "offer" ? ["ましょうか"] : intent === "plan" ? ["ましょう"] : ["ませんか", "ましょうか"]), "。");
+					return { label, segments };
+				});
+				const instructions = { "invite-message": "Ask your friend to join you; make an invitation question.", "accept-plan": "Accept the new day with a direct 'let's' reply, not another question.", "offer-message": "Offer your own help to A, without asking A to do the work.", "change-actor": facts.actors === "speaker" ? "Change the joint invitation into an offer to do it yourself." : "Change the solo offer into a question inviting the other person to join.", "two-intents": "Complete both messages for the intention shown. Their order changes." };
+				q.responseSpec = core.cloze(rows, instructions[taskId]);
+			}
 			return q;
 		}
 		function sharedQuestions(a, variant, days) {

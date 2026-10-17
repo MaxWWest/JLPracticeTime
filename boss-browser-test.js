@@ -27,8 +27,13 @@ async function main() {
 			assert.ok(!before.includes(q.explanation));
 			assert.ok(!before.includes(q.meta.pattern));
 			assert.match(await page.locator("#gp-type").textContent(), /^BOSS · 01-05 · /);
-			const correct = i % 2 === 0, choice = correct ? q.answer : q.options.find((o) => o !== q.answer);
-			await page.locator(`[data-gp-choice="${q.options.indexOf(choice)}"]`).click();
+			const correct = i % 2 === 0, choice = correct ? q.answer : Object.keys(q.choiceFeedback)[0];
+			assert.equal(Boolean(q.fields), i >= 8);
+			if (q.fields) {
+				assert.equal(await page.locator("[placeholder]").filter({ visible: true }).count(), 0);
+				await page.locator('[data-gp-part="0"]').fill(choice);
+				await page.locator('#gp-answer-form button[type="submit"]').click();
+			} else await page.locator(`[data-gp-choice="${q.options.indexOf(choice)}"]`).click();
 			assert.equal(await page.locator("#gp-feedback").textContent(), correct ? "Correct." : "Not quite.");
 			if (!correct) {
 				const coaching = await page.locator(".gp-coaching-card").evaluate((el) => {
@@ -36,7 +41,7 @@ async function main() {
 					copy.querySelectorAll("rt").forEach((rt) => rt.remove());
 					return copy.textContent;
 				});
-				assert.ok(coaching.includes(q.choiceFeedback[choice]));
+				assert.ok(coaching.includes(q.fields ? q.fields[0].contrasts.find((c) => c.accepted.includes(choice)).message : q.choiceFeedback[choice]));
 			}
 			assert.equal(await page.locator("#gp-retry-pattern").count(), 0, "A full pilot does not recycle an already used case as a retry");
 			await page.locator("#gp-next").click();
@@ -51,11 +56,12 @@ async function main() {
 			const ids = await page.evaluate(() => gpState.bank.map((q) => q.meta.id));
 			for (const id of ids) {
 				await page.evaluate((id) => {
-					gpState.queue = [gpState.bank.find((q) => q.meta.id === id)];
+					const q = gpState.bank.find((q) => q.meta.id === id);
+					gpState.queue = [q.writing ? { ...q, ...q.writing, mode: "text", options: undefined, kind: "Final challenge", band: "Write one Japanese sentence." } : q];
 					gpState.index = 0;
 					showGrammarPracticeQuestion();
 				}, id);
-				const overflow = await page.evaluate(() => [...document.querySelectorAll("#gp-prompt, #gp-subprompt, #gp-band, .gp-options button")].filter((el) => {
+				const overflow = await page.evaluate(() => [...document.querySelectorAll("#gp-prompt, #gp-subprompt, #gp-band, .gp-options button, .gp-field")].filter((el) => {
 					const rect = el.getBoundingClientRect();
 					return rect.width && (rect.left < -1 || rect.right > innerWidth + 1 || el.scrollWidth > el.clientWidth + 2);
 				}).map((el) => el.id || el.className));

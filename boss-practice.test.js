@@ -48,7 +48,7 @@ test("pilot is ten distinct cross-unit situations with no pre-answer grammar ins
 });
 
 test("every choice is checked against case facts independently of the answer key", () => {
-	for (const q of [...bank, ...boss.selectQueue(bank, 10, { seed: 25 })]) {
+	for (const q of [...bank, ...boss.selectQueue(bank, 10, { seed: 25 })].filter((q) => q.mode === "choice")) {
 		const supported = q.choiceFacts.map((claim) => truth(q, claim));
 		assert.equal(supported.filter(Boolean).length, 1, q.meta.id);
 		assert.equal(q.answer, q.options[supported.indexOf(true)], q.meta.id);
@@ -92,7 +92,9 @@ test("pilot sessions cap at ten, balance the units, vary order, and rotate fact 
 		for (const unit of units) assert.equal(queue.filter((q) => q.meta.sourceSessionId === unit).length, 2);
 		assert.ok(queue.every((q) => !recent.includes(q.meta.sceneKey)));
 		queue.forEach((q, i) => { if (i) assert.notEqual(q.meta.sourceSessionId, queue[i - 1].meta.sourceSessionId); });
-		const positions = queue.map((q) => q.options.indexOf(q.answer));
+		assert.ok(queue.slice(0, 8).every((q) => q.mode === "choice"));
+		assert.ok(queue.slice(8).every((q) => q.fields?.length === 1 && q.meta.answerMode === "production"));
+		const positions = queue.filter((q) => q.options).map((q) => q.options.indexOf(q.answer));
 		for (let i = 2; i < positions.length; i++) assert.ok(!(positions[i] === positions[i - 1] && positions[i] === positions[i - 2]));
 		const counts = [0, 1, 2, 3].map((position) => positions.filter((n) => n === position).length);
 		assert.ok(Math.max(...counts) - Math.min(...counts) <= 1);

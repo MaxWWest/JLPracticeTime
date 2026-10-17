@@ -84,7 +84,25 @@
 			if (!noun || !verb) throw new Error(`Missing ability vocabulary: ${word}/${frame.verb}`);
 			return { id: `${frame.id}:${word}`, frame: frame.id, word, verb: frame.verb, dictVerb: verb.forms.dictionary, dict: word + "を" + verb.forms.dictionary, potential: verb.forms.potential, en: `${frame.en} ${noun.en}` };
 		}));
-		const q = (task, a, v, content, facts) => core.question(version, "ability", tasks, task, a, v, content, facts);
+		function q(task, a, v, content, facts) {
+			const item = core.question(version, "ability", tasks, task, a, v, content, facts);
+			if (item.fields) {
+				const rows = item.fields.map((f, i) => {
+					const person = task === "two-people" ? facts.order[i] : facts.person;
+					const prefix = (person ? `${person}は` : "") + a.word;
+					let options;
+					if (a.potential) options = [true, false].flatMap((positive) => ["potential", "koto"].map((form) => abilityAnswers(a, positive, form, person)[0].slice(prefix.length).replace(/。$/, "")));
+					else {
+						const predicate = facts.sense ? senses.find((s) => s.id === facts.sense).percept.slice(0, -1) : "でき";
+						options = [`が${predicate}ます`, `が${predicate}ません`];
+					}
+					return { label: f.label, segments: [prefix, core.tailField(f, prefix, options), "。"] };
+				});
+				const instruction = task === "rewrite-potential" ? "Keep the meaning using the short potential form." : task === "rewrite-koto" ? "Keep the meaning using the ことができる construction." : facts.sense ? "Complete each observation for the indicated situation, using direct perception." : task === "service-report" ? "Complete today's service update." : "Complete each person's ability report. Keep the positive or negative meaning from the context.";
+				item.responseSpec = core.cloze(rows, instruction);
+			}
+			return item;
+		}
 		const vocabulary = (a) => `${a.word} (${nouns.get(a.word).en}) / ${a.dictVerb} (${verbs.get(a.verb).en})`;
 		function abilityField(a, positive, form, person = "", label = "Your message") {
 			return core.field(label, abilityAnswers(a, positive, form, person), [

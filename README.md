@@ -56,8 +56,8 @@ grading boundaries, diversity checks, and follow-on work.
 ## Boss 01-05 pilot
 
 Boss 01-05 is now a ten-question cross-unit pilot, separate from focused Review.
-It tests contextual choices without giving the target grammar away in the heading
-or instructions. Ten situation families each have four fact variants; a round
+Eight contextual choice questions lead into two one-sentence writing challenges,
+without naming the target grammar in advance. Ten situation families each have four fact variants; a round
 uses every family once. Longer rounds are unavailable until more distinct cases
 are added. Other Boss blocks and Review question counts are unchanged.
 
@@ -70,3 +70,15 @@ Run `node --test boss-practice.test.js` and, with Playwright available,
 `PLAYWRIGHT_CHANNEL=chrome node boss-browser-test.js`. The browser test supports
 `GRAMMAR_TEST_URL` and checks scoring, selected-answer feedback, hidden hints,
 variant freshness, and every pilot item at desktop and mobile widths.
+
+## Compact Review Answers
+
+Review in Units 01-05 uses short grammar blanks and dropdowns inside explicit
+Japanese sentence frames. Names, objects and unrelated vocabulary are supplied;
+grammar choices, meaning, roles and polarity are still assessed. Full-sentence
+writing is reserved for the last two questions of Boss 01-05. Other Boss blocks
+and legacy units are unchanged.
+
+See [RESPONSE_DESIGN.md](RESPONSE_DESIGN.md). Run
+`node --test response-practice.test.js` to check reconstructed sentences, kana,
+independent blank grading, typing reduction and the Boss writing boundary.

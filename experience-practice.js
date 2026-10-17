@@ -75,7 +75,20 @@
 			const prefix = word + frame.particle;
 			return { id: `${frame.id}:${word}`, frame: frame.id, word, verb: frame.verb, dict: prefix + verb.forms.dictionary, ta: prefix + verb.forms.ta, nai: prefix + verb.forms.nai, masu: prefix + verb.forms.masu, past: prefix + verb.forms.masuStem + "ました", negative: prefix + verb.forms.masuStem + "ません", en: `${frame.en} ${noun.en}` };
 		}));
-		const q = (task, a, v, content, facts) => core.question(version, "experience", tasks, task, a, v, content, facts);
+		function q(task, a, v, content, facts) {
+			const item = core.question(version, "experience", tasks, task, a, v, content, facts);
+			if (item.fields) {
+				const rows = item.fields.map((f, i) => {
+					const person = task === "two-meanings" && facts.order[i] === "routine" ? facts.other : facts.person;
+					const prefix = person + "は" + a.word + frames.find((frame) => frame.id === a.frame).particle;
+					const options = meanings.map((meaning) => sentences(a, meaning, person)[0].slice(prefix.length).replace(/。$/, ""));
+					return { label: f.label, segments: [prefix, core.tailField(f, prefix, options), "。"] };
+				});
+				const instruction = task === "change-meaning" ? `Change the statement to this meaning: ${descriptions[facts.meaning]}` : task === "two-meanings" ? "Keep each person's experience or occasional pattern separate." : task === "repair-claim" ? "Correct the draft's claim using the account above." : "Complete the report for the time and meaning established above.";
+				item.responseSpec = core.cloze(rows, instruction);
+			}
+			return item;
+		}
 		const vocabulary = (a) => `${a.word} (${nouns.get(a.word).en}) / ${a.verb} (${verbs.get(a.verb).en})`;
 		const field = (a, meaning, person, label) => core.field(label, sentences(a, meaning, person), meanings.filter((m) => m !== meaning).map((m) => ({ accepted: sentences(a, m, person), message: `Your sentence means: ${descriptions[m]} The requested meaning is: ${descriptions[meaning]}` })));
 		const history = (a, person, ever) => `${person}にこれまでのことを聞きました。\n「${ever ? `前に一度、${a.past}。そのときのことは、よく覚えています。` : `今まで一度も${a.negative}でした。いつか初めてやってみたいです。`}」`;

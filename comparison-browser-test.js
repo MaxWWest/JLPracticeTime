@@ -17,6 +17,11 @@ async function main() {
 	const browser = await chromium.launch({ headless: true, ...(process.env.PLAYWRIGHT_CHANNEL ? { channel: process.env.PLAYWRIGHT_CHANNEL } : {}) });
 	const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
 	const errors = [];
+	async function enter(part, value) {
+		const control = page.locator(`[data-gp-part="${part}"]`);
+		if (await control.evaluate((el) => el.tagName === "SELECT")) await control.selectOption(value);
+		else await control.fill(value);
+	}
 	page.on("pageerror", (error) => errors.push(error.message));
 	try {
 		await page.goto(process.env.GRAMMAR_TEST_URL || process.env.COMPARISON_TEST_URL || pathToFileURL(path.join(__dirname, "main.html")).href);
@@ -33,11 +38,16 @@ async function main() {
 			assert.equal(await page.locator("#gp-session").evaluate((session) => session.scrollTop), 0, "New questions start at the passage");
 			const question = await page.evaluate(() => gpState.queue[gpState.index]);
 			if (question.fields) {
+				assert.equal(await page.locator("#gp-body textarea").count(), 0, "Review must not require whole sentences");
 				assert.equal(await page.locator("[data-gp-part]").count(), question.fields.length);
 				assert.equal(await page.locator("#gp-body [placeholder]").count(), 0);
 				for (let part = 0; part < question.fields.length; part++) {
-					const answer = await page.evaluate(({ part }) => generatedGrammarEngine(gpState.queue[gpState.index]).normalize(gpState.queue[gpState.index].fields[part].accepted.at(-1)), { part });
-					await page.locator(`[data-gp-part="${part}"]`).fill(answer);
+					assert.equal(await page.locator(`[data-gp-part="${part}"]`).inputValue(), "", "No prefilled answer");
+					const answer = await page.evaluate(({ part }) => {
+						const q = gpState.queue[gpState.index], f = q.fields[part];
+						return f.options ? f.answer : generatedGrammarEngine(q).normalize(f.accepted.at(-1));
+					}, { part });
+					await enter(part, answer);
 				}
 				await page.locator('#gp-answer-form button[type="submit"]').click();
 			} else await page.locator(`[data-gp-choice="${question.options.indexOf(question.answer)}"]`).click();
@@ -62,7 +72,7 @@ async function main() {
 			for (const task of [...new Set(overview.map((q) => q.task))]) {
 				await page.evaluate((task) => {
 					const q = gpState.bank.filter((q) => q.meta.task === task).sort((a, b) => b.prompt.length - a.prompt.length)[0];
-					gpState.queue = [q];
+					gpState.queue = [GrammarPracticeCore.compact(q)];
 					gpState.index = 0;
 					showGrammarPracticeQuestion();
 					gpEls.session.scrollTop = 0;
@@ -82,23 +92,24 @@ async function main() {
 		}
 
 		await page.evaluate((splitTask) => {
-			gpState.queue = [gpState.bank.find((q) => q.meta.task === splitTask)];
+			gpState.queue = [GrammarPracticeCore.compact(gpState.bank.find((q) => q.meta.task === splitTask))];
 			gpState.index = 0;
 			showGrammarPracticeQuestion();
 		}, splitTask);
-		const correctSecond = await page.evaluate(() => gpState.queue[0].fields[1].answer);
+		const fields = await page.evaluate(() => gpState.queue[0].fields);
 		assert.equal(await page.locator('[data-gp-part="1"]').evaluate((input) => getComputedStyle(input).borderTopWidth), "1px");
-		await page.locator('[data-gp-part="0"]').fill("wrong");
-		await page.locator('[data-gp-part="1"]').fill(correctSecond);
+		const wrong = fields[0].options?.find((o) => !fields[0].accepted.includes(o)) || "wrong";
+		await enter(0, wrong);
+		for (let i = 1; i < fields.length; i++) await enter(i, fields[i].answer);
 		await page.locator('#gp-answer-form button[type="submit"]').click();
 		assert.equal(await page.locator(".gp-field.is-incorrect").count(), 1);
-		assert.equal(await page.locator(".gp-field.is-correct").count(), 1);
+		assert.equal(await page.locator(".gp-field.is-correct").count(), fields.length - 1);
+		assert.equal(await page.locator('[data-gp-part="0"]').getAttribute("aria-invalid"), "true");
 		if (["ability", "experience"].includes(unit)) {
-			assert.match(await page.locator(".gp-coaching-card").textContent(), /not automatically bad Japanese/);
 			await page.evaluate(() => showGrammarPracticeQuestion());
 			const knownMistake = await page.evaluate(() => gpState.queue[gpState.index].fields[0].contrasts[0]);
-			await page.locator('[data-gp-part="0"]').fill(knownMistake.accepted[0]);
-			await page.locator('[data-gp-part="1"]').fill(correctSecond);
+			await enter(0, knownMistake.accepted[0]);
+			await enter(1, fields[1].answer);
 			await page.locator('#gp-answer-form button[type="submit"]').click();
 			assert.ok((await page.locator(".gp-coaching-card").textContent()).includes(knownMistake.message));
 		}
@@ -106,6 +117,7 @@ async function main() {
 		await page.locator("#gp-retry-pattern").click();
 		assert.notEqual(await page.evaluate(() => gpState.queue[gpState.index].meta.familyKey), original);
 		assert.equal(await page.evaluate(() => gpState.queue[gpState.index].meta.engine), engineVersion);
+		assert.equal(await page.locator("#gp-body textarea").count(), 0, "Retry must preserve compact responses");
 		assert.deepEqual(errors, []);
 		console.log(`PASS (${unit}): complete 25-question Review, mixed Boss, kana grading, partial feedback, fresh retry, and all 12 formats at 1440/390/320px.`);
 	} finally {

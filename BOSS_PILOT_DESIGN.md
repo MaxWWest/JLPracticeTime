@@ -1,8 +1,9 @@
 # Boss 01-05: Contextual Pilot
 
 Boss 01-05 now uses `boss-practice.js`, not a concatenation of the five Review
-banks. This is a bounded ten-question selection pilot. Focused Review retains
-its existing written tasks, grammar-specific instructions, and question counts.
+banks. This bounded ten-question pilot has eight choices followed by two
+one-sentence writing challenges. Focused Review retains its task mix and counts,
+but uses sentence frames and short blanks instead of full-sentence copying.
 Other Boss blocks are unchanged. Adaptive insertion remains disabled everywhere.
 
 ## Teaching Contract
@@ -62,6 +63,11 @@ four fact variants each, not forty independent stories.
   are capped instead of silently padding with old Review questions.
 - Unit order varies, with no adjacent repeated primary unit. Answer positions
   are balanced and cannot form a three-position streak.
+- Reading handover and moving help finish the round as one-sentence writing
+  challenges. Their fact variants still rotate; their relative order varies.
+  Vocabulary is supplied, never a solved response or answer placeholder.
+  Checked kana, particle and word-order alternatives are accepted. Unrecognized
+  paraphrases are described as unmatched, not universally ungrammatical.
 - The last thirty case/variant keys are kept locally under
   `boss-01-05-review-history-v1`. The next three complete rounds can use different
   variants; after four variants, reuse is inevitable. Nouns can also change.

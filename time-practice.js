@@ -1,9 +1,8 @@
 /* Lexical frames -> temporal facts -> Japanese realization -> assessment. No UI state. */
 (function (root, factory) {
-	const api = factory();
-	if (typeof module === "object" && module.exports) module.exports = api;
-	else root.TimePractice = api;
-})(typeof globalThis === "object" ? globalThis : this, function () {
+	if (typeof module === "object" && module.exports) module.exports = factory(require("./grammar-practice-core.js"));
+	else root.TimePractice = factory(root.GrammarPracticeCore);
+})(typeof globalThis === "object" ? globalThis : this, function (core) {
 	"use strict";
 	const version = "time-v1";
 	const extraNouns = [
@@ -130,6 +129,18 @@
 			q.mode = q.fields ? "text" : "choice";
 			if (q.fields) q.answer = q.fields.map((f) => f.answer).join(" / ");
 			else if (!q.options.includes(q.answer) || new Set(q.options).size !== q.options.length) throw new Error(`Invalid choices: ${q.meta.id}`);
+			const action = actions.find((a) => a.id === scene.facts.action);
+			if (["stage-reply", "stage-repair", "two-updates"].includes(taskId)) {
+				const verb = verbs.get(action.verb).forms, stages = { before: verb.dictionary, during: verb.te + "いる", after: verb.ta };
+				const moments = scene.facts.moments || [scene.facts.stage];
+				q.responseSpec = core.cloze(moments.map((stage, i) => ({ label: q.fields[i].label, segments: [action.object + "を", core.gap(q.fields[i].label, [stages[stage]], Object.values(stages)), "ところです。"] })), taskId === "stage-repair" ? "Correct the draft's stage in the reply below." : "Complete each progress update for the situation or labelled time.");
+			} else if (taskId === "combine-actions") {
+				const [a, b] = scene.responseActions;
+				q.responseSpec = core.cloze([{ label: "Combined actions", segments: [core.gap("Accompanying action", [a.stem], [a.stem, b.stem]), core.gap("Link", ["ながら"]), "、", core.gap("Main action", [b.masu], [a.masu, b.masu]), "。"] }], `Keep ${b.ing} as the main action, with both actions happening together.`);
+			} else if (taskId === "change-limit") {
+				q.responseSpec = core.cloze([{ label: "New promise", segments: [scene.facts.boundary, core.gap("Time marker", [q.fields[0].answer.includes(scene.facts.boundary + "までに") ? "までに" : "まで"]), action.masu + "。"] }], "Keep the action and time; change the marker to express the new commitment.");
+			}
+			if (q.responseSpec) q.responseSpec.vocabulary = (scene.responseActions || [action]).map((a) => `${a.dict} (${a.en})`).join(" / ");
 			return q;
 		}
 		function nagaraQuestions(a, b) {
@@ -139,7 +150,7 @@
 			if (scenario === "a-first") facts.b = { actor: person, start: start + 20, end: start + 40 };
 			if (scenario === "b-first") { facts.b.start = start - 20; facts.b.end = start; }
 			if (scenario === "different-actors") facts.b.actor = other;
-			const scene = { familyKey: `overlap:${a.id}:${b.id}`, sceneKey: `overlap:${a.id}:${b.id}:${scenario}:${start}`, structure: pick(["activity-log", "conversation"], rng), domain: `${a.frame}-${b.frame}`, vocabulary: [a.word, b.word], facts };
+			const scene = { familyKey: `overlap:${a.id}:${b.id}`, sceneKey: `overlap:${a.id}:${b.id}:${scenario}:${start}`, structure: pick(["activity-log", "conversation"], rng), domain: `${a.frame}-${b.frame}`, vocabulary: [a.word, b.word], responseActions: [a, b], facts };
 			const record = (action, fact) => `${fact.actor}：${clock(fact.start)}〜${clock(fact.end)}　${action.dict}`;
 			const reports = [`${person}は${simultaneous(a, b, true)}`, `${person}は${a.te}から、${b.ta}。`, `${person}は${b.te}から、${a.ta}。`, `${person}が${a.te}いる間、${other}は${b.te}いました。`];
 			const evidence = `${record(a, facts.a)}\n${record(b, facts.b)}`;

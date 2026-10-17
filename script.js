@@ -2965,7 +2965,7 @@ function comparisonReviewHistory() {
 }
 
 function selectComparisonReview(bank, count) {
-	return ComparisonPractice.selectQueue(bank, count, { recent: comparisonReviewHistory() });
+	return ComparisonPractice.selectQueue(bank, count, { recent: comparisonReviewHistory() }).map((q) => GrammarPracticeCore.compact(q));
 }
 
 function buildTimePracticeBank() {
@@ -2986,7 +2986,7 @@ function timeReviewHistory() {
 }
 
 function selectTimeReview(bank, count) {
-	return TimePractice.selectQueue(bank, count, { recent: timeReviewHistory() });
+	return TimePractice.selectQueue(bank, count, { recent: timeReviewHistory() }).map((q) => GrammarPracticeCore.compact(q));
 }
 
 function generatedGrammarEngine(question) {
@@ -3017,7 +3017,7 @@ function invitationReviewHistory() {
 }
 
 function selectInvitationReview(bank, count) {
-	return InvitationPractice.selectQueue(bank, count, { recent: invitationReviewHistory() });
+	return InvitationPractice.selectQueue(bank, count, { recent: invitationReviewHistory() }).map((q) => GrammarPracticeCore.compact(q));
 }
 
 let abilityPracticeEngine;
@@ -3040,8 +3040,8 @@ function contextualReviewHistory(unit) {
 		return Array.isArray(value) ? value.filter((key) => typeof key === "string").slice(-50) : [];
 	} catch { return []; }
 }
-function selectAbilityReview(bank, count) { return AbilityPractice.selectQueue(bank, count, { recent: contextualReviewHistory("ability") }); }
-function selectExperienceReview(bank, count) { return ExperiencePractice.selectQueue(bank, count, { recent: contextualReviewHistory("experience") }); }
+function selectAbilityReview(bank, count) { return AbilityPractice.selectQueue(bank, count, { recent: contextualReviewHistory("ability") }).map((q) => GrammarPracticeCore.compact(q)); }
+function selectExperienceReview(bank, count) { return ExperiencePractice.selectQueue(bank, count, { recent: contextualReviewHistory("experience") }).map((q) => GrammarPracticeCore.compact(q)); }
 
 let bossPracticeEngine;
 function getBossPracticeEngine() {
@@ -7513,6 +7513,20 @@ function startGrammarPractice(sessionId = "comparison", questionCount = Number(g
 	showGrammarPracticeQuestion();
 }
 
+function renderGrammarResponseRows(question) {
+	return `<div class="gp-response-rows">${question.responseRows.map((row) => `
+		<div class="gp-response-row"><p class="gp-response-label">${escapeHtml(row.label)}</p>
+		<div class="gp-response-line" lang="ja">${row.segments.map((part) => {
+			if (typeof part === "string") return `<span>${renderJapaneseTextWithFurigana(part)}</span>`;
+			const index = part.field, field = question.fields[index];
+			const width = field.options ? Math.max(...field.options.map((option) => [...option].length)) + 2 : 7;
+			const attributes = `id="gp-part-${index}" data-gp-part="${index}" lang="ja" required`;
+			return `<label class="gp-field gp-gap" for="gp-part-${index}" style="--gap-width:${width}em"><span class="visually-hidden">${escapeHtml(field.label)}</span>${field.options
+				? `<select ${attributes}><option value="" disabled selected>...</option>${field.options.map((option) => `<option value="${escapeHtml(option)}">${escapeHtml(option)}</option>`).join("")}</select>`
+				: `<input ${attributes} autocomplete="off" spellcheck="false">`}</label>`;
+		}).join("")}</div></div>`).join("")}</div>`;
+}
+
 function showGrammarPracticeQuestion() {
 	const question = gpState.queue[gpState.index];
 	if (!question) {
@@ -7534,16 +7548,16 @@ function showGrammarPracticeQuestion() {
 		gpEls.body.innerHTML = `
 			${question.vocabulary ? `<p class="gp-vocabulary" lang="ja">${renderJapaneseTextWithFurigana(question.vocabulary)}</p>` : ""}
 			<form class="gp-answer gp-answer-parts" id="gp-answer-form">
-				<div class="gp-fields ${question.fields.every((field) => !field.multiline) ? "gp-fields-short" : ""}">
+				${question.responseRows ? renderGrammarResponseRows(question) : `<div class="gp-fields ${question.fields.every((field) => !field.multiline) ? "gp-fields-short" : ""}">
 					${question.fields.map((field, index) => `<label class="gp-field" for="gp-part-${index}"><span>${escapeHtml(field.label)}</span>${field.multiline
 						? `<textarea id="gp-part-${index}" data-gp-part="${index}" lang="ja" rows="2" autocomplete="off" spellcheck="false" required></textarea>`
 						: `<input id="gp-part-${index}" data-gp-part="${index}" lang="ja" autocomplete="off" spellcheck="false" required>`}</label>`).join("")}
-				</div>
+				</div>`}
 				<button type="submit" aria-label="Check answer">›</button>
 			</form>
 			<p class="rh-feedback" id="gp-feedback" aria-live="polite"></p>
 			<div class="gp-explanation" id="gp-explanation" hidden></div>`;
-		gpEls.body.querySelector("input, textarea").focus({ preventScroll: true });
+		gpEls.body.querySelector("input, textarea, select").focus({ preventScroll: true });
 		return;
 	}
 	if (question.mode === "text") {
@@ -7611,7 +7625,7 @@ function findGrammarRetryCandidate(question) {
 function queueGrammarRetryQuestion(question) {
 	const retry = findGrammarRetryCandidate(question);
 	if (!retry) return false;
-	gpState.queue.splice(gpState.index + 1, 0, { ...retry, kind: `retry · ${retry.kind}` });
+	gpState.queue.splice(gpState.index + 1, 0, { ...GrammarPracticeCore.compact(retry), kind: `retry · ${retry.kind}` });
 	return true;
 }
 
@@ -7620,7 +7634,8 @@ function isFinalGrammarPracticeQuestion() {
 }
 
 function renderGrammarAnswerCoaching(question, value, isCorrect) {
-	const selected = (Array.isArray(value) ? value.join(" / ") : String(value || "")).trim();
+	const selected = (question.responseRows && Array.isArray(value) ? GrammarPracticeCore.completeResponse(question, value) : Array.isArray(value) ? value.join(" / ") : String(value || "")).trim();
+	const modelAnswer = question.responseRows ? GrammarPracticeCore.completeResponse(question) : question.answer;
 	const retryAvailable = !isCorrect && Boolean(findGrammarRetryCandidate(question));
 	const selectedBlock = isCorrect ? "" : `
 		<p class="is-wrong">
@@ -7636,7 +7651,7 @@ function renderGrammarAnswerCoaching(question, value, isCorrect) {
 			<div class="gp-coaching-answer">
 				<p>
 					<span>Answer</span>
-					<strong${jpLangAttribute(question.answer)}>${renderJapaneseTextWithFurigana(question.answer)}</strong>
+					<strong${jpLangAttribute(modelAnswer)}>${renderJapaneseTextWithFurigana(modelAnswer)}</strong>
 				</p>
 				${selectedBlock}
 			</div>
@@ -7682,7 +7697,7 @@ function answerGrammarPractice(value) {
 			});
 		} else {
 			const form = gpEls.body.querySelector(".gp-answer");
-			form.querySelectorAll("input, textarea, button").forEach((control) => { control.disabled = true; });
+			form.querySelectorAll("input, textarea, select, button").forEach((control) => { control.disabled = true; });
 		}
 		gpEls.body.querySelector("#gp-next").focus();
 		return;
@@ -7701,9 +7716,10 @@ function answerGrammarPractice(value) {
 	} else {
 		const form = gpEls.body.querySelector(".gp-answer");
 		form.classList.add(isCorrect ? "is-correct" : "is-incorrect");
-		form.querySelectorAll("input, textarea, button").forEach((control) => { control.disabled = true; });
+		form.querySelectorAll("input, textarea, select, button").forEach((control) => { control.disabled = true; });
 		form.querySelectorAll(".gp-field").forEach((field, index) => {
 			field.classList.add(grading?.parts[index] ? "is-correct" : "is-incorrect");
+			field.querySelector("input, textarea, select").setAttribute("aria-invalid", String(!grading?.parts[index]));
 		});
 	}
 	gpEls.body.querySelector("#gp-next").focus();
@@ -9020,6 +9036,14 @@ gpEls.body.addEventListener("click", (event) => {
 		answerGrammarPractice(question.options[Number(choice.dataset.gpChoice)]);
 	}
 });
+gpEls.body.addEventListener("keydown", (event) => {
+	if (event.key !== "Enter" || !event.target.matches("#gp-answer-form input")) return;
+	if (event.isComposing || event.keyCode === 229) { event.preventDefault(); return; }
+	const controls = [...gpEls.body.querySelectorAll("[data-gp-part]")];
+	const next = controls[controls.indexOf(event.target) + 1];
+	if (next) { event.preventDefault(); next.focus(); }
+});
+
 gpEls.body.addEventListener("submit", (event) => {
 	if (!event.target.matches("#gp-answer-form")) return;
 	event.preventDefault();

@@ -806,6 +806,18 @@ body.practice-fullscreen { overflow: hidden; }
 .gp-field input:focus-visible, .gp-field textarea:focus-visible { outline: 2px solid #315e4b; outline-offset: 2px; }
 .gp-field.is-correct input, .gp-field.is-correct textarea { border-color: #578960; background: #f3faf3; }
 .gp-field.is-incorrect input, .gp-field.is-incorrect textarea { border-color: #b85a4a; background: #fff7f4; }
+.gp-response-rows { flex: 1; min-width: 0; padding: 20px; display: grid; gap: 24px; }
+.gp-answer:has(.gp-response-rows) { display: grid; grid-template-columns: minmax(0, 1fr); }
+.gp-answer:has(.gp-response-rows) > button { justify-self: end; width: 64px; height: 48px; margin: 0 20px 16px; border-radius: 4px; }
+.gp-response-label { margin: 0 0 12px; font-size: 13px; color: #4f6256; }
+.gp-response-line { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 4px; font-family: "Noto Sans JP", sans-serif; font-size: 19px; line-height: 2; }
+.gp-response-line > span { min-width: 0; overflow-wrap: anywhere; }
+.gp-response-line .gp-gap { width: var(--gap-width); max-width: 100%; flex: 0 1 auto; }
+.gp-answer .gp-gap input, .gp-answer .gp-gap select { box-sizing: border-box; width: 100%; min-width: 0; height: 48px; padding: 6px 10px; border: 1px solid #8ba696; border-bottom: 2px solid #315e4b; border-radius: 4px; color: #244d3b; background: #fff; font-family: "Noto Sans JP", sans-serif; font-size: 17px; text-align: left; }
+.gp-gap select:focus-visible { outline: 2px solid #315e4b; outline-offset: 2px; }
+.gp-gap.is-correct select { border-color: #578960; background: #f3faf3; }
+.gp-gap.is-incorrect select { border-color: #b85a4a; background: #fff7f4; }
+.gp-coaching-answer strong { white-space: pre-line; overflow-wrap: anywhere; }
 @media (max-width: 700px) {
 	.gp-hero.is-contextual { padding: 72px 18px 22px; }
 	.gp-hero.is-contextual h3 { font-size: 18px; line-height: 2; }
@@ -814,6 +826,11 @@ body.practice-fullscreen { overflow: hidden; }
 	.gp-fields-short { grid-template-columns: 1fr; }
 	.gp-answer .gp-field input, .gp-answer .gp-field textarea { font-size: 17px; }
 	.gp-answer.gp-answer-parts > button { width: 46px; flex-shrink: 0; }
+	.gp-response-rows { padding: 12px; }
+	.gp-response-line { font-size: 17px; }
+	.gp-answer .gp-gap input, .gp-answer .gp-gap select { font-size: 16px; }
+	.gp-answer .gp-gap select { font-size: 15px; }
+	.gp-answer:has(.gp-response-rows) > button { margin-right: 12px; }
 }
 .gp-body { display: flex; flex-direction: column; align-items: center; width: min(100% - 28px, 1000px); margin: 0 auto; padding: 22px 0 48px; }
 .gp-options { display: grid; width: 100%; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }

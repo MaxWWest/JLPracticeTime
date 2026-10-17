@@ -69,14 +69,34 @@
 			if (!noun || !verb) throw new Error(`Missing Boss lexical edge ${edge}: ${word}/${frame.verb}`);
 			return { word, en: bareEnglish(noun.en), verb: verb.ja, dict: word + frame.particle + verb.forms.dictionary, stem: word + frame.particle + verb.forms.masuStem, ta: word + frame.particle + verb.forms.ta, te: word + frame.particle + verb.forms.te, nai: word + frame.particle + verb.forms.nai, edge };
 		}
-		const normalize = core.normalizer([...aliases, ...readings]), grade = core.grader(normalize);
+		const normalize = core.normalizer([...aliases, ...readings, ["読む", "よむ"], ["読み", "よみ"], ["読ん", "よん"], ["終え", "おえ"], ["終わ", "おわ"], ["続け", "つづけ"], ["十六", "16"], ["十七", "17"], ["じゅうろく", "16"], ["じゅうしち", "17"], ["じゅうなな", "17"], ["時", "じ"]]), grade = core.grader(normalize);
 		function make(id, variant, facts, content, choices, conflicts, words = []) {
 			const spec = cases.find((c) => c.id === id), truths = choices.filter((c) => supported(id, facts, c.claims));
 			if (truths.length !== 1 || new Set(choices.map((c) => c.ja)).size !== 4) throw new Error(`Ambiguous Boss case ${id}:${variant}`);
 			const expected = conclusion(id, facts), answer = truths[0];
+			let writing;
+			if (id === "reading-handover") {
+				const limit = `${facts.hour}時${facts.finished ? "までに" : "まで"}`, object = `${words[0]}を`;
+				const predicates = ["読みます", "読む", ...(facts.finished ? ["読み終えます", "読み終える", "読み終わります", "読み終わる"] : ["読み続けます", "読み続ける", "読んでいます", "読んでいる"])];
+				const accepted = ["が", "は"].flatMap((particle) => predicates.flatMap((verb) => [
+					`${facts.assignee}${particle}${limit}${object}${verb}。`, `${limit}${facts.assignee}${particle}${object}${verb}。`, `${facts.assignee}${particle}${object}${limit}${verb}。`
+				]));
+				writing = { subprompt: `Write one note naming the agreed reader, the ${facts.hour}:00 time limit, and the reading action.`, accepted, vocabulary: `${words[0]} (${bareEnglish(nouns.get(words[0]).en)}) / 読む (read)` };
+			}
+			if (id === "moving-help") {
+				const object = `${words[0]}を`, intent = facts.intent;
+				const accepted = {
+					self: ["私が", "私が一人で"].flatMap((who) => [`${who}${object}運びましょうか。`, `${object}${who}運びましょうか。`]),
+					joint: ["一緒に", "二人で"].flatMap((who) => ["ませんか", "ましょうか"].flatMap((end) => [`${who}${object}運び${end}。`, `${object}${who}運び${end}。`])),
+					listener: [`${object}運んでくれませんか。`, `あなたが${object}運んでくれませんか。`, `${object}運んでもらえませんか。`, `あなたに${object}運んでもらえませんか。`],
+					history: ["", "あなたは"].flatMap((who) => ["が", "は"].map((particle) => `${who}${object}運んだこと${particle}ありますか。`))
+				}[intent];
+				writing = { subprompt: "Write Tanaka's missing line. Name the item; make the intended participants clear when proposing an action.", accepted, vocabulary: `${words[0]} (${bareEnglish(nouns.get(words[0]).en)}) / 運ぶ・運び・運んで・運んだ (carry)` };
+			}
+			if (writing) writing.fields = [core.field("Your sentence", [answer.ja, ...writing.accepted], choices.filter((c) => c !== answer).map((c) => ({ accepted: [c.ja], message: conflicts[Object.keys(expected).find((key) => c.claims[key] !== expected[key])] })))];
 			return {
 				kind: spec.format, mode: "choice", ...content, band: "Choose the best answer.", options: choices.map((c) => c.ja), answer: answer.ja,
-				choiceFacts: choices.map((c) => c.claims), choiceMeanings: Object.fromEntries(choices.map((c) => [c.ja, c.en])),
+				writing, choiceFacts: choices.map((c) => c.claims), choiceMeanings: Object.fromEntries(choices.map((c) => [c.ja, c.en])),
 				choiceFeedback: Object.fromEntries(choices.filter((c) => c !== answer).map((c) => [c.ja, `Your choice says: ${c.en} ${Object.keys(expected).filter((key) => c.claims[key] !== expected[key]).map((key) => conflicts[key]).join(" ")}`])),
 				meta: { engine: version, sessionId: "boss-01-05", sourceSessionId: spec.unit, units: [spec.unit, id === "moving-help" && facts.intent === "history" ? "experience" : spec.secondary], familyId: spec.unit, familyLabel: spec.unit, task: id, topic: spec.unit, pattern: spec.pattern, format: spec.format, difficulty: "boss", domain: id, familyKey: id, sceneKey: `${id}:${variant}`, id: `${id}:${variant}`, facts, vocabulary: words }
 			};
@@ -201,7 +221,20 @@
 			const family = candidates.filter((q) => q.meta.familyKey === key), fresh = family.filter((q) => !history.has(q.meta.sceneKey));
 			return core.pick(fresh.length ? fresh : family, rng);
 		});
-		return core.selectQueue(chosen, Math.min(count, roundSize), { seed }, version, cases.map((c) => ({ id: c.id, count: 2.5 })));
+		let ordered = core.selectQueue(chosen, Math.min(count, roundSize), { seed }, version, cases.map((c) => ({ id: c.id, count: 2.5 })));
+		if (ordered.length === roundSize) {
+			const quick = core.selectQueue(ordered.filter((q) => !q.writing), 8, { seed }, version, cases.map((c) => ({ id: c.id, count: 2.5 }))), finale = ordered.filter((q) => q.writing);
+			if (finale[0].meta.topic === quick.at(-1).meta.topic) finale.reverse();
+			ordered = [...quick, ...finale.map((q) => ({ ...q, ...q.writing, mode: "text", options: undefined, choiceFacts: undefined, kind: "Final challenge", band: "Write one Japanese sentence.", meta: { ...q.meta, answerMode: "production" } }))];
+			// Rebalance the remaining eight choices after removing the two writing tasks.
+			const positions = core.shuffle([0, 1, 2, 3, 0, 1, 2, 3], rng);
+			quick.forEach((q, i) => {
+				const claims = new Map(q.options.map((option, j) => [option, q.choiceFacts[j]]));
+				q.options = core.shuffle(q.options.filter((o) => o !== q.answer), rng); q.options.splice(positions[i], 0, q.answer);
+				q.choiceFacts = q.options.map((o) => claims.get(o));
+			});
+		}
+		return ordered;
 	}
 	return { version, roundSize, create, selectQueue, cases, edges, readings, conclusion, supported };
 });

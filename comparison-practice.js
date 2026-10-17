@@ -1,9 +1,8 @@
 /* Comparison facts, question construction, and grading are deliberately independent of the UI. */
 (function (root, factory) {
-	const api = factory();
-	if (typeof module === "object" && module.exports) module.exports = api;
-	else root.ComparisonPractice = api;
-})(typeof globalThis === "object" ? globalThis : this, function () {
+	if (typeof module === "object" && module.exports) module.exports = factory(require("./grammar-practice-core.js"));
+	else root.ComparisonPractice = factory(root.GrammarPracticeCore);
+})(typeof globalThis === "object" ? globalThis : this, function (core) {
 	"use strict";
 
 	const version = "comparison-v2";
@@ -353,6 +352,23 @@
 				const person = scene.structure === "perspective" ? scope : scene.structure === "action-reason" ? "私" : null;
 				const prefixes = person ? [`${person}には、`, `${person}にとって、`, `${person}にとっては、`] : scope === "default" ? [] : [`${scope}は、`];
 				fields([{ label, accepted: [...answers, ...prefixes.flatMap((prefix) => answers.map((answer) => prefix + answer))] }]);
+				q.responseSpec = core.cloze([comparisonRow(label, form, high, low)], `${scopeCue}${task.id === "opposite" ? "Reverse" : "Preserve"} the relationship. Complete the comparison using ${form === "hodo" ? "ほど" : "より and ほうが"}.`);
+			}
+			function comparisonRow(label, form, high = more, low = less) {
+				const nounChoices = shuffle([high, low], rng).map(nominal);
+				if (form === "hodo") return { label, segments: [
+					core.gap(`${label}: topic`, [nominal(low)], nounChoices), "は",
+					core.gap(`${label}: benchmark`, [high.ja], shuffle([high.ja, low.ja], rng)),
+					core.gap(`${label}: comparison marker`, ["ほど"]), ending(dimension, true) + "。"
+				] };
+				const baseFirst = form !== "topic-yori" && variant % 2 === 0, first = baseFirst ? low : high, second = baseFirst ? high : low;
+				const highMarker = form === "topic-yori" ? "は" : high.type === "action" ? "ほうが" : "のほうが";
+				return { label, segments: [
+					form === "topic-yori" && first === high ? nominal(first) : first.ja,
+					core.gap(`${label}: first marker`, baseFirst ? ["より", "よりも"] : [highMarker]),
+					form === "topic-yori" && second === high ? nominal(second) : second.ja,
+					core.gap(`${label}: second marker`, baseFirst ? [highMarker] : ["より", "よりも"]), ending(dimension) + "。"
+				] };
 			}
 			if (task.id === "paired-blanks") {
 				if (scene.structure !== "chain") return null;
@@ -393,6 +409,7 @@
 					{ label: "2. より + ほうが (either order)", accepted: sentenceAnswers(more, less, dimension, "hou") },
 					{ label: "3. A は B ほど ...", accepted: sentenceAnswers(more, less, dimension, "hodo") }
 				]);
+				q.responseSpec = core.cloze([comparisonRow("1", "topic-yori"), comparisonRow("2", "hou"), comparisonRow("3", "hodo")], "Keep the same relationship in all three sentence frames. Use は / より in 1, より / ほうが in 2, and ほど in 3.");
 			} else if (task.id === "particles") {
 				if (!["luggage", "clothes", "devices", "books", "drinks", "meals"].includes(scene.domain) || !["安い", "軽い", "暖かい", "便利", "読みやすい"].includes(dimension.adj)) return null;
 				const reasonPredicate = `${dimension.adj}${dimension.neg.endsWith("では") ? "だ" : ""}`;

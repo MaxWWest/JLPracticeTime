@@ -24,6 +24,39 @@
 	function field(label, accepted, contrasts = []) {
 		return { label, accepted: unique(accepted), answer: accepted[0], multiline: true, contrasts };
 	}
+	function gap(label, accepted, options) {
+		return { ...field(label, accepted), multiline: false, ...(options ? { options: unique(options) } : {}) };
+	}
+	// Only remove an authored, fixed frame prefix, never infer Japanese boundaries.
+	function tailField(source, prefix, options) {
+		const tails = (answers) => unique(answers.filter((answer) => answer.startsWith(prefix)).map((answer) => answer.slice(prefix.length).replace(/。$/, "")));
+		const accepted = tails(source.accepted);
+		if (!accepted.length) throw new Error(`No answers match frame: ${prefix}`);
+		return { ...gap(source.label, accepted, options), contrasts: (source.contrasts || []).map((contrast) => ({ ...contrast, accepted: tails(contrast.accepted) })) };
+	}
+	function cloze(rows, subprompt, band = "Complete the blanks.") {
+		const fields = [];
+		const responseRows = rows.map((row) => ({ label: row.label, segments: row.segments.map((part) => {
+			if (typeof part === "string") return part;
+			if (!part.accepted?.length || !part.answer) throw new Error("A grammar gap needs checked answers");
+			if (part.options && (!part.options.includes(part.answer) || part.options.length < 2)) throw new Error("A choice gap needs its checked answer and a contrast");
+			const index = fields.push(part) - 1;
+			return { field: index };
+		}) }));
+		return { fields, responseRows, subprompt, band };
+	}
+	function completeResponse(question, values = question.fields.map((f) => f.answer)) {
+		return question.responseRows.map((row) => row.segments.map((part) => typeof part === "string" ? part : (values[part.field] || "＿＿")).join("")).join("\n");
+	}
+	function compact(question, seed = Date.now()) {
+		if (!question.responseSpec) return question;
+		const rng = random(seed);
+		const result = { ...question, ...question.responseSpec, meta: { ...question.meta, answerMode: "cloze" } };
+		result.fields = result.fields.map((f) => f.options ? { ...f, options: shuffle(f.options, rng) } : f);
+		result.answer = result.fields.map((f) => f.answer).join(" / ");
+		result.accepted = [result.answer];
+		return result;
+	}
 	function grader(normalize) {
 		return (question, value) => {
 			if (question.mode === "choice") return { correct: value === question.answer, parts: [], feedback: value === question.answer ? [] : [question.choiceFeedback?.[value]].filter(Boolean) };
@@ -83,5 +116,5 @@
 		}
 		return queue;
 	}
-	return { random, shuffle, pick, unique, normalizer, field, grader, question, selectQueue };
+	return { random, shuffle, pick, unique, normalizer, field, gap, tailField, cloze, compact, completeResponse, grader, question, selectQueue };
 });
