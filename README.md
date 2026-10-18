@@ -2,6 +2,18 @@
 
 A static Japanese vocabulary, grammar, and practice site.
 
+## Furigana
+
+`furigana.js` matches authored word readings using Japanese word boundaries,
+with explicit irregular-verb and counter readings. The renderer draws on all
+five lesson reading lists plus the shared comparison vocabulary, and leaves
+kana endings outside ruby. It does not infer readings for arbitrary unknown
+words. Unknown compounds remain plain rather than receiving misleading
+character-by-character readings. Ambiguous authored text can use
+`{辛い|つらい}` or `{辛い|からい}` to select the intended reading.
+These display annotations do not change answer grading.
+Run `node --test furigana.test.js` for regression checks.
+
 ## Open the site
 
 Open `index.html` in a browser or serve this directory with any static web server.

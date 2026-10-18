@@ -71,6 +71,7 @@ globalThis.__grammarAuditApi = {
 	};
 	const context = {
 		console,
+		Furigana: require("./furigana.js"),
 		GrammarPracticeCore: require("./grammar-practice-core.js"),
 		ComparisonPractice: require("./comparison-practice.js"),
 		TimePractice: require("./time-practice.js"),

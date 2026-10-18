@@ -345,26 +345,21 @@ const furiganaAutoEntries = [
 	["運動", "うんどう"], ["残業", "ざんぎょう"], ["仕事", "しごと"]
 ].sort((a, b) => b[0].length - a[0].length);
 
-function getJapaneseFuriganaTokens(value, { auto = true } = {}) {
-	const source = String(value || "");
-	const tokens = [];
-	for (let index = 0; index < source.length;) {
-		const exact = source.slice(index).match(/^\{([^{}|]+)\|([^{}|]+)\}/);
-		if (exact) {
-			tokens.push({ text: exact[1], html: `<ruby>${escapeHtml(exact[1])}<rt>${escapeHtml(exact[2])}</rt></ruby>` });
-			index += exact[0].length;
-			continue;
+let furiganaRenderer;
+function getJapaneseFuriganaTokens(value, options = {}) {
+	// Initialize after the lesson vocabulary has been declared; grading aliases are unchanged.
+	if (!furiganaRenderer) {
+		const entries = [...furiganaAutoEntries, ...comparisonKanaAnswerAliases, ...ComparisonPractice.readings,
+			...TimePractice.readings, ...InvitationPractice.readings, ...AbilityPractice.readings, ...ExperiencePractice.readings, ...BossPractice.readings];
+		const readings = new Map(entries);
+		for (const { adj, neg } of comparisonAdjectivePool) {
+			const reading = readings.get(adj);
+			if (!reading || !adj.endsWith("い") || !neg.endsWith("く")) continue;
+			for (const suffix of ["かった", "く", "ければ", "さ"]) entries.push([adj.slice(0, -1) + suffix, reading.slice(0, -1) + suffix]);
 		}
-		const entry = auto ? furiganaAutoEntries.find(([kanji]) => source.startsWith(kanji, index)) : null;
-		if (entry) {
-			tokens.push({ text: entry[0], html: `<ruby>${escapeHtml(entry[0])}<rt>${escapeHtml(entry[1])}</rt></ruby>` });
-			index += entry[0].length;
-			continue;
-		}
-		tokens.push({ text: source[index], html: escapeHtml(source[index]) });
-		index += 1;
+		furiganaRenderer = Furigana.create(entries);
 	}
-	return tokens;
+	return furiganaRenderer.tokens(value, options);
 }
 
 function renderJapaneseTextWithFurigana(value, { auto = true } = {}) {
