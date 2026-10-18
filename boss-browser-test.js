@@ -50,14 +50,15 @@ async function main() {
 		await page.locator("#gp-again").click();
 		await page.locator('[data-gp-start="boss-01-05"]').click();
 		const next = await page.evaluate(() => gpState.queue.map((q) => q.meta.sceneKey));
-		assert.ok(next.every((key) => !first.includes(key)), "Second round changes the fact variants");
+		assert.ok(next.every((key) => !first.map(id => id.split(":")[0]).includes(key.split(":")[0])), "Second round changes the scenario families, not just their variants");
+		assert.equal(await page.evaluate(() => gpState.bank.length), 120);
 		for (const width of [1440, 390, 320]) {
 			await page.setViewportSize({ width, height: width === 1440 ? 1000 : 844 });
 			const ids = await page.evaluate(() => gpState.bank.map((q) => q.meta.id));
 			for (const id of ids) {
 				await page.evaluate((id) => {
 					const q = gpState.bank.find((q) => q.meta.id === id);
-					gpState.queue = [q.writing ? { ...q, ...q.writing, mode: "text", options: undefined, kind: "Final challenge", band: "Write one Japanese sentence." } : q];
+					gpState.queue = [q.writing ? { ...q, ...q.writing, answer: q.writing.fields[0].answer, mode: "text", options: undefined, kind: "Final challenge", band: "Write one Japanese sentence." } : q];
 					gpState.index = 0;
 					showGrammarPracticeQuestion();
 				}, id);
@@ -66,14 +67,14 @@ async function main() {
 					return rect.width && (rect.left < -1 || rect.right > innerWidth + 1 || el.scrollWidth > el.clientWidth + 2);
 				}).map((el) => el.id || el.className));
 				assert.deepEqual(overflow, [], `${id} at ${width}px`);
-				if (["study-booking:0", "moving-help:1", "first-visit:2"].includes(id) && width !== 320) await page.screenshot({ path: `/tmp/kotoba-boss-${width}-${id.replace(":", "-")}.png` });
+				if (["room-perspective:0", "reservation-limits:1", "bounded-diary:3", "moving-help:1", "first-visit:2"].includes(id) && width !== 320) await page.screenshot({ path: `/tmp/kotoba-boss-${width}-${id.replace(":", "-")}.png` });
 			}
 		}
 		await page.evaluate(() => startGrammarPractice("comparison", 25, { focus: "review" }));
 		assert.equal(await page.locator("#gp-session-notes").isVisible(), true);
 		assert.equal(await page.evaluate(() => gpState.queue.length), 25);
 		assert.deepEqual(errors, []);
-		console.log("PASS: live Boss entry, 10-question scoring, answer-specific feedback, hidden hints, variant freshness, all 40 pilot items at 1440/390/320px, and Review restoration.");
+		console.log("PASS: Boss entry, 10-question scoring, answer-specific feedback, hidden hints, scenario freshness, all 120 items at 1440/390/320px, and Review restoration.");
 	} finally { await browser.close(); }
 }
 main().catch((error) => { console.error(error); process.exitCode = 1; });

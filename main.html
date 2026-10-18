@@ -9,15 +9,16 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=20261017-response-v1">
-    <script src="grammar-practice-core.js?v=20261017-response-v1" defer></script>
-    <script src="comparison-practice.js?v=20261017-response-v1" defer></script>
-    <script src="time-practice.js?v=20261017-response-v1" defer></script>
-    <script src="invitation-practice.js?v=20261017-response-v1" defer></script>
-    <script src="ability-practice.js?v=20261017-response-v1" defer></script>
-    <script src="experience-practice.js?v=20261017-response-v1" defer></script>
-    <script src="boss-practice.js?v=20261017-response-v1" defer></script>
-    <script src="script.js?v=20261017-response-v1" defer></script>
+    <link rel="stylesheet" href="styles.css?v=20261017-quality-v1">
+    <script src="grammar-practice-core.js?v=20261017-quality-v1" defer></script>
+    <script src="comparison-practice.js?v=20261017-quality-v1" defer></script>
+    <script src="time-practice.js?v=20261017-quality-v1" defer></script>
+    <script src="invitation-practice.js?v=20261017-quality-v1" defer></script>
+    <script src="ability-practice.js?v=20261017-quality-v1" defer></script>
+    <script src="experience-practice.js?v=20261017-quality-v1" defer></script>
+    <script src="boss-scenarios.js?v=20261017-quality-v1" defer></script>
+    <script src="boss-practice.js?v=20261017-quality-v1" defer></script>
+    <script src="script.js?v=20261017-quality-v1" defer></script>
     <script src="reading.js?v=20261013-furigana-inflections" defer></script>
 </head>
 <body>
@@ -831,6 +832,7 @@
                     <div class="gp-session-note-panel" id="gp-session-note-panel" role="tooltip" hidden></div>
                     <div class="gp-hero" id="gp-hero">
                         <p class="rh-hero-label" id="gp-type">COMPARISON PATTERNS</p>
+                        <p id="gp-prompt-label" hidden></p>
                         <h3 id="gp-prompt"></h3>
                         <p id="gp-subprompt"></p>
                     </div>
@@ -839,7 +841,7 @@
                 </div>
                 <div class="conjugation-complete" id="gp-complete" hidden>
                     <span class="practice-welcome-mark" aria-hidden="true">文</span>
-                    <h3 id="gp-complete-title">Grammar stats</h3>
+                    <h3 id="gp-complete-title" tabindex="-1">Grammar stats</h3>
                     <p id="gp-result"></p>
                     <div class="conjugation-final-stats gp-final-stats">
                         <div><span>Accuracy</span><strong id="gp-final-accuracy">0%</strong></div>

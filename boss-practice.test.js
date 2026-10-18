@@ -22,13 +22,37 @@ function truth(q, claim) {
 		case "broadcast-access": return claim.access === f.registered && claim.audible === f.audibleNow;
 		case "first-visit": return claim.ever === f.completed && claim.tomorrow === f.accepted;
 		case "weekend-meal": return (claim.history === "never") === (f.pastCount === 0) && (claim.cheaper === "home") === (f.homeCost < f.shopCost);
+		case "suitcase-capacity": return f.capacity[claim.larger] === Math.max(...Object.values(f.capacity)) && claim.fits === (f.required <= f.capacity.red);
+		case "commute-total": return (claim.faster === "train") === (f.trainRide + f.trainWalk < f.busRide + f.busWalk) && claim.onTime === (f.remaining >= f.trainRide + f.trainWalk);
+		case "room-perspective": return claim.quieter === f.satoQuiet && claim.visited === f.satoVisited;
+		case "incomplete-ranking": return claim.relation === f.link && claim.agreed === f.accepted;
+		case "overlapping-work": return claim.simultaneous === (f.writer === f.reader && f.overlap) && claim.capable === f.independent;
+		case "delivery-cutoff": return claim.accepted === (f.handedIn <= f.cutoff) && claim.arrives === (f.arrivalDay === "today");
+		case "progress-correction": return (claim.packing === "after") === f.packed && (claim.departure === "before") === f.departNow;
+		case "reservation-limits": return (claim.cleaning === "duration") === f.continuousClean && (claim.reception === "duration") === f.continuousDesk;
+		case "declined-help": return (claim.helper === "sato") === f.accepted && claim.capable === f.canCarry;
+		case "pending-invitation": return claim.day === f.newDay && claim.confirmed === f.confirmed;
+		case "tool-offer": return (claim.actor === "sato") === f.helperActs && (claim.tool === "sato") === f.canLend;
+		case "partial-acceptance": return claim.lunch === f.lunch && claim.museum === f.museum;
+		case "training-update": return claim.capable === f.passedSolo && claim.done === f.todayDone;
+		case "alternative-machine": return claim.possible === f.alternativeWorking && (claim.cheaper === "school") === (f.schoolCost < f.shopCost);
+		case "voice-and-language": return claim.audible === f.sound && claim.understands === f.knowsLanguage;
+		case "ingredients-now": return claim.now === f.ingredientsReady && (claim.cheaper === "home") === (f.homeCost < f.shopCost);
+		case "single-trip": return claim.regular === f.repeat && claim.accepted === f.accepted;
+		case "specific-machine": return claim.tried === f.usedThis && claim.capable === f.canOperate;
+		case "reported-visit": return claim.narrator === f.narratorWent && claim.accepted === f.accepted;
+		case "bounded-diary": {
+			const rentals = f.days.filter(Boolean).length;
+			return claim.pattern === (f.days.length === 0 ? "plan" : rentals === 0 ? "none" : rentals === f.days.length ? "all" : "some");
+		}
 		default: throw new Error(`Unreviewed case: ${q.meta.task}`);
 	}
 }
 
-test("pilot is ten distinct cross-unit situations with no pre-answer grammar instructions", () => {
-	assert.equal(bank.length, 40);
-	assert.equal(new Set(bank.map((q) => q.meta.familyKey)).size, 10);
+test("Boss has thirty distinct cross-unit situations with no pre-answer grammar instructions", () => {
+	assert.equal(bank.length, 120);
+	assert.equal(new Set(bank.map((q) => q.meta.familyKey)).size, 30);
+	for (const unit of units) assert.equal(boss.cases.filter(c => c.unit === unit).length, 6);
 	for (const q of bank) {
 		assert.equal(q.meta.engine, boss.version);
 		assert.equal(new Set(q.meta.units).size, 2);
@@ -100,7 +124,7 @@ test("pilot sessions cap at ten, balance the units, vary order, and rotate fact 
 		assert.ok(Math.max(...counts) - Math.min(...counts) <= 1);
 		orders.add(queue.map((q) => q.meta.sourceSessionId).join("/"));
 		firstAnswers.add(queue[0].answer);
-		recent = [...recent, ...queue.map((q) => q.meta.sceneKey)].slice(-30);
+		recent = [...recent, ...queue.map((q) => q.meta.sceneKey)].slice(-50);
 	}
 	assert.ok(orders.size > 40);
 	assert.ok(firstAnswers.size > 10);
@@ -112,7 +136,7 @@ test("rebuilding changes compatible nouns without changing the finite scenario c
 	const samples = new Set();
 	for (let seed = 0; seed < 15; seed++) {
 		const items = boss.create({ ...input, seed }).buildBank();
-		assert.equal(items.length, 40);
+		assert.equal(items.length, 120);
 		for (const q of items) {
 			assert.equal(q.choiceFacts.filter((claim) => truth(q, claim)).length, 1);
 			if (q.meta.task === "weekend-meal") assert.ok(boss.edges.meal.words.includes(q.meta.vocabulary[0]));
@@ -142,6 +166,7 @@ test("actual Boss routing excludes all Review banks, while focused reviews stay 
 	assert.equal(runtime.grammarPracticeSessions["adaptive-review"], undefined);
 	const html = fs.readFileSync(path.join(__dirname, "main.html"), "utf8");
 	assert.ok(html.indexOf('src="grammar-practice-core.js') < html.indexOf('src="boss-practice.js'));
+	assert.ok(html.indexOf('src="boss-scenarios.js') < html.indexOf('src="boss-practice.js'));
 	assert.ok(html.indexOf('src="boss-practice.js') < html.indexOf('src="script.js'));
 	assert.match(html, /id="gp-count-boss-01-05"><option value="10" selected>10<\/option><\/select>/);
 });
@@ -154,7 +179,7 @@ test("the inspectable pilot sample matches the current generator", () => {
 test("the audit checks the real ten-question Boss pilot without legacy augmentation", () => {
 	const { buildSessionBanks, auditHardPracticeQueues } = require("./grammar-audit.js");
 	const entries = buildSessionBanks(runtime, ["boss-01-05"]);
-	assert.equal(entries[0].bank.length, 40);
+	assert.equal(entries[0].bank.length, 120);
 	assert.ok(entries[0].bank.every((q) => q.meta.engine === boss.version));
 	const findings = [];
 	auditHardPracticeQueues(runtime, entries, findings);

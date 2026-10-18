@@ -57,9 +57,10 @@ grading boundaries, diversity checks, and follow-on work.
 
 Boss 01-05 is now a ten-question cross-unit pilot, separate from focused Review.
 Eight contextual choice questions lead into two one-sentence writing challenges,
-without naming the target grammar in advance. Ten situation families each have four fact variants; a round
-uses every family once. Longer rounds are unavailable until more distinct cases
-are added. Other Boss blocks and Review question counts are unchanged.
+without naming the target grammar in advance. Thirty situation families each
+have four fact variants. Each round draws two families per unit and avoids the
+previous two rounds' families. The writing finale draws from all five units.
+Other Boss blocks and Review question counts are unchanged.
 
 Inspect [BOSS_PILOT_SAMPLE.md](BOSS_PILOT_SAMPLE.md) for Japanese questions with
 English passages and an answer key. Regenerate it with
@@ -82,3 +83,14 @@ and legacy units are unchanged.
 See [RESPONSE_DESIGN.md](RESPONSE_DESIGN.md). Run
 `node --test response-practice.test.js` to check reconstructed sentences, kana,
 independent blank grading, typing reduction and the Boss writing boundary.
+
+Review favors using and interpreting the grammar over reading long setups.
+Ten-question rounds contain at least seven compact grammar responses, with
+brief context and clearly distinguished keep/reverse/correct instructions.
+
+See [QUALITY_PASS.md](QUALITY_PASS.md) for counterfactual and grammar-first
+regression tests. Run `node --test quality-practice.test.js` for neutral labels,
+meaning-sensitive answers, scenario rotation, writing coverage, and kana
+acceptance. `node review-feedback-browser-test.js` completes ten-question rounds
+for all five units at desktop and mobile sizes, checking scores and visible
+results rather than merely checking whether the result elements exist.

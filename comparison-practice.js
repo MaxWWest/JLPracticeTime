@@ -71,12 +71,12 @@
 	];
 	const tasks = [
 		{ id: "paired-blanks", label: "Two-part comparison", count: 3 },
-		{ id: "rewrite-hodo", label: "Keep the meaning", count: 3 },
-		{ id: "rewrite-hou", label: "Keep the meaning", count: 2 },
+		{ id: "rewrite-hodo", label: "Keep the meaning", count: 4 },
+		{ id: "rewrite-hou", label: "Keep the meaning", count: 4 },
 		{ id: "opposite", label: "Reverse the comparison", count: 2 },
-		{ id: "meaning", label: "Follow the evidence", count: 2 },
-		{ id: "inference", label: "Connect the comparisons", count: 3 },
-		{ id: "tradeoff", label: "Two different qualities", count: 2 },
+		{ id: "meaning", label: "Interpret the comparison", count: 2 },
+		{ id: "inference", label: "Connect the comparisons", count: 1 },
+		{ id: "tradeoff", label: "Two different qualities", count: 1 },
 		{ id: "dialogue", label: "Continue the conversation", count: 2 },
 		{ id: "production", label: "Express the meaning", count: 2 },
 		{ id: "repair", label: "Correct the comparison", count: 2 },
@@ -217,12 +217,18 @@
 			let dimension = ds[0];
 			let target = { more: a, less: c, dimension, scope: "default" };
 			let facts = [];
-			let context = domain.intro;
-			let contextEn = domain.en;
+			let context = "";
+			let contextEn = "";
 			let queryPair = [a, c];
 			let conclusion = "more";
 			let presentation = { intro: context, introEn: domain.en, prefixes: [], past: [] };
-			if (structure === "chain") {
+			if (structure === "direct") {
+				facts = [fact(a, b, dimension)];
+				target.less = b;
+				queryPair = shuffle([a, b], rng);
+				conclusion = compare(facts, queryPair[0].ja, queryPair[1].ja, dimension.adj);
+				context = renderFact(facts[0], entities);
+			} else if (structure === "chain") {
 				facts = [fact(a, b, dimension), fact(b, c, dimension)];
 				context += "\n" + shuffle(facts, rng).map((f) => renderFact(f, entities)).join("\n");
 			} else if (structure === "tradeoff") {
@@ -238,11 +244,9 @@
 				const second = fact(b, a, dimension, s.b);
 				facts = [first, second];
 				const qualifier = structure === "perspective" ? "には" : "は";
-				const setup = structure === "perspective" ? "田中さんと山田さんに感想を聞きました。" : structure === "change" ? "先月のメモだけでは分からないので、今月の情報も確認しました。" : "利用する時間も考えて、次の情報を確認しました。";
-				presentation = { intro: `${domain.intro}\n${setup}`, introEn: domain.en, prefixes: [`${s.a}${qualifier}、`, `${s.b}${qualifier}、`], past: [structure === "change", false] };
+				presentation = { intro: "", introEn: "", prefixes: [`${s.a}${qualifier}、`, `${s.b}${qualifier}、`], past: [structure === "change", false] };
 				context = presentation.intro + "\n" + facts.map((f, index) => presentation.prefixes[index] + renderFact(f, entities, presentation.past[index])).join("\n");
-				const setupEn = structure === "perspective" ? "I asked Tanaka and Yamada for their impressions." : structure === "change" ? "Last month's notes are not enough, so I also checked this month's information." : "I checked this information, taking the time of use into account.";
-				contextEn = `${domain.en} ${setupEn} ${upper(s.aEn)}: ${relationEnglish(a, b, dimension, structure === "change")} ${upper(s.bEn)}: ${relationEnglish(b, a, dimension)}`;
+				contextEn = `${upper(s.aEn)}: ${relationEnglish(a, b, dimension, structure === "change")} ${upper(s.bEn)}: ${relationEnglish(b, a, dimension)}`;
 				const chooseFirst = structure !== "change" && rng() < 0.5;
 				target = { more: chooseFirst ? a : b, less: chooseFirst ? b : a, dimension, scope: chooseFirst ? s.a : s.b };
 			} else if (structure === "evidence") {
@@ -260,7 +264,7 @@
 				contextEn += " " + facts.map((f) => f.equal ? `${upper(entities.find((e) => e.ja === f.more).en)} and ${entities.find((e) => e.ja === f.less).en} are equally ${dimension.base}.` : relationEnglish(entities.find((e) => e.ja === f.more), entities.find((e) => e.ja === f.less), adjectives.get(f.dimension))).join(" ");
 			}
 			const lexical = unique(facts.flatMap((f) => [f.more, f.less]).map((name) => entities.find((e) => e.ja === name).root)).sort();
-			return { entities, target, facts, context, contextEn, presentation, structure, domain: domain.id, queryPair, conclusion,
+			return { entities, target, facts, context: context.trim(), contextEn: contextEn.trim(), presentation, structure, domain: domain.id, queryPair, conclusion,
 				familyKey: `${domain.id}:${lexical.join("|")}`, sceneKey: `${domain.id}:${facts.map((f) => `${f.more}>${f.less}:${f.dimension}:${f.scope}:${f.equal}`).sort().join("|")}` };
 		}
 
@@ -309,10 +313,10 @@
 				}
 				const [more, less] = shuffle(entities, rng);
 				const facts = [fact(more, less, dimension)];
-				const presentation = { intro: context, introEn: contextEn, prefixes: ["私には、"], past: [] };
-				context += `\n私には、${renderFact(facts[0], entities)}`;
+				const presentation = { intro: "", introEn: "", prefixes: ["私には、"], past: [] };
+				context = `私には、${renderFact(facts[0], entities)}`;
 				const meaning = relationEnglish(more, less, dimension);
-				contextEn += ` For me, ${meaning[0].toLowerCase() + meaning.slice(1)}`;
+				contextEn = `For me, ${meaning[0].toLowerCase() + meaning.slice(1)}`;
 				result.push({ entities, facts, target: { more, less, dimension, scope: "default" }, context, contextEn, presentation, domain, structure: "action-reason", conclusion: "more", queryPair: entities,
 					familyKey: `${domain}:${entities.map((e) => e.root).sort().join("|")}`, sceneKey: `${domain}:${entities.map((e) => e.ja).sort().join("|")}:${more.ja}:${dimension.adj}` });
 			}
@@ -327,12 +331,12 @@
 		}
 		function vocabulary(scene, targetOnly = false) {
 			const used = new Set([scene.target.more.ja, scene.target.less.ja, ...(targetOnly ? [] : scene.facts.flatMap((f) => [f.more, f.less]))]);
-			const entities = scene.entities.filter((e) => used.has(e.ja));
+			const entities = scene.entities.filter((e) => used.has(e.ja)).sort((a, b) => a.ja.localeCompare(b.ja, "ja"));
 			return [...entities.map((e) => `${e.ja} (${e.en})`), `${scene.target.dimension.adj} (${scene.target.dimension.base})`].join(" / ");
 		}
 		function contextInForm(scene, form) {
 			const { intro, prefixes, past } = scene.presentation;
-			return intro + "\n" + scene.facts.map((f, i) => (prefixes[i] || "") + renderFact(f, scene.entities, past[i], form)).join("\n");
+			return [intro, ...scene.facts.map((f, i) => (prefixes[i] || "") + renderFact(f, scene.entities, past[i], form))].filter(Boolean).join("\n");
 		}
 		function buildQuestion(scene, task, variant) {
 			const { more, less, dimension, scope } = scene.target;
@@ -352,21 +356,29 @@
 				const person = scene.structure === "perspective" ? scope : scene.structure === "action-reason" ? "私" : null;
 				const prefixes = person ? [`${person}には、`, `${person}にとって、`, `${person}にとっては、`] : scope === "default" ? [] : [`${scope}は、`];
 				fields([{ label, accepted: [...answers, ...prefixes.flatMap((prefix) => answers.map((answer) => prefix + answer))] }]);
-				q.responseSpec = core.cloze([comparisonRow(label, form, high, low)], `${scopeCue}${task.id === "opposite" ? "Reverse" : "Preserve"} the relationship. Complete the comparison using ${form === "hodo" ? "ほど" : "より and ほうが"}.`);
+				const operation = task.id === "opposite" ? "Reverse the relationship" : task.id === "repair" ? "Correct the draft" : "Keep the same meaning";
+				const instructions = task.id === "production"
+					? `Express the English meaning using ${form === "hodo" ? "ほど" : "より and ほうが"}.`
+					: `${scopeCue}${operation}. ${task.id === "repair" ? "Make it agree with the facts above; keep its comparison pattern." : `Use ${form === "hodo" ? "ほど" : "より and ほうが"}.`}`;
+				q.responseSpec = { ...core.cloze([comparisonRow(label, form, high, low)], instructions, task.id === "production" ? "Translate into Japanese." : operation + "."), instructionFocus: [operation, ...(task.id === "production" || scope === "default" ? [] : [scope])] };
 			}
 			function comparisonRow(label, form, high = more, low = less) {
 				const nounChoices = shuffle([high, low], rng).map(nominal);
 				if (form === "hodo") return { label, segments: [
 					core.gap(`${label}: topic`, [nominal(low)], nounChoices), "は",
 					core.gap(`${label}: benchmark`, [high.ja], shuffle([high.ja, low.ja], rng)),
-					core.gap(`${label}: comparison marker`, ["ほど"]), ending(dimension, true) + "。"
+					"ほど", ending(dimension, true) + "。"
 				] };
-				const baseFirst = form !== "topic-yori" && variant % 2 === 0, first = baseFirst ? low : high, second = baseFirst ? high : low;
-				const highMarker = form === "topic-yori" ? "は" : high.type === "action" ? "ほうが" : "のほうが";
+				if (form === "topic-yori") return { label, segments: [core.gap(`${label}: topic`, [nominal(high)], nounChoices), "は", core.gap(`${label}: benchmark`, [low.ja], [high.ja, low.ja]), "より", ending(dimension) + "。"] };
+				// Place entities independently of their semantic rank, so the frame cannot reveal the answer.
+				const ordered = [high, low].sort((a, b) => a.ja.localeCompare(b.ja, "ja"));
+				if (variant % 2) ordered.reverse();
+				const [first, second] = ordered, baseFirst = first === low;
+				const highMarker = high.type === "action" ? "ほうが" : "のほうが";
 				return { label, segments: [
-					form === "topic-yori" && first === high ? nominal(first) : first.ja,
+					first.ja,
 					core.gap(`${label}: first marker`, baseFirst ? ["より", "よりも"] : [highMarker]),
-					form === "topic-yori" && second === high ? nominal(second) : second.ja,
+					second.ja,
 					core.gap(`${label}: second marker`, baseFirst ? [highMarker] : ["より", "よりも"]), ending(dimension) + "。"
 				] };
 			}
@@ -391,17 +403,19 @@
 				writing("Rewritten comparison", form, task.id === "opposite" ? less : more, task.id === "opposite" ? more : less);
 				if (task.id === "opposite") q.explanation = `This exercise deliberately reverses the original claim: ${relationEnglish(less, more, dimension)} ${q.answer}`;
 			} else if (task.id === "production") {
-				q.prompt = `${scene.context.split("\n")[0]}\n\n${relationEnglish(more, less, dimension)}`;
-				q.subprompt = `Express the English comparison using the supplied Japanese words. ${scope === "default" ? "" : "The comparison concerns " + scope + "."}`;
+				q.prompt = relationEnglish(more, less, dimension);
+				q.promptLabel = "English to Japanese";
+				q.subprompt = "Express the English comparison using the supplied Japanese words.";
 				q.band = targetForm === "hodo" ? "Use ほど with a negative ending." : "Use より and ほうが. Either word order is accepted.";
 				writing("Japanese comparison", targetForm);
 			} else if (task.id === "repair") {
-				q.prompt = contextInForm(scene, targetForm === "hodo" ? "topic-yori" : "hodo") + `\n\n書いた文：${sentence(less, more, dimension, targetForm === "hodo" ? "hodo" : "hou-yori")}`;
+				q.prompt = contextInForm(scene, targetForm === "hodo" ? "topic-yori" : "hodo") + `\n\nDraft to correct: ${sentence(less, more, dimension, targetForm === "hodo" ? "hodo" : "hou-yori")}`;
 				q.subprompt = `${scopeCue}The last sentence is grammatical, but it contradicts the information above. Correct its comparison; keep ${dimension.adj}.`;
 				q.band = targetForm === "hodo" ? "Keep the ほど pattern." : "Keep より and ほうが. Either order is accepted.";
 				writing("Corrected comparison", targetForm);
 			} else if (task.id === "three-forms") {
-				q.prompt = `${relationEnglish(more, less, dimension)}\n\n${more.ja} / ${less.ja}\n${dimension.adj}`;
+				q.prompt = relationEnglish(more, less, dimension);
+				q.promptLabel = "One meaning, three Japanese forms";
 				q.subprompt = "Express this one relationship in each of the three forms.";
 				q.band = "Keep the meaning in all three sentences.";
 				fields([
@@ -409,7 +423,7 @@
 					{ label: "2. より + ほうが (either order)", accepted: sentenceAnswers(more, less, dimension, "hou") },
 					{ label: "3. A は B ほど ...", accepted: sentenceAnswers(more, less, dimension, "hodo") }
 				]);
-				q.responseSpec = core.cloze([comparisonRow("1", "topic-yori"), comparisonRow("2", "hou"), comparisonRow("3", "hodo")], "Keep the same relationship in all three sentence frames. Use は / より in 1, より / ほうが in 2, and ほど in 3.");
+				q.responseSpec = core.cloze([comparisonRow("1", "topic-yori"), comparisonRow("2", "hou"), comparisonRow("3", "hodo")], "Keep the same relationship in all three frames. Choose the compared items and complete the missing markers.");
 			} else if (task.id === "particles") {
 				if (!["luggage", "clothes", "devices", "books", "drinks", "meals"].includes(scene.domain) || !["安い", "軽い", "暖かい", "便利", "読みやすい"].includes(dimension.adj)) return null;
 				const reasonPredicate = `${dimension.adj}${dimension.neg.endsWith("では") ? "だ" : ""}`;
@@ -421,7 +435,7 @@
 				fields((variant % 2 ? ["を", "が"] : ["が", "を"]).map((part, i) => ({ label: `Blank ${i + 1}`, accepted: [part], multiline: false })));
 				q.explanation = "が marks the subject of the adjective comparison. を marks the object of 選びます. The predicate determines the particle after ほう; ほう does not always take が.";
 			} else if (task.id === "meaning") {
-				if (scene.structure !== "evidence") return null;
+				if (!["direct", "evidence"].includes(scene.structure)) return null;
 				const [a, b] = scene.queryPair;
 				q.subprompt = `${a.ja}と${b.ja}と、どちらが${dimension.adj}ですか。`;
 				q.band = "Choose only what the passage establishes.";
@@ -459,7 +473,7 @@
 			} else return null;
 			if (!q.answer) return null;
 			q.english = scene.contextEn;
-			if (task.id === "production") q.english = `${scene.presentation.introEn}\n${relationEnglish(more, less, dimension)}`;
+			if (task.id === "production") q.english = relationEnglish(more, less, dimension);
 			if (task.id === "three-forms") q.english = relationEnglish(more, less, dimension);
 			if (task.id === "particles") q.english = `${relationEnglish(more, less, dimension)} For that reason, I will choose ${more.en}.`;
 			if (task.id === "repair") q.english += ` Written sentence (to correct): ${relationEnglish(less, more, dimension)}`;
@@ -471,7 +485,7 @@
 			const scenes = [];
 			for (let i = 0; i < 8; i++) {
 				for (const domain of domains) {
-					for (const structure of ["chain", "tradeoff", "condition", "change", "perspective", "evidence"]) {
+					for (const structure of ["direct", "chain", "tradeoff", "condition", "change", "perspective", "evidence"]) {
 						const scene = makeScene(domain, structure, i);
 						if (scene) scenes.push(scene);
 					}
@@ -503,7 +517,12 @@
 
 	function selectQueue(bank, count = 25, { seed = Date.now(), recent = [] } = {}) {
 		const rng = rngFromSeed(seed);
-		const candidates = shuffle(bank.filter((q) => q.meta?.engine === version), rng);
+		const candidates = shuffle(bank.filter((q) => {
+			if (q.meta?.engine !== version) return false;
+			if (q.meta.task === "meaning") return q.meta.structure === "direct";
+			if (["rewrite-hodo", "rewrite-hou", "opposite", "repair"].includes(q.meta.task)) return ["direct", "action-reason"].includes(q.meta.structure);
+			return true;
+		}), rng);
 		const sceneKeys = new Set();
 		const families = new Set();
 		const recentKeys = new Set(recent);
@@ -520,6 +539,7 @@
 				if (sceneKeys.has(m.sceneKey) || families.has(m.familyKey)) continue;
 				const taskUse = usage.task.get(m.task) || 0;
 				let score = taskUse / quotas.get(m.task) * 100;
+				score += core.reviewBalancePenalty(q, queue, targetCount);
 				if (taskUse >= quotas.get(m.task)) score += 1000;
 				if (last?.meta.task === m.task) score += 400;
 				if (last?.meta.structure === m.structure) score += 120;
@@ -538,6 +558,7 @@
 			for (const word of best.meta.vocabulary) bump(usage.vocabulary, word);
 			bump(usage.answer, best.answer);
 		}
+		queue.splice(0, queue.length, ...core.interleave(queue, q => q.meta.task));
 		const positions = [0, 0, 0, 0];
 		let lastPosition = -1, run = 0;
 		for (const q of queue.filter((item) => item.mode === "choice")) {

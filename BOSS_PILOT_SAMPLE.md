@@ -1,120 +1,83 @@
-# Boss 01-05: Pilot Sample
+# Boss 01-05: Sample Round
 
-Deterministic preview, seed 20261016. Ten scenario families, not an unlimited bank.
+Deterministic preview, seed 20261016. Ten questions drawn from thirty scenario families (four fact variants each).
 English passages are shown here for editorial review, not during the website quiz.
-Eight quick-response tasks lead into two one-sentence writing challenges. Focused Review uses sentence frames and short blanks.
+Eight quick-response tasks lead into two one-sentence writing challenges drawn from all five units. Focused Review uses sentence frames and short blanks.
 
-## 1. Check both conditions
+## 1. Read the situation
 
-午前中、学校でパソコンを借りて作業する予定です。
-操作の練習では、もう説明を見なくても、一人で全部できました。
-ところが、今日使うパソコンは修理中です。12時に修理が終わり、すぐ使える状態になります。あなたが借りられる時間は11時までです。作業には10分かかります。
-ほかのパソコンは借りられません。
+先月、田中さんはカメラを一人で使えませんでした。今週練習して、今日の最後のテストでは先生の助けなしで全部操作できました。
+テストとは別に、今日の仕事の資料も用意しなければなりません。資料の作業はもう全部終わり、提出しました。今の様子を伝えます。
 
-**English:** You plan to borrow a computer at school this morning. During training you operated it independently without instructions. Repairs finish at 12:00; your permitted borrowing period ends at 11:00. The task takes ten minutes, and there is no other machine.
+**English:** Last month Tanaka could not operate the camera alone. After training, today's final test was completed independently. Separately, today's documents have already been finished and submitted. Report the present state.
 
-Which summary distinguishes your own skill from whether this loan leaves enough time to work?
+Which report distinguishes current skill from today's separate work?
 
-A. 一人でパソコンを使うことはできます。今日の貸し出し時間には、作業する時間がありません。
-B. 一人でパソコンを使うことはできません。今日の貸し出し時間には、作業する時間がありません。
-C. 一人でパソコンを使うことはできません。今日の貸し出し時間には、作業する時間があります。
-D. 一人でパソコンを使うことはできます。今日の貸し出し時間には、作業する時間があります。
+A. 田中さんは今、一人でカメラを使うことができます。今日の資料はまだ作り始めていません。
+B. 田中さんは今、一人でカメラを使うことができます。今日の資料はもう提出しました。
+C. 田中さんは今、一人でカメラを使うことができません。今日の資料はまだ作り始めていません。
+D. 田中さんは今、一人でカメラを使うことができません。今日の資料はもう提出しました。
 
-## 2. Choose a reply
+## 2. Read the situation
 
-今日は友だちとカレーを食べる予定で、あなたが作ることになっています。
-材料と道具の準備が終わりました。まだ作り始めていませんが、電話を切ったらすぐ始めます。
-友だちから電話です。「もう食べられますか。今、一緒に食べませんか。」
-あなた：「＿＿＿＿」
+田中さんが駅で自転車を借りたかどうかの記録が三日分だけ残っています。月曜日は借りました。火曜日は借りませんでした。水曜日は借りました。記録は水曜日の夜までです。
+それより前や後については何も書かれていません。担当者は「書かれていない日のことは想像しないでください」と言いました。
 
-**English:** You are responsible for making curry to share with a friend. Preparation is complete, but you have not begun; you will start immediately after the call. Your friend calls: 'Is it ready? Shall we eat together now?'
+**English:** Only three days of Tanaka's station bicycle-rental record remain: Monday borrowed a bicycle, Tuesday did not, Wednesday borrowed one. The record ends Wednesday night. There is no information about other dates; do not invent missing history.
 
-Choose the reply that matches the kitchen situation and answers your friend's invitation.
+Which conclusion stays within what this limited record establishes?
 
-A. カレーを作ったところです。もうできたので、一緒に食べましょう。
-B. カレーを作っているところです。まだできていないので、少し待ってください。
-C. 今日はカレーを作りません。明日作るので、明日一緒に食べませんか。
-D. 今からカレーを作るところです。まだできていないので、少し待ってください。
+A. 記録の三日間は借りませんでしたが、それ以前に借りたことがあるかどうかは分かりません。
+B. 記録の三日間には借りない日もありましたが、借りたこともあると分かります。
+C. これからの予定だけなので、実際に借りたことがあるかどうかは分かりません。
+D. 記録の三日間は毎日借りました。駅で自転車を借りたことがあると分かります。
 
-## 3. Report the agreement
+## 3. Read the situation
 
-田中：日曜日、一緒に博物館に行きませんか。
-山田：その日は行けません。土曜日なら大丈夫です。
-田中：私は土曜日も行けます。では、土曜日に一緒に行きましょう。
-山田：そうしましょう。
-佐藤さんは最初の誘いだけ聞いていました。二人の最後の予定を伝えます。
+旅行の切符を調べています。Aの切符はBより安く、Cの切符もBほど高くありません。さらに調べると、AはCより千円安いと分かりました。
+田中：「Aを買いませんか。」
+山田：「そうですね。Aを買いましょう。」
 
-**English:** Tanaka first invites Yamada to the museum on Sunday. Yamada is unavailable then but available on Saturday. Tanaka can also go on Saturday. They agree to go together that day. Sato heard only the first invitation.
+**English:** Ticket A is cheaper than B, and C is also cheaper than B. Further research shows A is 1,000 yen cheaper than C. Tanaka proposes A. Yamada agrees to buy A.
 
-Which message reports the final agreement, rather than the first suggestion?
+What can you conclude about A versus C and the decision to buy A?
 
-A. 日曜日、田中さんと山田さんが一緒に博物館に行きます。
-B. 土曜日、田中さんと山田さんが一緒に博物館に行きます。
-C. 日曜日、山田さんは行かず、田中さんだけが博物館に行きます。
-D. 土曜日、山田さんは行かず、田中さんだけが博物館に行きます。
+A. CはAほど安くありません。二人はAを買うことにしました。
+B. AとCはどちらが安いか、まだ分かりません。二人はAを買うことにまだしていません。
+C. AとCはどちらが安いか、まだ分かりません。二人はAを買うことにしました。
+D. CはAほど安くありません。二人はAを買うことにまだしていません。
 
-## 4. Check the message
+## 4. Restore the missing line
 
-ホテルの案内には、先週は東館のほうが西館より安かったと書いてあります。
-電話で今日の宿泊料金を聞くと、東館は6000円、西館は8000円でした。
-受付：「今日、空室があるのは西館だけです。もう一方は満室なので、予約できません。」
-古い案内を持っている友だちに、今の状況を伝えます。
+教室から机を移す前に、二人が話しています。
+田中さんと山田さんはどちらも手が空いています。机は重すぎて、一人では運べません。
+田中：「＿＿＿＿」
+山田：いいですね。二人で運びましょう。
 
-**English:** An old notice says the east building was cheaper last week. Today's prices are east ¥6000, west ¥8000. Only the west building has vacancies tonight. Update your friend, who has the old notice.
+**English:** Neither person can carry the heavy item alone. Yamada replies, 'Good idea. Let's carry it together.' The item is a desk.
 
-Which message accurately updates both the price comparison and tonight's availability?
+Which missing line fits the situation and Yamada's response?
 
-A. 今日は西館は東館ほど安くありません。今夜泊まれるのは東館だけです。
-B. 今日は西館は東館ほど安くありません。今夜泊まれるのは西館だけです。
-C. 今日は東館は西館ほど安くありません。今夜泊まれるのは西館だけです。
-D. 今日は東館は西館ほど安くありません。今夜泊まれるのは東館だけです。
+A. 机を運んでくれませんか。
+B. 私が机を運びましょうか。
+C. 一緒に机を運びませんか。
+D. 机を運んだことがありますか。
 
-## 5. Check the message
+## 5. Read the situation
 
-同じ一人分の弁当について、店で買うと400円、家で作ると全部で600円です。
-田中さんは「家で何度も作りました。ふだんの週末も作りますが、忙しい週末は作らず、店で買います」と話しました。
-友だちに、田中さんの話と値段の違いをまとめます。
+宅配便で荷物を送ります。受付の人は「当日の便に載せる荷物は十五時までに渡してください。それより後は翌日の便です」と言いました。
+荷物を渡したのは16時でした。その後、届け先を近くの店に変え、店の人が直接取りに来ることになりました。店の人は「今日の十八時に店に持ち帰ります」と約束しました。宅配便の条件と、最後の受け取り方を区別します。
 
-**English:** Buying the packed lunch costs ¥400; making the same amount at home costs ¥600 in total. Tanaka has made it many times and usually cooks on weekends, but sometimes buys it instead on busy weekends. Summarize the account and the prices.
+**English:** The courier accepts parcels for today's run only if handed in by 15:00; yours was handed in at 16:00. Afterwards the destination changed to a nearby shop whose employee will collect it directly and bring it to the shop at 18:00 today. Distinguish the courier cutoff from the final collection arrangement.
 
-Which message preserves both Tanaka's account and the cost comparison?
+Which update correctly checks the original cutoff and the final arrival day?
 
-A. 田中さんは家で弁当を作ったことがありません。弁当は、作るより買うほうが安いです。
-B. 田中さんは家で弁当を作らないこともありますが、ふだんは作ります。弁当は、買うより作るほうが安いです。
-C. 田中さんは家で弁当を作らないこともありますが、ふだんは作ります。弁当は、作るより買うほうが安いです。
-D. 田中さんは家で弁当を作ったことがありません。弁当は、買うより作るほうが安いです。
+A. 宅配便の締め切りには間に合いました。最後の約束では、店の人は今日荷物を持ち帰れます。
+B. 宅配便の締め切りには間に合いませんでした。最後の約束では、店の人は明日荷物を持ち帰れます。
+C. 宅配便の締め切りには間に合いました。最後の約束では、店の人は明日荷物を持ち帰れます。
+D. 宅配便の締め切りには間に合いませんでした。最後の約束では、店の人は今日荷物を持ち帰れます。
 
-## 6. Choose a plan
-
-明日の勉強場所を探しています。教室は会議室より静かですが、図書室ほど静かではありません。
-図書室と会議室には空きがあります。教室は満室です。受付から「今日の14時には予約が全部終わっているようにしてください」と言われました。
-今は13時です。友だちは、空いている二つの部屋のうち、静かなほうを希望しています。
-
-**English:** The classroom is quieter than the meeting room, but not as quiet as the reading room. Only the reading room and the meeting room have space. Reception requires booking to be complete by 14:00 today; it is now 13:00. Your friend prefers the quieter available room.
-
-Which plan respects both your friend's preference and the reception desk's instruction?
-
-A. 図書室より会議室のほうが静かなので、会議室にしましょう。予約は14時から始めましょう。
-B. 図書室より会議室のほうが静かなので、会議室にしましょう。予約は14時までに済ませましょう。
-C. 会議室より図書室のほうが静かなので、図書室にしましょう。予約は14時から始めましょう。
-D. 会議室より図書室のほうが静かなので、図書室にしましょう。予約は14時までに済ませましょう。
-
-## 7. Choose the current update
-
-会員向けの講演が、今始まったところです。自分のアカウントで映像を見るには登録が必要です。
-あなたの登録はまだ済んでいません。受付では、別のアカウントで同じ講演を再生しています。
-さっきは受付で先生の話す言葉がはっきり分かりました。今は廊下に出てドアを閉めたので、先生の声は全く耳に入りません。
-
-**English:** A members-only talk has just started. Registration is required to view it through your account; your registration is not complete. Reception plays the same talk through a different account. You heard it clearly at reception, but now in the corridor with the door shut no sound reaches you.
-
-Which update describes your own account and what reaches your ears now?
-
-A. 自分のアカウントで映像を見ることができません。今、先生の声が聞こえません。
-B. 自分のアカウントで映像を見ることができません。今、先生の声が聞こえます。
-C. 自分のアカウントで映像を見ることができます。今、先生の声が聞こえません。
-D. 自分のアカウントで映像を見ることができます。今、先生の声が聞こえます。
-
-## 8. Complete the conversation
+## 6. Complete the conversation
 
 田中さんは昨日まで、その博物館に一度も行っていませんでした。今日、初めて行く予定で出かけましたが、途中で電車が止まりました。家に戻ったので、そこへは行っていません。
 帰宅後、山田さんから「明日、一緒に行きませんか」と連絡がありました。田中さんは「いいですね。明日は一緒に行きましょう」と答えました。
@@ -128,18 +91,46 @@ B. 田中さんは、その博物館に行ったことがありません。明�
 C. 田中さんは、その博物館に行ったことがありません。明日は山田さんと一緒に行く予定です。
 D. 田中さんは、その博物館に行ったことがあります。明日は山田さんと一緒に行く予定です。
 
+## 7. Read the situation
+
+今、ラジオで外国語の放送を聞いています。田中さんはその言語を長く勉強して、話の内容を理解できます。
+さっきスピーカーの状態を確認しました。今は音量が十分で、話す声ははっきり耳に入ります。放送はまだ続いています。
+
+**English:** A foreign-language radio programme is still playing. Tanaka has studied the language and can understand it. After checking the speaker, the current volume makes the voice clearly audible. Distinguish sound from language ability.
+
+Which statement distinguishes what reaches Tanaka's ears now from language comprehension?
+
+A. 今、放送の声は聞こえます。田中さんはその言語を理解することができます。
+B. 今、放送の声は聞こえません。田中さんはその言語を理解することができます。
+C. 今、放送の声は聞こえます。田中さんはその言語を理解することができません。
+D. 今、放送の声は聞こえません。田中さんはその言語を理解することができません。
+
+## 8. Read the situation
+
+田中さんはカメラを使う作業をしなければなりません。佐藤さんは操作が得意です。佐藤さんのカメラは今日使えます。田中さんの物は今日は手元にありません。
+佐藤：「操作は私が代わりにしましょうか。」
+田中：「はい、お願いします。私は隣で見ています。」
+使える物を一台だけ用意します。
+
+**English:** Tanaka needs to work with a camera; Sato is skilled at operating it. Sato's machine works today, while Tanaka's is not available. Sato offers to operate it instead; Tanaka accepts and will watch. Only the usable owner's machine is prepared.
+
+Which plan keeps the equipment owner separate from the person doing the work?
+
+A. 田中さんが、佐藤さんのカメラを使って作業します。
+B. 田中さんが、田中さんのカメラを使って作業します。
+C. 佐藤さんが、田中さんのカメラを使って作業します。
+D. 佐藤さんが、佐藤さんのカメラを使って作業します。
+
 ## 9. Final challenge
 
-教室から机を移す前に、二人が話しています。
-田中さんと山田さんはどちらも手が空いています。机は重すぎて、一人では運べません。
-田中：「＿＿＿＿」
-山田：いいですね。二人で運びましょう。
+家から会社へ行きます。電車に乗っている時間は十五分ですが、駅までと駅から歩く時間が合わせて5分かかります。バスに乗る時間は二十五分で、歩く時間は全部で五分です。
+どちらも今すぐ出発でき、待つ時間はありません。会議が始まるまで、あと45分です。開始時刻には会社に着いていなければなりません。
 
-**English:** Neither person can carry the heavy item alone. Yamada replies, 'Good idea. Let's carry it together.' The item is a desk.
+**English:** From home to work, the train ride takes 15 minutes plus 5 minutes of walking in total. The bus takes 25 minutes plus five minutes of walking. Both routes can start now with no waiting. The meeting starts in 45 minutes; you must arrive by then.
 
-Write Tanaka's missing line. Name the item; make the intended participants clear when proposing an action.
+Compare the two complete journeys in one sentence, stating which reaches work sooner. Include both ways of travelling.
 
-机 (desk) / 運ぶ・運び・運んで・運んだ (carry)
+電車 (train) / バス (bus) / 会社に着く (arrive at work) / 早く (sooner)
 
 [Your sentence]
 
@@ -161,59 +152,57 @@ Write one note naming the agreed reader, the 16:00 time limit, and the reading a
 
 ## Answer Key
 
-**1. A** (equipment-loan:2)
+**1. B** (training-update:0)
 
-I can use the computer independently; today's loan does not leave time to do the task.
+Tanaka can now use the camera independently; today's documents have been submitted.
 
-Independent ability is established. Repair ends after the return deadline, so there is not enough available time for the ten-minute task. Ability and the available time window are separate.
+Update ability from the latest independent test. Neither the old lack of skill nor the new training result alone tells you whether a different job was completed.
 
-**2. D** (kitchen-call:0)
+**2. B** (bounded-diary:1)
 
-I am just about to make the curry; please wait.
+There were both rentals and days without them in the three recorded days, establishing past experience.
 
-I am just about to make the curry; please wait. The invitation cannot establish that the food is ready. The preparation record determines both the stage and whether eating now is possible.
+One recorded event proves it has happened at least once. No event in three recorded days cannot prove it has never happened in a lifetime. Describe frequency only within the recorded period.
 
-**3. B** (outing-plan:1)
+**3. A** (incomplete-ranking:1)
 
-On Saturday, Tanaka and Yamada will go together to the museum.
+A is cheaper than C; the two have agreed to buy A.
 
-The final plan is 土曜日, with both people. Being available does not establish participation: the final proposal and response do.
+Two items being cheaper than B does not rank those two against each other. Separately, a proposal becomes an agreement only when the reply accepts it.
 
-**4. B** (hotel-change:2)
+**4. C** (moving-help:1)
 
-The east building is cheaper today; only the west building is available tonight.
+Would you like to carry the desk together?
 
-Today's figures, not last week's notice, establish the price comparison. A cheaper building is not necessarily available: only 西館 can be booked tonight.
+Would you like to carry the desk together? Read who would act and what the next reply accepts. ましょうか can offer the speaker's help; a joint invitation and a request for the listener's help assign different participants. The history question checks an earlier event, not a current agreement.
 
-**5. C** (weekend-meal:2)
+**5. D** (delivery-cutoff:1)
 
-Tanaka usually makes it at home but sometimes does not; buying it is cheaper.
+The parcel missed the courier cutoff; under the final arrangement the employee can bring it to the shop today.
 
-The account describes occasional omissions within a usual habit, not no lifetime experience. Compare the same serving: buying it is cheaper. With action comparisons, the dictionary verb connects directly to ほうが.
+Meeting a dispatch cutoff and arriving on a particular day are different claims. The final direct-collection arrangement, not the original courier schedule, determines arrival.
 
-**6. D** (study-booking:0)
-
-Choose the reading room as the quieter room, and complete the booking by 14:00.
-
-Following both comparisons gives 会議室 < 教室 < 図書室 in quietness. Choose 図書室. The booking must be completed by 14:00, not started at that time.
-
-**7. A** (broadcast-access:3)
-
-I cannot view through my account; I cannot hear the speaker now.
-
-Registration does not yet permit viewing through your account. At your current location you do not hear the speaker. The earlier location and reception's separate account do not change these facts.
-
-**8. C** (first-visit:1)
+**6. C** (first-visit:1)
 
 Tanaka has never visited the museum; tomorrow Tanaka plans to go with Yamada.
 
 A plan alone does not establish a past visit. Today's event still leaves Tanaka without that experience. Tomorrow's invitation was accepted, independently of the past experience.
 
-**9. 一緒に机を運びませんか。** (moving-help:1)
+**7. A** (voice-and-language:0)
 
-Would you like to carry the desk together?
+The voice is audible now; Tanaka can understand that language.
 
-Would you like to carry the desk together? Read who would act and what the next reply accepts. ましょうか can offer the speaker's help; a joint invitation and a request for the listener's help assign different participants. The history question checks an earlier event, not a current agreement.
+Hearing a voice and understanding its language are independent. Knowing a language does not make a muted speaker audible; clear sound does not confer language knowledge.
+
+**8. D** (tool-offer:0)
+
+Sato will do the work using Sato's camera.
+
+The person offering equipment or preparation help is not necessarily the operator. The accepted proposal assigns the action; equipment condition assigns which machine to use.
+
+**9. 電車で行くほうがバスで行くより早く会社に着きます。** (commute-total:0)
+
+Include walking: train 20 minutes, bus 30. A shorter ride alone does not mean a shorter journey. Arrival must be no later than the meeting start.
 
 **10. 田中さんが、16時までに資料を読みます。** (reading-handover:0)
 

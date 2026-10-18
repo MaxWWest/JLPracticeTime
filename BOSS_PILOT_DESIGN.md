@@ -1,7 +1,7 @@
 # Boss 01-05: Contextual Pilot
 
-Boss 01-05 now uses `boss-practice.js`, not a concatenation of the five Review
-banks. This bounded ten-question pilot has eight choices followed by two
+Boss 01-05 uses `boss-practice.js` and `boss-scenarios.js`, not a concatenation of
+the five Review banks. Each bounded ten-question round has eight choices followed by two
 one-sentence writing challenges. Focused Review retains its task mix and counts,
 but uses sentence frames and short blanks instead of full-sentence copying.
 Other Boss blocks are unchanged. Adaptive insertion remains disabled everywhere.
@@ -51,11 +51,31 @@ not new scenario families. Adding random nouns cannot substitute for new reasoni
 | Broadcast access | Ability | Account access and current audibility |
 | First visit | Experience | Completed versus abandoned trip and a new invitation |
 | Weekend meal | Experience | Never versus occasional omission and action comparison |
+| Suitcase capacity | Comparison | Capacity versus weight and whether the actual load fits |
+| Complete commute | Comparison | Total journey versus ride time and arrival deadline |
+| Room perspective | Comparison | Speaker-specific evaluation versus actual visits |
+| Incomplete ranking | Comparison | Unknown relation versus confirmed purchase agreement |
+| Overlapping work | Time | Same-time actions, different actors, independent ability |
+| Delivery cutoff | Time | Original dispatch cutoff versus final direct-collection plan |
+| Progress correction | Time | Old message versus two current action stages |
+| Two work limits | Time | Independent duration/completion commitments for two jobs |
+| Declined help | Invitation | Polite refusal versus assignment and unaided ability |
+| Pending invitation | Invitation | Counterproposal versus agreement and reply deadline |
+| Tool offer | Invitation | Equipment owner versus accepted operator |
+| Partial acceptance | Invitation | Separate replies to lunch and a visit, despite prior experience |
+| Training update | Ability | Acquired skill versus an independently completed job |
+| Alternative machine | Ability | One broken machine versus another option and listed cost |
+| Voice and language | Ability | Current audibility versus language comprehension |
+| Ingredients now | Ability | Cooking skill versus available ingredients and total cost |
+| Single trip | Experience | One past visit versus monthly routine and new acceptance |
+| Specific machine | Experience | Old-model experience versus this model and current ability |
+| Reported visit | Experience | Diary writer versus quoted visitor and invitation response |
+| Bounded diary | Experience | Recorded events, omissions, future plans and unknown history |
 
-A round uses all ten cases once, two primary targets per unit. It does not claim
-to cover every subconstruction: for example, ながら and explicit どちら production
-remain in Review, not this pilot. The forty bank entries are ten families with
-four fact variants each, not forty independent stories.
+A round selects ten different families, two primary targets per unit. There are
+six families per unit, thirty total, with 120 fact variants, not 120 independent
+stories. Explicit どちら production remains in Review. Vocabulary substitutions
+do not count as additional scenario families.
 
 ## Selection And UI
 
@@ -63,18 +83,20 @@ four fact variants each, not forty independent stories.
   are capped instead of silently padding with old Review questions.
 - Unit order varies, with no adjacent repeated primary unit. Answer positions
   are balanced and cannot form a three-position streak.
-- Reading handover and moving help finish the round as one-sentence writing
-  challenges. Their fact variants still rotate; their relative order varies.
+- Two eligible cases from different units finish the round as one-sentence
+  writing challenges. Eleven families have writing versions across all five
+  units. Selection favors fresh families and least-recently written units.
   Vocabulary is supplied, never a solved response or answer placeholder.
   Checked kana, particle and word-order alternatives are accepted. Unrecognized
   paraphrases are described as unmatched, not universally ungrammatical.
-- The last thirty case/variant keys are kept locally under
-  `boss-01-05-review-history-v1`. The next three complete rounds can use different
-  variants; after four variants, reuse is inevitable. Nouns can also change.
+- The last fifty case/variant keys are kept locally under
+  `boss-01-05-review-history-v1`. The previous twenty entries supply a two-round
+  family cooldown: three consecutive rounds can cover all thirty families.
+  Unseen fact variants are preferred when a family returns. Nouns can also change.
 - This history is freshness tracking, not scoring-based adaptation. Starting a
   session records its selection even if the learner does not finish it.
-- A full round offers no same-case retry, because all ten families are already
-  present. Leaving Boss restores the normal Review notes and retry behavior.
+- Boss deliberately offers no in-round retries, preserving the 8+2 boundary.
+  Leaving Boss restores the normal Review notes and retry behavior.
 
 ## Inspect And Verify
 
@@ -91,15 +113,15 @@ PLAYWRIGHT_CHANNEL=chrome node boss-browser-test.js
 Playwright must be installed or available through `NODE_PATH`. Set
 `GRAMMAR_TEST_URL` to exercise the deployed site. The Boss harness checks actual
 entry, a completed round with mixed correct/wrong answers, selected-answer
-feedback, hidden hints, fresh second-round variants, all forty entries at
+feedback, hidden hints, fresh second-round families, all 120 entries at
 1440/390/320px, and restoration of focused Review.
 
 Independent case-level tests check all claim combinations, routing, session
 diversity over one hundred seeds, lexical variation, and preview consistency.
 Those tests establish internal consistency, not native-speaker certification or
 calibration to an official JLPT difficulty score. Editorial and learner review
-are still necessary. Expansion should add new reasoning families and production
-tasks after this small sample is tested, not merely more nouns or clock values.
+are still necessary. Further expansion should add new reasoning families and
+production tasks, not merely more nouns or clock values.
 
 ## Reference Basis
 

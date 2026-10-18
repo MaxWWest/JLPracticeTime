@@ -3049,7 +3049,7 @@ function getBossPracticeEngine() {
 	return bossPracticeEngine;
 }
 function selectBossPilot(bank, count) {
-	return BossPractice.selectQueue(bank, count, { recent: contextualReviewHistory("boss-01-05").slice(-30) });
+	return BossPractice.selectQueue(bank, count, { recent: contextualReviewHistory("boss-01-05") });
 }
 
 function buildPermissionPracticeBank() {
@@ -7476,7 +7476,7 @@ function startGrammarPractice(sessionId = "comparison", questionCount = Number(g
 	const comparisonKeys = gpState.queue.filter((q) => q.meta?.engine === ComparisonPractice.version).map((q) => q.meta.familyKey);
 	const bossKeys = gpState.queue.filter((q) => q.meta?.engine === BossPractice.version).map((q) => q.meta.sceneKey);
 	if (bossKeys.length) {
-		try { localStorage.setItem("boss-01-05-review-history-v1", JSON.stringify([...contextualReviewHistory("boss-01-05"), ...bossKeys].slice(-30))); } catch { /* Variant freshness only; no adaptive question insertion. */ }
+		try { localStorage.setItem("boss-01-05-review-history-v1", JSON.stringify([...contextualReviewHistory("boss-01-05"), ...bossKeys].slice(-50))); } catch { /* Freshness only; no adaptive question insertion. */ }
 	}
 	for (const [unit, engine] of [["ability", AbilityPractice], ["experience", ExperiencePractice]]) {
 		const keys = gpState.queue.filter((q) => q.meta?.engine === engine.version).map((q) => q.meta.familyKey);
@@ -7527,6 +7527,13 @@ function renderGrammarResponseRows(question) {
 		}).join("")}</div></div>`).join("")}</div>`;
 }
 
+function renderGrammarInstruction(text, highlights = []) {
+	const terms = highlights.filter((term) => term && String(text).includes(term));
+	if (!terms.length) return renderJapaneseTextWithFurigana(text);
+	const pattern = new RegExp(`(${terms.map((term) => term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|")})`, "g");
+	return String(text).split(pattern).map((part) => terms.includes(part) ? `<strong>${renderJapaneseTextWithFurigana(part)}</strong>` : renderJapaneseTextWithFurigana(part)).join("");
+}
+
 function showGrammarPracticeQuestion() {
 	const question = gpState.queue[gpState.index];
 	if (!question) {
@@ -7539,8 +7546,11 @@ function showGrammarPracticeQuestion() {
 	gpEls.hero.classList.toggle("is-ordering", question.kind === "sentence ordering");
 	gpEls.hero.classList.toggle("is-contextual", Boolean(generatedGrammarEngine(question)));
 	gpEls.type.textContent = `${gpState.sessionLabel || "GRAMMAR PRACTICE"} · ${question.kind}`;
+	const promptLabel = document.querySelector("#gp-prompt-label");
+	promptLabel.textContent = question.promptLabel || "";
+	promptLabel.hidden = !question.promptLabel;
 	gpEls.prompt.innerHTML = renderJapaneseTextWithFurigana(question.prompt);
-	gpEls.subprompt.innerHTML = renderJapaneseTextWithFurigana(question.subprompt);
+	gpEls.subprompt.innerHTML = renderGrammarInstruction(question.subprompt, question.instructionFocus);
 	gpEls.band.innerHTML = renderJapaneseTextWithFurigana(question.band);
 	gpEls.progress.textContent = `${gpState.index + 1} / ${gpState.queue.length}`;
 	gpEls.correct.textContent = `✓ ${gpState.correct}`;
@@ -7587,11 +7597,8 @@ function showGrammarPracticeQuestion() {
 
 function findGrammarRetryCandidate(question) {
 	if (!question?.meta || !gpState.bank?.length) return null;
-	if (question.meta.engine === BossPractice.version) {
-		const used = new Set(gpState.queue.map((q) => q.meta.familyKey));
-		const candidates = gpState.bank.filter((q) => q.meta.engine === BossPractice.version && q.meta.sourceSessionId === question.meta.sourceSessionId && !used.has(q.meta.familyKey));
-		return selectBossPilot(candidates, 1)[0] || null;
-	}
+	// A Boss round stays bounded: eight choices followed by two writing challenges.
+	if (question.meta.engine === BossPractice.version) return null;
 	for (const [unit, engine] of [["ability", AbilityPractice], ["experience", ExperiencePractice]]) {
 		if (question.meta.engine !== engine.version) continue;
 		const used = new Set(gpState.queue.filter((q) => q.meta?.engine === engine.version).map((q) => q.meta.familyKey));
@@ -7835,6 +7842,8 @@ function finishGrammarPractice() {
 	gpEls.missed.innerHTML = `${renderGrammarResultBreakdown()}${gpState.missed.length
 		? `<h4>Review these patterns</h4>${gpState.missed.slice(0, 6).map((question) => `<div class="pitch-missed-item"><span>${escapeHtml(question.kind)}</span><span lang="ja">${renderJapaneseTextWithFurigana(question.answer)}</span><small>${renderJapaneseTextWithFurigana(question.explanation)}</small></div>`).join("")}`
 		: ""}`;
+	gpEls.complete.scrollIntoView({ block: "start", behavior: "instant" });
+	gpEls["complete-title"]?.focus({ preventScroll: true });
 }
 
 function exitGrammarPractice() {

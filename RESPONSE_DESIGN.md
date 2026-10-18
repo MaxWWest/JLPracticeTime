@@ -29,6 +29,18 @@ is labelled, graded and marked independently; after submission the feedback
 reassembles the complete Japanese sentence. Enter advances between short typed
 blanks, and IME confirmation must not submit the form.
 
+The quality pass also separates presentation order from semantic roles. Positive
+comparison frames place entities independently of their rank; negative and
+topic-comparison frames ask the learner to select the correct entities. The
+simultaneous-action word bank is sorted independently of which action is main.
+Invitation fields no longer announce "offer" versus "invitation", and current
+habit/exception tasks share a neutral heading. Brief situations establish the
+intended meaning; Japanese utterances supply the evidence for interpretation.
+Review is grammar practice, not a minimum-length reading exercise. Ten-question
+rounds contain at least seven compact grammar responses. Direct comparison
+rewrites use one fact, English production is clearly labelled, and critical
+operations such as reversing a relationship are emphasized. See `QUALITY_PASS.md`.
+
 ## Implementation
 
 Lesson engines author `responseSpec` using `GrammarPracticeCore.cloze`. Rows
@@ -46,7 +58,7 @@ reconstructs model and learner sentences for post-answer feedback.
 
 `response-practice.test.js` checks all compact frame constructions against the
 original full-sentence grader, independent errors, kana acceptance, meaningful
-contrasts, empty placeholders, unchanged twelve-task Review mixes and more than
+contrasts, empty placeholders, twelve-task Review coverage and more than
 60% less required typing in each upgraded unit's bank. This measures required
 characters, not learner completion time or educational equivalence.
 
@@ -54,6 +66,8 @@ The existing Review browser harness covers all five units, full 25-question
 rounds, manual retries and all twelve presentation types at 1440/390/320px.
 The Boss harness covers the real 8+2 sequence, mixed-result scoring and all fact
 variants. `response-browser-test.js` checks the longest dropdowns for clipping,
-IME confirmation, Enter navigation and reassembled feedback. The task mix is
-unchanged, but learner testing is still needed to
+IME confirmation, Enter navigation and reassembled feedback.
+`review-feedback-browser-test.js` completes ten-question rounds in all five
+units on desktop and mobile, checking scoring and results within the viewport.
+Learner testing is still needed to
 calibrate the difficulty of selecting clauses versus producing them unaided.

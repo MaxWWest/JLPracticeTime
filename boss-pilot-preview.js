@@ -7,11 +7,11 @@ function preview(seed = 20261016) {
 	const r = loadGrammarRuntime();
 	const engine = boss.create({ nounPools: r.comparisonNounPools, verbPool: r.grammarVerbPool, aliases: r.comparisonKanaAnswerAliases, seed });
 	const questions = boss.selectQueue(engine.buildBank(), 10, { seed });
-	const lines = ["# Boss 01-05: Pilot Sample", "", `Deterministic preview, seed ${seed}. Ten scenario families, not an unlimited bank.`, "English passages are shown here for editorial review, not during the website quiz.", "Eight quick-response tasks lead into two one-sentence writing challenges. Focused Review uses sentence frames and short blanks.", "", ...questions.flatMap((q, i) => [
+	const lines = ["# Boss 01-05: Sample Round", "", `Deterministic preview, seed ${seed}. Ten questions drawn from thirty scenario families (four fact variants each).`, "English passages are shown here for editorial review, not during the website quiz.", "Eight quick-response tasks lead into two one-sentence writing challenges drawn from all five units. Focused Review uses sentence frames and short blanks.", "", ...questions.flatMap((q, i) => [
 		`## ${i + 1}. ${q.kind}`, "", q.prompt, "", `**English:** ${q.promptEnglish}`, "", q.subprompt, "",
 		...(q.options ? q.options.map((option, j) => `${String.fromCharCode(65 + j)}. ${option}`) : [q.vocabulary, "", "[Your sentence]"]), ""
 	]), "## Answer Key", "", ...questions.flatMap((q, i) => [
-		`**${i + 1}. ${q.options ? String.fromCharCode(65 + q.options.indexOf(q.answer)) : q.answer}** (${q.meta.id})`, "", q.choiceMeanings[q.answer], "", q.explanation, ""
+		`**${i + 1}. ${q.options ? String.fromCharCode(65 + q.options.indexOf(q.answer)) : q.answer}** (${q.meta.id})`, "", ...(q.choiceMeanings[q.answer] ? [q.choiceMeanings[q.answer], ""] : []), q.explanation, ""
 	])];
 	return lines.join("\n");
 }

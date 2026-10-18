@@ -778,7 +778,7 @@ body.practice-fullscreen { overflow: hidden; }
 .gp-roadmap { display: grid; grid-template-columns: repeat(25, minmax(24px, 1fr)); gap: 5px; padding: 11px; border: 1px solid var(--line); border-radius: 10px; background: #f0efe7; }
 .gp-roadmap span { display: grid; min-height: 24px; place-items: center; border-radius: 6px; background: #fffefa; color: #9a9d95; font-size: 9px; font-weight: 700; }
 .gp-roadmap .is-active { background: #315e4b; color: #fff; }
-.gp-session[hidden], #gp-complete[hidden] { display: none; }
+.gp-session[hidden], #gp-complete[hidden], #gp-setup[hidden], #gp-prompt-label[hidden] { display: none; }
 .gp-session { position: fixed; z-index: 200; inset: 0; display: flex; flex-direction: column; overflow-y: auto; background: #f4f4f4; }
 .gp-session .rh-top svg { width: 22px; height: 22px; fill: currentColor; }
 .gp-session .rh-stats { align-items: center; }
@@ -794,7 +794,10 @@ body.practice-fullscreen { overflow: hidden; }
 .gp-hero.is-ordering p:last-child { max-width: 920px; margin-top: 16px; font-family: "Noto Sans JP", "DM Sans", sans-serif; font-size: clamp(20px, 2vw, 28px); line-height: 1.8; }
 .gp-hero.is-contextual { min-height: auto; padding: 76px 24px 28px; }
 .gp-hero.is-contextual h3 { width: 100%; max-width: 1000px; font-size: 23px; line-height: 2; text-align: left; white-space: pre-line; word-break: normal; }
-.gp-hero.is-contextual p:last-child { max-width: 1000px; font-size: 15px; }
+.gp-hero.is-contextual p:last-child { max-width: 1000px; font-size: 18px; color: #315e4b; }
+#gp-prompt-label { width: 100%; max-width: 1000px; margin: 0 0 12px; font-size: 14px; font-weight: 700; text-align: left; }
+#gp-subprompt strong { font-weight: 800; color: #163e2d; text-decoration: underline; text-underline-offset: 4px; }
+#gp-complete { scroll-margin-top: 24px; }
 .gp-hero.is-contextual ~ .gp-body .gp-options button > span:last-child { line-height: 1.9; white-space: pre-line; }
 .gp-vocabulary { width: 100%; margin: 0 0 16px; color: #596158; font-size: 14px; line-height: 1.9; overflow-wrap: anywhere; }
 .gp-answer.gp-answer-parts { max-width: 100%; border-radius: 8px; }
@@ -821,7 +824,7 @@ body.practice-fullscreen { overflow: hidden; }
 @media (max-width: 700px) {
 	.gp-hero.is-contextual { padding: 72px 18px 22px; }
 	.gp-hero.is-contextual h3 { font-size: 18px; line-height: 2; }
-	.gp-hero.is-contextual p:last-child { font-size: 14px; }
+	.gp-hero.is-contextual p:last-child { font-size: 16px; }
 	.gp-fields { padding: 12px; gap: 12px; }
 	.gp-fields-short { grid-template-columns: 1fr; }
 	.gp-answer .gp-field input, .gp-answer .gp-field textarea { font-size: 17px; }

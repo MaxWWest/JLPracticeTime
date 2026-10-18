@@ -26,16 +26,16 @@
 		["作業", "さぎょう"], ["活動", "かつどう"], ["半分", "はんぶん"], ["様子", "ようす"], ["時刻", "じこく"], ["移動", "いどう"], ["最初", "さいしょ"], ["再現", "さいげん"], ["一分", "いっぷん"], ["二人", "ふたり"]
 	];
 	const tasks = [
-		{ id: "overlap-report", label: "Read the activity record", topic: "nagara", count: 2 },
-		{ id: "combine-actions", label: "Combine two actions", topic: "nagara", count: 2 },
-		{ id: "same-actor", label: "Who did what, when?", topic: "nagara", count: 2 },
+		{ id: "overlap-report", label: "Read the activity record", topic: "nagara", count: 1 },
+		{ id: "combine-actions", label: "Combine two actions", topic: "nagara", count: 4 },
+		{ id: "same-actor", label: "Who did what, when?", topic: "nagara", count: 1 },
 		{ id: "main-action", label: "Choose the main focus", topic: "nagara", count: 2 },
-		{ id: "stage-choice", label: "Choose the current stage", topic: "tokoro", count: 2 },
-		{ id: "stage-reply", label: "Send a progress update", topic: "tokoro", count: 2 },
+		{ id: "stage-choice", label: "Choose the current stage", topic: "tokoro", count: 1 },
+		{ id: "stage-reply", label: "Send a progress update", topic: "tokoro", count: 3 },
 		{ id: "two-updates", label: "Two moments, two updates", topic: "tokoro", count: 2 },
 		{ id: "stage-repair", label: "Correct the action stage", topic: "tokoro", count: 2 },
-		{ id: "two-limits", label: "Two different time limits", topic: "limits", count: 3 },
-		{ id: "feasible-plan", label: "Check both commitments", topic: "limits", count: 2 },
+		{ id: "two-limits", label: "Two different time limits", topic: "limits", count: 4 },
+		{ id: "feasible-plan", label: "Check both commitments", topic: "limits", count: 1 },
 		{ id: "change-limit", label: "Change the commitment", topic: "limits", count: 2 },
 		{ id: "limit-meaning", label: "What does the promise mean?", topic: "limits", count: 2 }
 	];
@@ -136,11 +136,11 @@
 				q.responseSpec = core.cloze(moments.map((stage, i) => ({ label: q.fields[i].label, segments: [action.object + "を", core.gap(q.fields[i].label, [stages[stage]], Object.values(stages)), "ところです。"] })), taskId === "stage-repair" ? "Correct the draft's stage in the reply below." : "Complete each progress update for the situation or labelled time.");
 			} else if (taskId === "combine-actions") {
 				const [a, b] = scene.responseActions;
-				q.responseSpec = core.cloze([{ label: "Combined actions", segments: [core.gap("Accompanying action", [a.stem], [a.stem, b.stem]), core.gap("Link", ["ながら"]), "、", core.gap("Main action", [b.masu], [a.masu, b.masu]), "。"] }], `Keep ${b.ing} as the main action, with both actions happening together.`);
+				q.responseSpec = core.cloze([{ label: "Combined actions", segments: [core.gap("Accompanying action", [a.stem], [a.stem, b.stem]), core.gap("Link", ["ながら"]), "、", core.gap("Main action", [b.masu], [a.masu, b.masu]), "。"] }], "Use the passage to decide which action is the main focus; keep both actions simultaneous.");
 			} else if (taskId === "change-limit") {
 				q.responseSpec = core.cloze([{ label: "New promise", segments: [scene.facts.boundary, core.gap("Time marker", [q.fields[0].answer.includes(scene.facts.boundary + "までに") ? "までに" : "まで"]), action.masu + "。"] }], "Keep the action and time; change the marker to express the new commitment.");
 			}
-			if (q.responseSpec) q.responseSpec.vocabulary = (scene.responseActions || [action]).map((a) => `${a.dict} (${a.en})`).join(" / ");
+			if (q.responseSpec) q.responseSpec.vocabulary = [...(scene.responseActions || [action])].sort((a, b) => a.dict.localeCompare(b.dict, "ja")).map((a) => `${a.dict} (${a.en})`).join(" / ");
 			return q;
 		}
 		function nagaraQuestions(a, b) {
@@ -157,12 +157,14 @@
 			const correct = ["overlap", "a-first", "b-first", "different-actors"].indexOf(relationship(facts.a, facts.b));
 			const sameA = { actor: person, start, end: start + 20 }, sameB = { actor: person, start: start + 5, end: start + 25 };
 			const stories = [{ a: sameA, b: sameB }, { a: sameA, b: { ...sameB, actor: other } }, { a: sameA, b: { ...sameB, start: start + 20, end: start + 40 } }, { a: sameA, b: { ...sameB, start: start - 20, end: start } }];
-			const main = `${person}は「${b.dict}」ことを主にして、その間に「${a.dict}」こともします。`;
+			const [accompanying, primary] = rng() < 0.5 ? [a, b] : [b, a];
+			const main = `Your main task is to ${primary.en}. At the same time, you ${accompanying.en}.`;
+			const focusScene = { ...scene, responseActions: [accompanying, primary], facts: { a: sameA, b: sameB, mainAction: primary.id } };
 			return [
-				question("overlap-report", scene, { prompt: `${scene.structure === "activity-log" ? "昨日の活動を記録しました。" : "昨日何をしていたか聞いて、時間をメモしました。"}\n${evidence}\n同じ人の二つの時間が重なる場合、その間は両方を一緒にしていました。`, subprompt: "Which report matches both the people and the times?", band: "Choose the accurate report.", options: reports, answer: reports[correct], choiceFacts: ["overlap", "a-first", "b-first", "different-actors"], explanation: scenario === "overlap" ? "The same person performs both actions during overlapping periods, so ながら fits. It does not mean one action finished before the other began." : scenario === "different-actors" ? "The times overlap, but the actors differ. This simultaneous-action use of ながら joins two actions by the same actor; 間 can describe two people's actions." : "The periods do not overlap. てから preserves which action happened first; ながら would change that relationship.", english: `${names[person]}'s activity record concerns ${a.ing} and ${b.ing}.` }),
-				question("combine-actions", scene, { prompt: `今日の予定を一文で伝えたいです。\n${main}\n二つの活動は同時にします。`, subprompt: `Combine the actions with ながら; keep ${b.ing} as the main action. Write as ${names[person]}, using the supplied phrases.`, band: "Write one sentence, preserving the main focus.", vocabulary: wordBank(a, b), fields: [field("Combined sentence", combinedAnswers(a, b, person))], explanation: `${a.stem}ながら is the accompanying action. ${b.masu} comes in the main clause. Reversing the clauses can be grammatical, but changes the focus explicitly requested here.`, english: `I will ${b.en} while ${a.ing}.` }),
-				question("same-actor", scene, { prompt: `「${person}は${simultaneous(a, b, true)}」\nこの文と合う記録を探しています。同じ人の二つの時間が重なる場合、その間は両方を一緒にしていました。`, subprompt: "Which record can this sentence describe?", band: "Check the actor and the overlap.", options: stories.map((f) => `${record(a, f.a)}\n${record(b, f.b)}`), answer: `${record(a, stories[0].a)}\n${record(b, stories[0].b)}`, choiceFacts: stories, explanation: "Both actions must belong to the named person and overlap in time. Merely happening on the same day, or at the same time for different people, is not enough.", english: `${names[person]} ${b.past} while ${a.ing}.` }),
-				question("main-action", scene, { prompt: `二つのことを同時にする予定です。\n${main}\nその予定を、何を主にするかが分かるように伝えてください。`, subprompt: "Both clause orders can be grammatical. Which one puts the stated main activity in the main clause?", band: "Choose the requested focus and timing.", options: [simultaneous(a, b), simultaneous(b, a), `${a.te}から、${b.masu}。`, `${b.te}から、${a.masu}。`], answer: simultaneous(a, b), explanation: "The main action follows ながら. The reversed ながら sentence is not bad Japanese; it gives the other activity the main focus. The てから choices instead make the activities sequential.", english: `The main activity is ${b.ing}; ${a.ing} accompanies it.` })
+				question("overlap-report", scene, { prompt: evidence, promptLabel: "Activity log", subprompt: "Which report matches the people and times? Each activity continues throughout its interval.", band: "Choose the accurate report.", options: reports, answer: reports[correct], choiceFacts: ["overlap", "a-first", "b-first", "different-actors"], explanation: scenario === "overlap" ? "The same person performs both actions during overlapping periods, so ながら fits. It does not mean one action finished before the other began." : scenario === "different-actors" ? "The times overlap, but the actors differ. This simultaneous-action use of ながら joins two actions by the same actor; 間 can describe two people's actions." : "The periods do not overlap. てから preserves which action happened first; ながら would change that relationship.", english: `${names[person]}'s activity record concerns ${a.ing} and ${b.ing}.` }),
+				question("combine-actions", focusScene, { prompt: main, promptLabel: "Situation", subprompt: "Combine the simultaneous actions, preserving the main focus.", band: "Keep the main focus.", vocabulary: wordBank(a, b), fields: [field("Combined sentence", combinedAnswers(accompanying, primary, person))], explanation: `${accompanying.stem}ながら is the accompanying action. ${primary.masu} comes in the main clause. Reversing the clauses can be grammatical, but changes the requested focus.`, english: `I will ${primary.en} while ${accompanying.ing}.` }),
+				question("same-actor", scene, { prompt: `「${person}は${simultaneous(a, b, true)}」`, subprompt: "Which record fits? Each activity continues throughout its interval.", band: "Check the actor and the overlap.", options: stories.map((f) => `${record(a, f.a)}\n${record(b, f.b)}`), answer: `${record(a, stories[0].a)}\n${record(b, stories[0].b)}`, choiceFacts: stories, explanation: "Both actions must belong to the named person and overlap in time. Merely happening on the same day, or at the same time for different people, is not enough.", english: `${names[person]} ${b.past} while ${a.ing}.` }),
+				question("main-action", focusScene, { prompt: main, promptLabel: "Situation", subprompt: "Which sentence preserves both the timing and the main focus?", band: "Choose the matching sentence.", options: [simultaneous(accompanying, primary), simultaneous(primary, accompanying), `${a.te}から、${b.masu}。`, `${b.te}から、${a.masu}。`], answer: simultaneous(accompanying, primary), explanation: "The main action follows ながら. The reversed ながら sentence is not bad Japanese; it gives the other activity the main focus. The てから choices instead make the activities sequential.", english: `The main activity is ${primary.ing}; ${accompanying.ing} accompanies it.` })
 			];
 		}
 		function stageQuestions(action, variant) {
@@ -173,12 +175,11 @@
 			const now = stage === "before" ? start - 1 : stage === "during" ? middle : end + 1;
 			const scene = { familyKey: `stage:${action.id}`, sceneKey: `stage:${action.id}:${stage}:${start}`, structure: ["interruption", "progress-message", "handover"][variant % 3], domain: action.frame, vocabulary: [action.word], facts: { stage, now, start, end, action: action.id } };
 			const details = pick({
-				before: ["まだ始めていませんが、準備はできました。すぐに始めます。", "必要な物をそろえました。まだ何もしていません。これからすぐに始めます。", "電話が終わったら、すぐに始めます。準備はもうできていますが、作業はまだです。"],
-				during: ["少し前に始めました。まだ半分で、続けています。", "もう始めていますが、最後まで終わっていません。今も続けています。", "途中でやめずに続けています。終わるまで、もう少し時間が必要です。"],
-				after: ["全部終わりました。終わってから、まだ一分しかたっていません。", "最後まで終えたのは、ほんの少し前です。今はもう続けていません。", "一分前に最後まで終えました。次に何をするか、これから考えます。"]
+				before: ["準備ができたので、今から始めます。", "まだ始めていません。今からです。", "準備はできました。では、始めます。"],
+				during: ["まだ半分です。もう少し待ってください。", "今、続けています。あと半分です。", "まだ途中なので、あとで電話します。"],
+				after: ["ついさっき全部終わりました。", "最後まで終えたのは、一分前です。", "今、全部終わりました。"]
 			}[stage], rng);
-			const intro = pick(["友だちから電話がかかってきました。今の様子を伝えます。", "家族に短いメッセージを送ります。今の様子を聞かれました。", "次の予定を決めたいので、友だちが今の様子を聞いています。"], rng);
-			const context = `${intro}\n作業：${action.dict}\n${details}`;
+			const context = `Task: ${action.en}\n「${details}」`;
 			const options = ["before", "during", "after"].map((s) => stageSentence(action, s));
 			const otherStage = pick(["before", "during", "after"].filter((s) => s !== stage), rng);
 			const moments = shuffle([stage, otherStage], rng);
@@ -187,7 +188,7 @@
 			return [
 				question("stage-choice", scene, { prompt: context, subprompt: "Which reply accurately describes the current stage?", band: "Choose the progress report.", options, answer: stageSentence(action, stage), choiceFacts: ["before", "during", "after"], explanation, english: `The task is to ${action.en}. It is ${stage === "before" ? "about to begin" : stage === "during" ? "under way, about halfway through" : "entirely finished, just one minute ago"}.` }),
 				question("stage-reply", scene, { prompt: context, subprompt: "Reply with a full sentence using ところです. Keep the supplied action; choose its stage from the situation.", band: "Write the current progress update.", vocabulary: wordBank(action), fields: [field("Reply", stageAnswers(action, stage))], explanation, english: `I ${stage === "before" ? "am about to " + action.en : stage === "during" ? "am in the middle of " + action.ing : "have just finished " + action.ing}.` }),
-				question("two-updates", { ...scene, facts: { ...scene.facts, moments } }, { prompt: `今日の記録を見て、二つの時点の返事を再現します。\n作業：${action.dict}\n${clock(start - 1)}：準備ができました。この後すぐに始めました。\n${clock(start)}：開始。その後、休まずに続けました。\n${clock(end)}：全部終了。`, subprompt: "Write what you would say at each labelled time, using ところです. The fields are not necessarily in chronological order.", band: "Give both progress updates.", vocabulary: wordBank(action), fields: moments.map((s) => field(`At ${englishClock(momentTime(s))}`, stageAnswers(action, s))), explanation: `${clock(start - 1)} is just before starting; a time between ${clock(start)} and ${clock(end)} is during the action; ${clock(end + 1)} is just after completion. Do not reuse the same verb form for both moments.`, english: `Task: ${action.en}. Ready at ${englishClock(start - 1)}, started at ${englishClock(start)}, finished at ${englishClock(end)}. Give updates at ${moments.map((s) => englishClock(momentTime(s))).join(" and ")}.` }),
+				question("two-updates", { ...scene, facts: { ...scene.facts, moments } }, { prompt: `Task: ${action.en}\n${englishClock(start - 1)}: Ready to begin\n${englishClock(start)}: Started; no breaks\n${englishClock(end)}: Finished`, promptLabel: "Timeline", subprompt: "Give an update for each labelled time using ところです. Check the times; their order varies.", band: "Give both progress updates.", vocabulary: wordBank(action), fields: moments.map((s) => field(`At ${englishClock(momentTime(s))}`, stageAnswers(action, s))), explanation: `${clock(start - 1)} is just before starting; a time between ${clock(start)} and ${clock(end)} is during the action; ${clock(end + 1)} is just after completion. Do not reuse the same verb form for both moments.`, english: `Task: ${action.en}. Ready at ${englishClock(start - 1)}, started at ${englishClock(start)}, finished at ${englishClock(end)}. Give updates at ${moments.map((s) => englishClock(momentTime(s))).join(" and ")}.` }),
 				question("stage-repair", scene, { prompt: `${context}\n送ろうとした返事：「${stageSentence(action, otherStage)}」`, subprompt: "The draft is grammatical, but describes the wrong stage. Correct it using ところです without changing the action.", band: "Correct the meaning, not the vocabulary.", vocabulary: wordBank(action), fields: [field("Corrected reply", stageAnswers(action, stage))], explanation, english: `Correct the draft to describe ${action.ing} ${stage === "before" ? "about to begin" : stage === "during" ? "in progress" : "just completed"}.` })
 			];
 		}
@@ -201,7 +202,7 @@
 			const lines = [action, other].map((a, i) => {
 				const time = i ? clock(until) : boundary, marker = markers[i];
 				return { text: `${time}［　］${a.masu}。`, answer: marker,
-					detail: marker === "までに" ? `「${a.dict}」作業は、その時には全部終わっている必要があります。早く終わってもかまいません。` : `「${a.dict}」作業は、その時刻まで続けます。全部終わらなくても、その時にやめます。` };
+					detail: marker === "までに" ? "その時には全部必要です。早く終わってもかまいません。" : "途中でやめないでください。その時刻になったら、残りがあってもやめます。" };
 			});
 			const finish = deadline - pick([0, 5, 10], rng);
 			const plans = [{ finish, waitStart: finish, waitEnd: until }, { finish: deadline + 5, waitStart: deadline + 5, waitEnd: until }, { finish, waitStart: finish, waitEnd: until - 10 }, { finish: deadline + 5, waitStart: deadline + 5, waitEnd: until - 10 }];
@@ -255,6 +256,7 @@
 				if (used.has(m.familyKey)) continue;
 				const taskUse = usage.task.get(m.task) || 0;
 				let score = taskUse >= quotas.get(m.task) ? 10000 : 0;
+				score += core.reviewBalancePenalty(q, queue, count);
 				score += taskUse / quotas.get(m.task) * 100 + (usage.topic.get(m.topic) || 0) * 25;
 				if (last?.task === m.task) score += 600;
 				if (last?.topic === m.topic) score += 150;
@@ -272,6 +274,7 @@
 			for (const word of best.meta.vocabulary) bump(usage.vocabulary, word);
 			bump(usage.answer, best.answer);
 		}
+		queue.splice(0, queue.length, ...core.interleave(queue, q => q.meta.task));
 		const positions = new Map();
 		let lastPosition = -1, run = 0;
 		for (const q of queue.filter((q) => q.options)) {

@@ -31,18 +31,18 @@
 		["動作", "どうさ"], ["行動", "こうどう"], ["眼鏡", "めがね"], ["申し出", "もうしで"], ["賛成", "さんせい"], ["参加", "さんか"], ["相手", "あいて"], ["役に立ち", "やくにたち"]
 	];
 	const tasks = [
-		{ id: "invite-message", label: "Invite someone", topic: "invitation", count: 2 },
-		{ id: "accept-plan", label: "Accept a counterproposal", topic: "proposal", count: 2 },
-		{ id: "offer-message", label: "Offer to take over", topic: "offer", count: 2 },
-		{ id: "change-actor", label: "Change who will act", topic: "roles", count: 2 },
-		{ id: "two-intents", label: "Two messages, different intentions", topic: "roles", count: 3 },
+		{ id: "invite-message", label: "Invite someone", topic: "invitation", count: 3 },
+		{ id: "accept-plan", label: "Accept a counterproposal", topic: "proposal", count: 3 },
+		{ id: "offer-message", label: "Offer to take over", topic: "offer", count: 3 },
+		{ id: "change-actor", label: "Change who will act", topic: "roles", count: 4 },
+		{ id: "two-intents", label: "Two messages, different intentions", topic: "roles", count: 4 },
 		{ id: "context-pair", label: "One ending, two contexts", topic: "roles", count: 2 },
-		{ id: "choose-reply", label: "Keep the shared plan", topic: "proposal", count: 2 },
-		{ id: "reply-meaning", label: "Read the response in context", topic: "offer", count: 2 },
-		{ id: "final-plan", label: "Track the final agreement", topic: "proposal", count: 2 },
-		{ id: "counterproposal", label: "Decline and suggest another day", topic: "invitation", count: 2 },
-		{ id: "missing-turn", label: "Restore the missing turn", topic: "offer", count: 2 },
-		{ id: "scope-reading", label: "What has actually been agreed?", topic: "invitation", count: 2 }
+		{ id: "choose-reply", label: "Keep the shared plan", topic: "proposal", count: 1 },
+		{ id: "reply-meaning", label: "Read the response in context", topic: "offer", count: 1 },
+		{ id: "final-plan", label: "Track the final agreement", topic: "proposal", count: 1 },
+		{ id: "counterproposal", label: "Decline and suggest another day", topic: "invitation", count: 1 },
+		{ id: "missing-turn", label: "Restore the missing turn", topic: "offer", count: 1 },
+		{ id: "scope-reading", label: "What has actually been agreed?", topic: "invitation", count: 1 }
 	];
 	// Edges constrain noun + verb + social use. Reasons never decide the answer by themselves.
 	const frames = [
@@ -64,12 +64,14 @@
 	const dayEnglish = { "土曜日": "on Saturday", "日曜日": "on Sunday", "金曜日": "on Friday", "明日": "tomorrow", "あさって": "the day after tomorrow" };
 	const atDay = (day) => day.endsWith("曜日") ? day + "に" : day;
 	const preparationEdges = { outing: ["地図", "メール"], study: ["資料", "メール"], practice: ["資料", "メール"], write: ["資料", "メール"], "read-aloud": ["資料", "メール"], send: ["資料", "メール"] };
-	const otherHelpContexts = {
-		cook: "Aは料理のしかたが分からず、Bは作り方を知っています。Aは食卓の準備をしています。",
-		write: "Aは別の仕事をしなければなりません。書く内容は、もうBにも伝えてあります。",
-		"read-aloud": "Aはのどが痛くて、声が出ません。Bには声に出して読むことができます。",
-		carry: "Aは足をけがしていて、歩くのが大変です。Bは物を移すのを手伝えます。",
-		send: "Aは送り方が分かりません。Bは送り方を知っていて、同じデータも持っています。"
+	const helpSituations = {
+		cook: "A is busy setting the table. You can prepare the food.",
+		write: "A has injured their hand. You can write what they dictate.",
+		"read-aloud": "A has forgotten their glasses and cannot read the text. You can read it aloud.",
+		carry: "A needs something moved, but their hands are full. You are free to help.",
+		open: "A wants something opened, but is carrying things in both hands. Your hands are free.",
+		lend: "A has forgotten something they need. You have a spare.",
+		send: "A cannot get online. You have the same file and the recipient's address."
 	};
 	function random(seed) { let n = seed >>> 0; return () => { n += 0x6D2B79F5; let t = Math.imul(n ^ n >>> 15, n | 1); t ^= t + Math.imul(t ^ t >>> 7, t | 61); return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 	function shuffle(values, rng) { const a = [...values]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(rng() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
@@ -116,15 +118,16 @@
 			if (q.fields) {
 				const intents = taskId === "two-intents" ? facts.intents : [taskId === "offer-message" || (taskId === "change-actor" && facts.actors === "speaker") ? "offer" : taskId === "accept-plan" ? "plan" : "invite"];
 				const rows = intents.map((intent, i) => {
-					const label = q.fields[i].label, segments = [];
+					const label = taskId === "two-intents" ? `Message ${i + 1}` : "Reply", segments = [];
 					if (taskId === "accept-plan") segments.push(core.gap("Agreed day", [facts.next], [facts.first, facts.next]), "、");
 					else if (taskId === "invite-message") segments.push(facts.first + "、");
 					segments.push(core.gap(`${label}: participants`, intent === "offer" ? ["私が", "私が一人で"] : ["一緒に", "二人で"], ["私が", "一緒に", "あなたが"]), a.stem,
 						core.gap(`${label}: ending`, intent === "offer" ? ["ましょうか"] : intent === "plan" ? ["ましょう"] : ["ませんか", "ましょうか"]), "。");
 					return { label, segments };
 				});
-				const instructions = { "invite-message": "Ask your friend to join you; make an invitation question.", "accept-plan": "Accept the new day with a direct 'let's' reply, not another question.", "offer-message": "Offer your own help to A, without asking A to do the work.", "change-actor": facts.actors === "speaker" ? "Change the joint invitation into an offer to do it yourself." : "Change the solo offer into a question inviting the other person to join.", "two-intents": "Complete both messages for the intention shown. Their order changes." };
-				q.responseSpec = core.cloze(rows, instructions[taskId]);
+				const instructions = { "invite-message": "Complete your question to the friend in this situation.", "accept-plan": "Complete A's direct acceptance of B's proposal, not another question.", "offer-message": "Complete B's question in this situation.", "change-actor": "Revise the question to match the new situation in the passage.", "two-intents": "Complete the question for each numbered situation. Track who will act." };
+				q.responseSpec = { ...core.cloze(rows, instructions[taskId]), kind: "Complete the exchange", vocabulary: `${a.dict} (${a.en})` };
+				if (taskId === "two-intents") q.prompt = intents.map((intent, i) => `Message ${i + 1}: ${intent === "offer" ? "Your friend is busy. Ask whether you can take over." : "You and your friend are free. Ask whether they would like to join you."}`).join("\n");
 			}
 			return q;
 		}
@@ -149,11 +152,11 @@
 				`${first}は仕事があるんです。${next}、私が一人で${a.masu}。`
 			];
 			return [
-				q("invite-message", { prompt: `${a.setting}\nしたいこと：${a.dict}\nあなたは${first}なら時間があります。友だちの予定は、まだ聞いていません。`, subprompt: `Ask whether your friend would like to join you ${dayEnglish[first]}. Include the day and 一緒に (or 二人で); make it a polite invitation question, not an announcement.`, band: "Write the invitation.", vocabulary: wordBank(a, first), fields: [field("Your message", answers(a, "invite", first))], explanation: "Both ませんか and shared-action ましょうか work here. 一緒に/二人で makes the shared action explicit. ましょう is also a useful proposal, but is not the invitation question requested in this task.", english: `Would you like to ${a.en} together ${dayEnglish[first]}?` }),
+				q("invite-message", { prompt: `You are free ${dayEnglish[first]} and would like a friend to join you. You have not asked about their plans yet.`, promptLabel: "Situation", subprompt: `Ask whether your friend would like to join you ${dayEnglish[first]}. Include the day and 一緒に (or 二人で); make it a polite invitation question, not an announcement.`, band: "Write the invitation.", vocabulary: wordBank(a, first), fields: [field("Your message", answers(a, "invite", first))], explanation: "Both ませんか and shared-action ましょうか work here. 一緒に/二人で makes the shared action explicit. ましょう is also a useful proposal, but is not the invitation question requested in this task.", english: `Would you like to ${a.en} together ${dayEnglish[first]}?` }),
 				q("accept-plan", { prompt: `${a.setting}\nA：${invited}\nB：${first}は予定があるんです。${next}なら空いているんですが、どうですか。\nA：［返事］`, subprompt: "Reply as A. Accept B's new day with a full 'let's' statement, not another question. Include the new day and 一緒に (or 二人で).", band: "Accept the changed plan.", vocabulary: wordBank(a, first, next), fields: [field("A's acceptance", answers(a, "plan", next))], explanation: `B did not accept ${first}; B suggested ${next}. A's accepting ましょう statement should keep that new day and the shared action. A question would reopen the suggestion rather than give the requested direct acceptance.`, english: `Then let's ${a.en} together ${dayEnglish[next]}.` }),
 				q("choose-reply", { prompt: `AとBは、二人で「${a.dict}」ことを相談しています。\nA：${invited}\nB：その日は無理ですが、${next}は空いています。\nA：私も${next}なら大丈夫です。\nB：［返事］`, subprompt: "Which reply directly proposes doing it together on the newly available day, rather than assigning it to one person?", band: "Keep both participants and the agreed day.", options: [sharedReply, `いいですね。${utterance(a, "propose", "一緒に", first)}`, `${next}、私が一人で${a.stem}ましょうか。`, `Aさん、${next}は一人で${a.te}ください。`], answer: sharedReply, choiceFacts: [{ day: next, actors: "both" }, { day: first, actors: "both" }, { day: next, actors: "B" }, { day: next, actors: "A" }], explanation: `The target is a shared proposal for ${next}. The other lines change the day or assign the action to only A or B; they are not simply ungrammatical.`, english: `Both are free ${dayEnglish[next]}; B proposes that they ${a.en} together.` }, { day: next, actors: "both" }),
 				q("counterproposal", { prompt: `A：${invited}\nあなたはBです。${first}は仕事がありますが、${next}は空いています。Aと二人でしたいので、別の日に誘い直します。`, subprompt: "Which message declines the unavailable day and asks A to join you on the other day?", band: "Choose the counter-invitation, not a solo plan.", options: counterOptions, answer: counterOptions[0], choiceFacts: [{ day: next, actors: "both" }, { day: first, actors: "both" }, { day: next, actors: "A" }, { day: next, actors: "B" }], explanation: "A reason can soften a refusal, and a new ませんか invitation keeps the possibility of doing it together. Asking the other person to do it alone, or saying you will do it alone, changes that intention.", english: `I work ${dayEnglish[first]}. Would you like to ${a.en} together ${dayEnglish[next]}?` }, { day: next, actors: "both" }),
-				q("scope-reading", { prompt: `${a.setting}\nA：${invited}\nB：${replies[chosenStatus]}\n会話はここで止まっています。`, subprompt: "What has B actually communicated? Do not assume that an invitation or a proposed new date has already been accepted.", band: "Read the state of the invitation.", options: statusOptions, answer: statusOptions[["pending", "agreed", "declined", "counterproposal"].indexOf(chosenStatus)], choiceFacts: ["pending", "agreed", "declined", "counterproposal"], explanation: chosenStatus === "pending" ? "Asking to check the schedule postpones the answer; it is neither acceptance nor a definite refusal." : chosenStatus === "agreed" ? "B responds with a shared ましょう statement, accepting the proposed activity and day." : chosenStatus === "declined" ? "The stated conflict and 無理なんです decline this invitation. No alternative date has been proposed." : "B declines the original day but asks about another. A has not yet accepted the counterproposal.", english: `A invites B to ${a.en} ${dayEnglish[first]}. B's response is ${chosenStatus}.` }, { status: chosenStatus })
+				q("scope-reading", { prompt: `A：${invited}\nB：${replies[chosenStatus]}`, subprompt: "What has B agreed to, if anything?", band: "Choose the supported interpretation.", options: statusOptions, answer: statusOptions[["pending", "agreed", "declined", "counterproposal"].indexOf(chosenStatus)], choiceFacts: ["pending", "agreed", "declined", "counterproposal"], explanation: chosenStatus === "pending" ? "Asking to check the schedule postpones the answer; it is neither acceptance nor a definite refusal." : chosenStatus === "agreed" ? "B responds with a shared ましょう statement, accepting the proposed activity and day." : chosenStatus === "declined" ? "The stated conflict and 無理なんです decline this invitation. No alternative date has been proposed." : "B declines the original day but asks about another. A has not yet accepted the counterproposal.", english: `A invites B to ${a.en} ${dayEnglish[first]}. B's response is ${chosenStatus}.` }, { status: chosenStatus })
 			];
 		}
 		function helpQuestions(a, variant) {
@@ -165,24 +168,23 @@
 			const jointTurn = a.use === "both" && variant % 2 === 1;
 			const invitation = utterance(a, variant === 1 ? "invite" : "check", "一緒に");
 			const missingAnswer = jointTurn ? invitation : offer;
-			const missingContext = jointTurn ? `${a.setting}\nA：私もしたいと思っていたんです。` : `${a.problem}\nA：今、困っているんです。`;
 			const acceptance = jointTurn ? `いいですね。${utterance(a, "propose", "一緒に")}` : "ありがとうございます。Bさんにお願いします。私はここで待っています。";
 			const results = [
-				q("offer-message", { prompt: `${a.problem}\nBができること：${a.dict}\nあなたはBです。Aの役に立ちたいと思っています。まだ引き受ける約束はしていません。`, subprompt: "Offer to do the supplied action for A. Ask whether your help is wanted; include 私が so that the actor is explicit.", band: "Write B's offer, not a request to A.", vocabulary: wordBank(a, "私が"), fields: [field("B's offer", answers(a, "offer"))], explanation: "私が ... ましょうか offers the speaker's action and asks whether it is wanted. A joint invitation would recruit A instead. The question itself does not mean A has accepted.", english: `Shall I ${a.en} for you?` }),
-				q("reply-meaning", { prompt: `AとBが話しています。Bは時間があり、必要な物も持っています。\nBが申し出ること：${a.dict}\nB：${offer}\nA：${reply}\nBはまだ次の返事をしていません。`, subprompt: "What does A's whole response do? Read beyond the opening thank-you or 大丈夫です.", band: "Identify acceptance, refusal, delay, or a new proposal.", options: statuses, answer: statuses[["accepted", "declined", "pending", "together"].indexOf(status)], choiceFacts: ["accepted", "declined", "pending", "together"], explanation: "A thank-you alone does not settle who will act. The rest of the reply either accepts B's help, explicitly declines it, postpones the decision, or proposes shared action. 大丈夫です is interpreted from its surrounding words, not as an automatic refusal.", english: `B offers to ${a.en}. A's response is ${status}.` }, { status }),
-				q("missing-turn", { prompt: `動作：${a.dict}\n${missingContext}\nB：［　］\nA：${acceptance}\nAはBの提案を変えずに受けました。`, subprompt: "B asks a question; A accepts it without changing who will act. Which missing question fits the whole exchange?", band: "Restore the invitation or offer.", options: [missingAnswer, `Aさん、${a.te}くれませんか。`, jointTurn ? offer : invitation, `私が一人で${a.masu}。`], answer: missingAnswer, choiceFacts: [jointTurn ? "both" : "B", "A", jointTurn ? "B" : "both", "statement"], explanation: jointTurn ? "A accepts doing it together, without proposing a change to B's suggestion. The joint invitation fits. A solo offer or a request for A alone would assign different participants; the statement does not meet the question requirement." : "A accepts B's action and waits. B's solo offer fits. てくれませんか asks A to act; the joint invitation recruits both people. The statement may be grammatical but is not the question specified here.", english: `B asks about whether to ${a.en}; A accepts ${jointTurn ? "doing it together" : "B's help and waits"} without changing the participants.` }, { actors: jointTurn ? "both" : "B" })
+				q("offer-message", { prompt: helpSituations[a.frame], promptLabel: "You are B", subprompt: "Ask whether A would like your help.", band: "Write B's offer.", vocabulary: wordBank(a, "私が"), fields: [field("B's offer", answers(a, "offer"))], explanation: "私が ... ましょうか offers the speaker's action and asks whether it is wanted. A joint invitation would recruit A instead. The question itself does not mean A has accepted.", english: `Shall I ${a.en} for you?` }),
+				q("reply-meaning", { prompt: `B：${offer}\nA：${reply}`, subprompt: "How does A respond to B?", band: "Choose the supported interpretation.", options: statuses, answer: statuses[["accepted", "declined", "pending", "together"].indexOf(status)], choiceFacts: ["accepted", "declined", "pending", "together"], explanation: "A thank-you alone does not settle who will act. The rest of the reply either accepts B's help, explicitly declines it, postpones the decision, or proposes shared action. 大丈夫です is interpreted from its surrounding words, not as an automatic refusal.", english: `B offers to ${a.en}. A's response is ${status}.` }, { status }),
+				q("missing-turn", { prompt: `B：［　］\nA：${acceptance}`, subprompt: "B asks a question; A accepts without changing who will act. Which question fits?", band: "Restore the missing turn.", options: [missingAnswer, `Aさん、${a.te}くれませんか。`, jointTurn ? offer : invitation, `私が一人で${a.masu}。`], answer: missingAnswer, choiceFacts: [jointTurn ? "both" : "B", "A", jointTurn ? "B" : "both", "statement"], explanation: jointTurn ? "A accepts doing it together, without proposing a change to B's suggestion. The joint invitation fits. A solo offer or a request for A alone would assign different participants; the statement does not meet the question requirement." : "A accepts B's action and waits. B's solo offer fits. てくれませんか asks A to act; the joint invitation recruits both people. The statement may be grammatical but is not the question specified here.", english: `B asks about whether to ${a.en}; A accepts ${jointTurn ? "doing it together" : "B's help and waits"} without changing the participants.` }, { actors: jointTurn ? "both" : "B" })
 			];
 			if (a.use !== "both") return results;
 			const fields = shuffle(["offer", "invite"], rng);
 			const toSolo = variant % 2 === 0;
 			const contexts = [["solo", "joint"], ["joint", "solo"], ["solo", "solo"], ["joint", "joint"]][variant];
-			const context = (kind, index) => kind === "solo" ? `${index ? otherHelpContexts[a.frame] : a.problem}\nA：${index ? "私は今できません。代わりにしてもらえると助かります。" : "今は自分ではできないので、お願いできますか。"}\nB：${a.stem}ましょうか。` : `${index ? "AもBも時間があり、これからすることを相談しています。" : a.setting}\nA：${index ? "私もします。二人で一緒にするのはどうですか。" : "一人でするより、二人で一緒にしたいです。"}\nB：では、${a.stem}ましょうか。`;
+			const context = (kind, index) => kind === "solo" ? `A：${index ? "私は今できません。代わりにしてもらえると助かります。" : "今は手が離せないんです。お願いできますか。"}\nB：${a.stem}ましょうか。` : `A：${index ? "私もします。一人だと寂しいですから。" : "私もしたいです。そちらはどうですか。"}\nB：では、${a.stem}ましょうか。`;
 			const pairFacts = [["solo", "joint"], ["joint", "solo"], ["solo", "solo"], ["joint", "joint"]];
 			const pairText = (f) => f.map((r, i) => `${i + 1}：${r === "solo" ? "Bが自分の行動を申し出ている。" : "BがAと一緒にすることを提案している。"}`).join("\n");
 			results.push(
-				q("change-actor", { prompt: `${a.setting}\n元のメッセージ：「${toSolo ? joint : offer}」\n${toSolo ? "相手には別の仕事があります。今度は相手を誘わず、自分が代わりにすることを申し出ます。" : "今度は自分だけでするのではなく、相手と二人ですることを誘う質問に変えます。"}`, subprompt: `Keep the action, but change the participants. Make a polite question and include ${toSolo ? "私が" : "一緒に (or 二人で)"}.`, band: "Rewrite who will act.", vocabulary: wordBank(a), fields: [field("Revised message", answers(a, toSolo ? "offer" : "invite"))], explanation: "ましょうか can appear in both readings. Changing only the ending may not change the participants: the explicit actor and the surrounding context matter. ませんか is also accepted for the rewritten joint invitation.", english: `${toSolo ? "Offer to" : "Invite the listener to"} ${a.en} ${toSolo ? "yourself instead of together" : "together instead of by yourself"}.` }, { actors: toSolo ? "speaker" : "both" }),
-				q("two-intents", { prompt: `使う動作：${a.dict}\n${a.setting}\n同じ動作について、別々の相手に二つのメッセージを送ります。片方では相手と一緒にしたいです。もう片方では、忙しい相手の代わりに自分がします。`, subprompt: "Write both polite questions. Use 一緒に (or 二人で) for the joint invitation, and 私が for the offer. Read each field label; their order changes.", band: "Keep the two intentions distinct.", vocabulary: wordBank(a), fields: fields.map((intent) => field(intent === "offer" ? "Offer: you do it for the busy person" : "Invitation: you and the other person do it together", answers(a, intent))), explanation: "The same action can be a joint invitation or a solo offer. Both joint ませんか and joint ましょうか are accepted; the solo offer uses 私が ... ましょうか. Each field is checked independently.", english: `Invite someone to ${a.en} together, and separately offer to ${a.en} for a busy person.` }, { intents: fields }),
-				q("context-pair", { prompt: `動作：${a.dict}\n場面1\n${context(contexts[0], 0)}\n場面2\n${context(contexts[1], 1)}`, subprompt: "B uses the same ending in both scenes. Which pair of readings fits what came before it? The readings may be the same or different.", band: "Interpret each use of ましょうか independently.", options: pairFacts.map(pairText), answer: pairText(contexts), choiceFacts: pairFacts, explanation: "ましょうか does not by itself encode 'I' or 'we'. A request to take over supports a solo offer; A's wish to participate supports a joint suggestion. Check both scenes independently: they need not have opposite answers.", english: `The question about whether to ${a.en} is ${contexts.map((c) => c === "solo" ? "a solo offer" : "a shared suggestion").join(" and then ")}.` }, { contexts })
+				q("change-actor", { prompt: `Original: 「${toSolo ? joint : offer}」\nNew situation: ${toSolo ? "Your friend has other work to do. Ask whether you can take over." : "Your friend is free and would like to join in. Invite them instead of doing it alone."}`, subprompt: "Keep the action, but change who will act. Make a polite question.", band: "Rewrite who will act.", vocabulary: wordBank(a), fields: [field("Revised message", answers(a, toSolo ? "offer" : "invite"))], explanation: "ましょうか can appear in both readings. Changing only the ending may not change the participants: the explicit actor and the surrounding context matter. ませんか is also accepted for the rewritten joint invitation.", english: `${toSolo ? "Offer to" : "Invite the listener to"} ${a.en} ${toSolo ? "yourself instead of together" : "together instead of by yourself"}.` }, { actors: toSolo ? "speaker" : "both" }),
+				q("two-intents", { prompt: "", promptLabel: "Two situations", subprompt: "Write a polite question for each situation.", band: "Keep the two intentions distinct.", vocabulary: wordBank(a), fields: fields.map((intent, i) => field(`Message ${i + 1}`, answers(a, intent))), explanation: "The same action can be a joint invitation or a solo offer. Both joint ませんか and joint ましょうか are accepted; the solo offer uses 私が ... ましょうか. Each field is checked independently.", english: `Invite someone to ${a.en} together, and separately offer to ${a.en} for a busy person.` }, { intents: fields }),
+				q("context-pair", { prompt: `1\n${context(contexts[0], 0)}\n\n2\n${context(contexts[1], 1)}`, subprompt: "Who would act in each exchange? The answers may be the same or different.", band: "Interpret each question independently.", options: pairFacts.map(pairText), answer: pairText(contexts), choiceFacts: pairFacts, explanation: "ましょうか does not by itself encode 'I' or 'we'. A request to take over supports a solo offer; A's wish to participate supports a joint suggestion. Check both scenes independently: they need not have opposite answers.", english: `The question about whether to ${a.en} is ${contexts.map((c) => c === "solo" ? "a solo offer" : "a shared suggestion").join(" and then ")}.` }, { contexts })
 			);
 			return results;
 		}
@@ -237,11 +239,14 @@
 				if (used.has(m.familyKey)) continue;
 				const taskUse = usage.task.get(m.task) || 0;
 				let score = taskUse >= quotas.get(m.task) ? 10000 : 0;
+				score += core.reviewBalancePenalty(q, queue, count);
 				score += taskUse / quotas.get(m.task) * 100 + (usage.topic.get(m.topic) || 0) * 25;
 				if (last?.task === m.task) score += 600;
 				if (last?.topic === m.topic) score += 150;
 				if (last?.domain === m.domain) score += 100;
-				if (history.has(m.familyKey)) score += 500;
+				if (history.has(m.familyKey)) score += 2000;
+				// Save dual-use actions for the tasks that actually contrast solo and joint action.
+				if (!["change-actor", "two-intents", "context-pair"].includes(m.task) && frames.find(f => f.id === m.domain)?.use === "both") score += 300;
 				score += (usage.domain.get(m.domain) || 0) * 15;
 				score += m.vocabulary.reduce((sum, word) => sum + (usage.vocabulary.get(word) || 0) * 18, 0);
 				if (score < bestScore) { best = q; bestScore = score; }
@@ -252,6 +257,7 @@
 			for (const key of ["task", "topic", "domain"]) bump(usage[key], best.meta[key]);
 			for (const word of best.meta.vocabulary) bump(usage.vocabulary, word);
 		}
+		queue.splice(0, queue.length, ...core.interleave(queue, q => q.meta.task));
 		const positions = new Map();
 		let lastPosition = -1, run = 0;
 		for (const q of queue.filter((q) => q.options)) {

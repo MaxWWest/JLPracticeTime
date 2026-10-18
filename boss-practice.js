@@ -1,8 +1,8 @@
 /* A bounded cross-unit pilot. Facts precede language, choices and feedback. */
 (function (root, factory) {
-	if (typeof module === "object" && module.exports) module.exports = factory(require("./grammar-practice-core.js"));
-	else root.BossPractice = factory(root.GrammarPracticeCore);
-})(typeof globalThis === "object" ? globalThis : this, function (core) {
+	if (typeof module === "object" && module.exports) module.exports = factory(require("./grammar-practice-core.js"), require("./boss-scenarios.js"));
+	else root.BossPractice = factory(root.GrammarPracticeCore, root.BossScenarios);
+})(typeof globalThis === "object" ? globalThis : this, function (core, expanded) {
 	"use strict";
 	const version = "boss-01-05-v1", roundSize = 10;
 	const cases = [
@@ -15,7 +15,8 @@
 		{ id: "equipment-loan", unit: "ability", secondary: "time", format: "Check both conditions", pattern: "skill + availability before a deadline" },
 		{ id: "broadcast-access", unit: "ability", secondary: "time", format: "Choose the current update", pattern: "access + perception after a change" },
 		{ id: "first-visit", unit: "experience", secondary: "invitation", format: "Complete the conversation", pattern: "experience + accepted or declined plan" },
-		{ id: "weekend-meal", unit: "experience", secondary: "comparison", format: "Check the message", pattern: "never / sometimes not + action comparison" }
+		{ id: "weekend-meal", unit: "experience", secondary: "comparison", format: "Check the message", pattern: "never / sometimes not + action comparison" },
+		...expanded.cases
 	];
 	const extraNouns = [
 		["自習室", "じしゅうしつ", "study room"], ["図書室", "としょしつ", "reading room"], ["研修室", "けんしゅうしつ", "training room"],
@@ -26,6 +27,7 @@
 		["水族館", "すいぞくかん", "aquarium"], ["博物館", "はくぶつかん", "museum"], ["美術館", "びじゅつかん", "art museum"]
 	];
 	const readings = [
+		...expanded.readings,
 		...extraNouns.map(([word, kana]) => [word, kana]), ["受付", "うけつけ"], ["予約", "よやく"], ["完了", "かんりょう"], ["宿泊", "しゅくはく"], ["料金", "りょうきん"], ["満室", "まんしつ"], ["空室", "くうしつ"], ["相談", "そうだん"], ["交代", "こうたい"], ["担当", "たんとう"], ["続き", "つづき"], ["台所", "だいどころ"], ["材料", "ざいりょう"], ["準備", "じゅんび"], ["途中", "とちゅう"], ["運ぶ", "はこぶ"], ["運び", "はこび"], ["運ん", "はこん"], ["一緒", "いっしょ"], ["手伝", "てつだ"], ["去年", "きょねん"], ["今年", "ことし"], ["参加", "さんか"], ["先週", "せんしゅう"], ["今週", "こんしゅう"], ["修理", "しゅうり"], ["操作", "そうさ"], ["返却", "へんきゃく"], ["練習", "れんしゅう"], ["登録", "とうろく"], ["会員", "かいいん"], ["配信", "はいしん"], ["放送", "ほうそう"], ["映像", "えいぞう"], ["音声", "おんせい"], ["会議", "かいぎ"], ["廊下", "ろうか"], ["毎回", "まいかい"], ["週末", "しゅうまつ"], ["中止", "ちゅうし"], ["予定", "よてい"], ["閉館", "へいかん"], ["初めて", "はじめて"], ["一度", "いちど"], ["何度", "なんど"], ["経験", "けいけん"], ["値段", "ねだん"], ["完成", "かんせい"], ["静か", "しずか"], ["東館", "ひがしかん"], ["西館", "にしかん"], ["田中", "たなか"], ["山田", "やまだ"], ["佐藤", "さとう"], ["午前", "ごぜん"], ["午後", "ごご"], ["土曜日", "どようび"], ["日曜日", "にちようび"]
 	];
 	const edges = {
@@ -52,7 +54,11 @@
 			case "broadcast-access": return { access: f.registered, audible: f.audibleNow };
 			case "first-visit": return { ever: f.completed, tomorrow: f.accepted };
 			case "weekend-meal": return { history: f.pastCount ? "sometimes-not" : "never", cheaper: f.homeCost < f.shopCost ? "home" : "shop" };
-			default: throw new Error(`Unknown Boss case: ${id}`);
+			default: {
+				const result = expanded.conclusion(id, f);
+				if (!result) throw new Error(`Unknown Boss case: ${id}`);
+				return result;
+			}
 		}
 	}
 	function supported(id, facts, claims) {
@@ -69,12 +75,12 @@
 			if (!noun || !verb) throw new Error(`Missing Boss lexical edge ${edge}: ${word}/${frame.verb}`);
 			return { word, en: bareEnglish(noun.en), verb: verb.ja, dict: word + frame.particle + verb.forms.dictionary, stem: word + frame.particle + verb.forms.masuStem, ta: word + frame.particle + verb.forms.ta, te: word + frame.particle + verb.forms.te, nai: word + frame.particle + verb.forms.nai, edge };
 		}
-		const normalize = core.normalizer([...aliases, ...readings, ["読む", "よむ"], ["読み", "よみ"], ["読ん", "よん"], ["終え", "おえ"], ["終わ", "おわ"], ["続け", "つづけ"], ["十六", "16"], ["十七", "17"], ["じゅうろく", "16"], ["じゅうしち", "17"], ["じゅうなな", "17"], ["時", "じ"]]), grade = core.grader(normalize);
+		const normalize = core.normalizer([...aliases, ...readings, ["読む", "よむ"], ["読み", "よみ"], ["読ん", "よん"], ["終え", "おえ"], ["終わ", "おわ"], ["続け", "つづけ"], ["十五", "15"], ["じゅうご", "15"], ["十六", "16"], ["十七", "17"], ["じゅうろく", "16"], ["じゅうしち", "17"], ["じゅうなな", "17"], ["時", "じ"]]), grade = core.grader(normalize);
 		function make(id, variant, facts, content, choices, conflicts, words = []) {
 			const spec = cases.find((c) => c.id === id), truths = choices.filter((c) => supported(id, facts, c.claims));
 			if (truths.length !== 1 || new Set(choices.map((c) => c.ja)).size !== 4) throw new Error(`Ambiguous Boss case ${id}:${variant}`);
 			const expected = conclusion(id, facts), answer = truths[0];
-			let writing;
+			let writing = content.writing;
 			if (id === "reading-handover") {
 				const limit = `${facts.hour}時${facts.finished ? "までに" : "まで"}`, object = `${words[0]}を`;
 				const predicates = ["読みます", "読む", ...(facts.finished ? ["読み終えます", "読み終える", "読み終わります", "読み終わる"] : ["読み続けます", "読み続ける", "読んでいます", "読んでいる"])];
@@ -93,7 +99,7 @@
 				}[intent];
 				writing = { subprompt: "Write Tanaka's missing line. Name the item; make the intended participants clear when proposing an action.", accepted, vocabulary: `${words[0]} (${bareEnglish(nouns.get(words[0]).en)}) / 運ぶ・運び・運んで・運んだ (carry)` };
 			}
-			if (writing) writing.fields = [core.field("Your sentence", [answer.ja, ...writing.accepted], choices.filter((c) => c !== answer).map((c) => ({ accepted: [c.ja], message: conflicts[Object.keys(expected).find((key) => c.claims[key] !== expected[key])] })))];
+			if (writing) writing.fields = [core.field("Your sentence", [...(writing.includeChoiceAnswer === false ? [] : [answer.ja]), ...writing.accepted], choices.filter((c) => c !== answer).map((c) => ({ accepted: [c.ja], message: conflicts[Object.keys(expected).find((key) => c.claims[key] !== expected[key])] })))];
 			return {
 				kind: spec.format, mode: "choice", ...content, band: "Choose the best answer.", options: choices.map((c) => c.ja), answer: answer.ja,
 				writing, choiceFacts: choices.map((c) => c.claims), choiceMeanings: Object.fromEntries(choices.map((c) => [c.ja, c.en])),
@@ -208,7 +214,10 @@
 						explanation: `${pastCount ? "The account describes occasional omissions within a usual habit, not no lifetime experience." : "The account says there has been no past experience; a future intention does not change that."} Compare the same serving: ${homeCost < shopCost ? "making" : "buying"} it is cheaper. With action comparisons, the dictionary verb connects directly to ほうが.`
 					}, pairs(["sometimes-not", "never"], ["home", "shop"]).map(([h, cheaper]) => ({ claims: { history: h, cheaper }, ja: `田中さんは家で${h === "never" ? a.ta + "ことがありません" : a.nai + "こともありますが、ふだんは作ります"}。${a.word}は、${cheaper === "home" ? "買うより作るほうが" : "作るより買うほうが"}安いです。`, en: `Tanaka ${h === "never" ? "has never made it at home" : "usually makes it at home but sometimes does not"}; ${cheaper === "home" ? "making" : "buying"} it is cheaper.` })), { history: `Tanaka's account ${history === "never" ? "rules out all past experience" : "explicitly includes past experience and a usual habit with exceptions"}.`, cheaper: `Making costs ¥${homeCost}; buying the same serving costs ¥${shopCost}. That price order is reversed in your choice.` }, [a.word, a.verb]);
 				}
-				default: throw new Error(`Missing Boss builder ${id}`);
+				default: {
+					const item = expanded.build(id, v, { action });
+					return make(id, v, item.facts, item.content, item.choices, item.conflicts, item.words);
+				}
 			}
 		}
 		const buildBank = () => cases.flatMap((spec) => [0, 1, 2, 3].map((v) => buildCase(spec.id, v)));
@@ -221,11 +230,29 @@
 			const family = candidates.filter((q) => q.meta.familyKey === key), fresh = family.filter((q) => !history.has(q.meta.sceneKey));
 			return core.pick(fresh.length ? fresh : family, rng);
 		});
-		let ordered = core.selectQueue(chosen, Math.min(count, roundSize), { seed }, version, cases.map((c) => ({ id: c.id, count: 2.5 })));
-		if (ordered.length === roundSize) {
-			const quick = core.selectQueue(ordered.filter((q) => !q.writing), 8, { seed }, version, cases.map((c) => ({ id: c.id, count: 2.5 }))), finale = ordered.filter((q) => q.writing);
-			if (finale[0].meta.topic === quick.at(-1).meta.topic) finale.reverse();
-			ordered = [...quick, ...finale.map((q) => ({ ...q, ...q.writing, mode: "text", options: undefined, choiceFacts: undefined, kind: "Final challenge", band: "Write one Japanese sentence.", meta: { ...q.meta, answerMode: "production" } }))];
+		const tasks = cases.map((c) => ({ id: c.id, count: 2.5 }));
+		if (count < roundSize || chosen.length < roundSize) return core.selectQueue(chosen, Math.min(count, roundSize), { seed, recent }, version, tasks);
+		const units = core.unique(cases.map(c => c.unit)), recentFamilies = recent.slice(-20).map(key => key.split(":")[0]);
+		const familyAge = q => recentFamilies.lastIndexOf(q.meta.familyKey);
+		const pools = Object.fromEntries(units.map(unit => [unit, core.shuffle(chosen.filter(q => q.meta.sourceSessionId === unit), rng).sort((a, b) => familyAge(a) - familyAge(b))]));
+		// History is stored in complete ten-item rounds, whose last two entries are writing.
+		const priorWriters = recent.filter((_, i) => i % roundSize >= 8).map(key => cases.find(c => c.id === key.split(":")[0])?.unit);
+		const writerUnits = core.shuffle(units, rng).filter(unit => pools[unit].some(q => q.writing)).sort((a, b) => {
+			const freshA = pools[a].some(q => q.writing && familyAge(q) < 0), freshB = pools[b].some(q => q.writing && familyAge(q) < 0);
+			return Number(freshB) - Number(freshA) || priorWriters.lastIndexOf(a) - priorWriters.lastIndexOf(b);
+		}).slice(0, 2);
+		const selected = [], finale = [];
+		for (const unit of units) {
+			const pool = pools[unit], writer = writerUnits.includes(unit) ? pool.find(q => q.writing) : null;
+			if (writer) finale.push(writer);
+			selected.push(...(writer ? [writer, ...pool.filter(q => q !== writer).slice(0, 1)] : pool.slice(0, 2)));
+		}
+		if (selected.length !== roundSize || finale.length !== 2) return core.selectQueue(chosen, roundSize, { seed, recent }, version, tasks);
+		const quick = core.interleave(core.selectQueue(selected.filter(q => !finale.includes(q)), 8, { seed }, version, tasks), q => q.meta.sourceSessionId);
+		// Preserve unit interleaving at the writing boundary as well as within choices.
+		if (finale[0].meta.topic === quick.at(-1).meta.topic) finale.reverse();
+		const ordered = [...quick, ...finale.map((q) => ({ ...q, ...q.writing, answer: q.writing.fields[0].answer, mode: "text", options: undefined, choiceFacts: undefined, kind: "Final challenge", band: "Write one Japanese sentence.", meta: { ...q.meta, answerMode: "production" } }))];
+		{
 			// Rebalance the remaining eight choices after removing the two writing tasks.
 			const positions = core.shuffle([0, 1, 2, 3, 0, 1, 2, 3], rng);
 			quick.forEach((q, i) => {

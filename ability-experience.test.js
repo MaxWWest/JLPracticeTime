@@ -23,7 +23,7 @@ for (const { id, api, engine, bank } of lessons) {
 		}
 		for (const q of bank) {
 			assert.equal(q.meta.engine, api.version);
-			assert.ok(q.prompt.length >= 50, q.meta.id);
+			assert.ok(q.prompt.trim().length > 0, q.meta.id);
 			assert.ok(!q.placeholder);
 			assert.ok(!/undefined|null/.test(JSON.stringify(q)), q.meta.id);
 			assert.ok(!/adaptive|verb stem|negative adjective/i.test(q.kind));

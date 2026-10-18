@@ -78,6 +78,26 @@
 		else if (!q.options?.includes(q.answer) || unique(q.options).length !== q.options.length) throw new Error(`Invalid choices: ${q.meta.id}`);
 		return q;
 	}
+	function interleave(items, key) {
+		if (items.every((item, i) => !i || key(item) !== key(items[i - 1]))) return [...items];
+		const groups = new Map();
+		for (const item of items) {
+			const id = key(item);
+			if (!groups.has(id)) groups.set(id, []);
+			groups.get(id).push(item);
+		}
+		const result = [];
+		while (result.length < items.length) {
+			const remaining = [...groups].filter(([, group]) => group.length).sort((a, b) => b[1].length - a[1].length);
+			const next = remaining.find(([id]) => !result.length || id !== key(result.at(-1))) || remaining[0];
+			result.push(next[1].shift());
+		}
+		return result;
+	}
+	function reviewBalancePenalty(question, queue, count) {
+		// Short Review rounds must not spend most of their slots on reading-only choices.
+		return count >= 10 && question.mode === "choice" && queue.filter((q) => q.mode === "choice").length >= Math.floor(count / 3) ? 100000 : 0;
+	}
 	function selectQueue(bank, count, { seed = Date.now(), recent = [] } = {}, version, tasks) {
 		const rng = random(seed), candidates = shuffle(bank.filter((q) => q.meta?.engine === version), rng);
 		const queue = [], used = new Set(), history = new Set(recent);
@@ -91,6 +111,7 @@
 				if (used.has(m.familyKey)) continue;
 				const taskUse = usage.task.get(m.task) || 0;
 				let score = (taskUse >= quotas.get(m.task) ? 10000 : 0) + taskUse / quotas.get(m.task) * 100;
+				score += reviewBalancePenalty(q, queue, count);
 				score += (usage.topic.get(m.topic) || 0) * 20 + (usage.domain.get(m.domain) || 0) * 12;
 				if (last?.task === m.task) score += 600;
 				if (last?.topic === m.topic) score += 80;
@@ -116,5 +137,5 @@
 		}
 		return queue;
 	}
-	return { random, shuffle, pick, unique, normalizer, field, gap, tailField, cloze, compact, completeResponse, grader, question, selectQueue };
+	return { random, shuffle, pick, unique, normalizer, field, gap, tailField, cloze, compact, completeResponse, grader, question, interleave, reviewBalancePenalty, selectQueue };
 });
