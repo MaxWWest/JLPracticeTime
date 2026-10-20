@@ -330,7 +330,7 @@
 	}
 
 	function skillKey(item) {
-		return item.type || item.role || "interpretation";
+		return item.balanceKey || item.type || item.role || "interpretation";
 	}
 
 	function shuffle(items, random = Math.random) {

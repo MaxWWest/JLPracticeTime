@@ -936,6 +936,7 @@ body.reading-fullscreen { overflow: hidden; }
 .rh-target { margin: 0; font-size: clamp(32px, 6.5vw, 64px); font-weight: 500; line-height: 1.3; overflow-wrap: anywhere; }
 .rh-sentence { max-width: 1000px; margin: 0; font-size: clamp(24px, 4.2vw, 42px); line-height: 2.1; font-family: "Noto Sans JP", sans-serif; }
 .rh-passage { width: min(100%, 900px); margin: 0; color: #21352b; font-family: "Noto Sans JP", sans-serif; font-size: 24px; line-height: 2; text-align: left; white-space: pre-line; overflow-wrap: anywhere; }
+.rh-reference-target { color: #184735; text-decoration: underline; text-decoration-thickness: 3px; text-underline-offset: 6px; background: #fff5c4; padding: 0 3px; }
 .rh-sentence ruby, .rh-passage ruby, .rh-answer-line ruby, .rh-choice-option ruby { ruby-position: over; }
 .rh-sentence rt, .rh-passage rt, .rh-answer-line rt, .rh-choice-option rt { color: #6f8b7c; font-family: "Noto Sans JP", sans-serif; font-size: .34em; font-weight: 500; line-height: 1; }
 .rh-char { display: inline; }

@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=20261020-reading-v1">
+    <link rel="stylesheet" href="styles.css?v=20261020-reading-v2">
     <script src="grammar-practice-core.js?v=20261017-quality-v1" defer></script>
     <script src="comparison-practice.js?v=20261017-quality-v1" defer></script>
     <script src="time-practice.js?v=20261017-quality-v1" defer></script>
@@ -20,8 +20,10 @@
     <script src="boss-practice.js?v=20261017-quality-v1" defer></script>
     <script src="furigana.js?v=20261018-readings-v1" defer></script>
     <script src="script.js?v=20261018-readings-v1" defer></script>
-    <script src="reading-content.js?v=20261020-reading-v1" defer></script>
-    <script src="reading.js?v=20261020-reading-v1" defer></script>
+    <script src="reading-content.js?v=20261020-reading-v2" defer></script>
+    <script src="reading-skills.js?v=20261020-reading-v2" defer></script>
+    <script src="reading-quality.js?v=20261020-reading-v2" defer></script>
+    <script src="reading.js?v=20261020-reading-v2" defer></script>
 </head>
 <body>
     <div class="page-shell">
@@ -1162,7 +1164,6 @@
                     <div class="nominal-conjugation-heading">
                         <p class="eyebrow section-eyebrow">READING HELP</p>
                         <h3>Reading help</h3>
-                        <p>Six training modes that build the habits you need for long reading passages: spotting stacked grammar, finding sentence breaks, separating what was said or thought, tracking who did what, reading narrator mood, and checking short-passage meaning.</p>
                     </div>
                     <div class="rh-modes" id="rh-setup">
                         <article class="rh-mode-card">
@@ -1239,7 +1240,6 @@
                         <article class="rh-mode-card">
                             <span class="rh-mode-num" aria-hidden="true">4</span>
                             <h4>Who did it?</h4>
-                            <p>Level 1 agent tracking. Read benefactive, passive, and causative sentences, then choose the doer, receiver, grammar clue, or role summary.</p>
                             <p class="rh-mode-example" lang="ja">妹は私に荷物を持ってもらいました。<br><span>Who carried it?</span></p>
                             <label>Focus
                                 <select id="rh-agent-focus">
@@ -1249,7 +1249,6 @@
                                     <option value="affected">Affected person</option>
                                     <option value="causer">Causer</option>
                                     <option value="object">Object / target</option>
-                                    <option value="clue">Grammar clue</option>
                                     <option value="meaning">Role summary</option>
                                 </select>
                             </label>
@@ -1261,15 +1260,12 @@
                         <article class="rh-mode-card">
                             <span class="rh-mode-num" aria-hidden="true">5</span>
                             <h4>Narrator mood</h4>
-                            <p>Level 1 mood tracking. Decide whether the writer's evaluation is positive or negative, then identify the feeling, clue, and clue type.</p>
                             <p class="rh-mode-example" lang="ja">友だちが手伝ってくれました。<br><span>Positive or negative?</span></p>
                             <label>Focus
                                 <select id="rh-mood-focus">
                                     <option value="mixed" selected>Mixed goals</option>
-                                    <option value="mood">Positive / negative</option>
+                                    <option value="mood">Overall stance</option>
                                     <option value="tone">Feeling type</option>
-                                    <option value="clue">Clue expression</option>
-                                    <option value="signal">Clue kind</option>
                                 </select>
                             </label>
                             <label>Questions
@@ -1304,6 +1300,39 @@
                                 <select id="rh-count-passages"><option value="10" selected>10</option><option value="20">20</option><option value="30">30</option><option value="50">50</option></select>
                             </label>
                             <button class="practice-start" type="button" data-rh-start="passages">Start →</button>
+                        </article>
+                        <article class="rh-mode-card">
+                            <span class="rh-mode-num" aria-hidden="true">7</span>
+                            <h4>Reference tracking</h4>
+                            <p class="rh-mode-example" lang="ja">これ・それ・その人・そこ・こう・そう</p>
+                            <label>Focus
+                                <select id="rh-reference-focus">
+                                    <option value="mixed" selected>Mixed references</option>
+                                    <option value="backward">Earlier information</option>
+                                    <option value="forward">Later explanation</option>
+                                </select>
+                            </label>
+                            <label>Questions
+                                <select id="rh-count-references"><option value="10" selected>10</option><option value="20">20</option></select>
+                            </label>
+                            <button class="practice-start" type="button" data-rh-start="references">Start →</button>
+                        </article>
+                        <article class="rh-mode-card">
+                            <span class="rh-mode-num" aria-hidden="true">8</span>
+                            <h4>Sentence connections</h4>
+                            <p class="rh-mode-example" lang="ja">しかし・それで・なぜなら・例えば</p>
+                            <label>Focus
+                                <select id="rh-connection-focus">
+                                    <option value="mixed" selected>Mixed goals</option>
+                                    <option value="connector">Choose the connector</option>
+                                    <option value="continuation">Complete the next sentence</option>
+                                    <option value="relationship">Interpret the connection</option>
+                                </select>
+                            </label>
+                            <label>Questions
+                                <select id="rh-count-connections"><option value="10" selected>10</option><option value="20">20</option></select>
+                            </label>
+                            <button class="practice-start" type="button" data-rh-start="connections">Start →</button>
                         </article>
                     </div>
                     <p class="conjugation-status" id="rh-status"></p>

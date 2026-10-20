@@ -12,7 +12,7 @@
 	const transforms = {
 		a: { form: "〜た", name: "Past tense", cue: "completed or happened in the past" },
 		b: { form: "〜ない", name: "Negative", cue: "does not do / is not" },
-		c: { form: "〜たい", name: "Volition (want to)", cue: "wants to do the action" },
+		c: { form: "〜たい", name: "Desire (want to)", cue: "wants to do the action" },
 		d: { form: "〜かもしれない", name: "Inference", cue: "maybe / might be true" },
 		e: { form: "〜てくれる", name: "Benefactive (granting a favor)", cue: "someone does it as a favor for the speaker side" },
 		f: { form: "〜ておく", name: "Readiness", cue: "does it in advance / leaves it ready" },
@@ -25,7 +25,6 @@
 		m: { form: "〜ないで", name: "Attendant circumstances (without doing)", cue: "without doing the action" },
 	};
 	const letters = Object.keys(transforms);
-	const exclusiveGroups = [["e", "l"], ["h", "i"]];
 
 	function verbForms(state) {
 		const { text, type } = state;
@@ -78,19 +77,18 @@
 	}
 
 	function generateChain(base, steps) {
-		const search = (state, used, trail) => {
-			if (trail.length === steps) return trail;
-			for (const letter of shuffled(letters)) {
-				if (used.includes(letter)) continue;
-				if (exclusiveGroups.some((group) => group.includes(letter) && group.some((other) => used.includes(other)))) continue;
-				const next = applyTransform(state, letter, used.length, used);
-				if (!next) continue;
-				const result = search(next, [...used, letter], [...trail, { letter, state: next }]);
-				if (result) return result;
+		for (const pattern of shuffled(window.ReadingQuality.stackChains.filter(value => value.length === steps))) {
+			let state = base;
+			const trail = [], used = [];
+			for (const letter of pattern) {
+				state = applyTransform(state, letter, used.length, used);
+				if (!state) break;
+				trail.push({ letter, state });
+				used.push(letter);
 			}
-			return null;
-		};
-		return search(base, [], []);
+			if (trail.length === steps) return trail;
+		}
+		return null;
 	}
 
 	// Swap the kana stem for the word's kanji so the stacked form reads naturally.
@@ -106,7 +104,7 @@
 	}
 
 	function baseVerbLabel(word) {
-		const type = getVerbType(word);
+		const type = word.type || getVerbType(word);
 		let text = String(word.kanji || word.reading || word.baseText || "").replace(/[\s　]/g, "");
 		if (type === "suru" && text && !text.endsWith("する")) text += "する";
 		if (type === "kuru" && text && !text.endsWith("くる")) text = text.endsWith("く") ? `${text.slice(0, -1)}くる` : `${text}くる`;
@@ -151,7 +149,7 @@
 		"Simultaneous action",
 		"Without doing",
 		"Listing / adding information",
-		"Main-clause setup"
+		"Continuing state"
 	];
 
 	function sentenceBreakChunks(item) {
@@ -167,22 +165,12 @@
 	}
 
 	function classifyBreakRole(item, position) {
-		const chunk = item.text.slice(0, position).split(/[。！？]/).at(-1) || item.text.slice(0, position);
-		const trimmed = chunk.replace(/[、\s　]+$/g, "");
-		if (/(ために|ように)$/.test(trimmed)) return { label: "Purpose / goal", explanation: "This chunk tells the purpose or intended outcome for the following action." };
-		if (/(ので|から|ため|せいで|なくて|すぎて)$/.test(trimmed)) return { label: "Reason / cause", explanation: "This chunk explains why the following event or choice happens." };
-		if (/(たら|なら|れば|と)$/.test(trimmed)) return { label: "Condition", explanation: "This chunk sets the condition for the following result or request." };
-		if (/(けれども|けれど|けど|が|のに|ても|でも)$/.test(trimmed)) return { label: "Contrast / concession", explanation: "This chunk sets up a contrast, exception, or 'even though' relationship." };
-		if (/(前に|あとで|てから|間に|間|とき|うちに|まで|までに)$/.test(trimmed)) return { label: "Time / sequence", explanation: "This chunk tells when something happens or in what order events happen." };
-		if (/ながら$/.test(trimmed)) return { label: "Simultaneous action", explanation: "This chunk gives an action happening at the same time as the main action." };
-		if (/(ないで|ずに)$/.test(trimmed)) return { label: "Without doing", explanation: "This chunk says the next action happens without doing this action." };
-		if (/し$/.test(trimmed)) return { label: "Listing / adding information", explanation: "This chunk adds one reason or fact in a list." };
-		if (/て$/.test(trimmed)) return { label: "Time / sequence", explanation: "This te-form chunk links actions in sequence or gives light cause/background." };
-		return { label: "Main-clause setup", explanation: "This chunk prepares background information before the main clause." };
+		return item.roles[item.breaks.indexOf(position)];
 	}
 
 	function breakRoleOptions(answer) {
-		const distractors = shuffled(breakRoleChoices.filter((choice) => choice !== answer));
+		const overlapping = ["Time / sequence", "Condition", "Simultaneous action"];
+		const distractors = shuffled(breakRoleChoices.filter((choice) => choice !== answer && !(overlapping.includes(answer) && overlapping.includes(choice))));
 		return shuffled([answer, ...distractors.slice(0, 3)]);
 	}
 
@@ -202,77 +190,34 @@
 		return { type: types[Math.floor(Math.random() * types.length)] };
 	}
 
-	const quoteVerbChoices = [
-		"said / told",
-		"thought / believed",
-		"asked",
-		"wrote / was written",
-		"explained / taught / informed",
-		"felt",
-		"announced / reported"
-	];
-
-	const quoteForceChoices = [
-		"Greeting / thanks",
-		"Request / instruction",
-		"Rule / prohibition",
-		"Question / permission request",
-		"Plan / intention",
-		"Belief / guess",
-		"Feeling / evaluation",
-		"Information / announcement"
-	];
+	const quoteVerbChoices = Object.values(window.ReadingQuality.reportingLabels);
+	const quoteForceChoices = Object.values(window.ReadingQuality.forceDescriptions).map(([label]) => label);
 
 	function quoteContent(item) {
 		return item.text.slice(item.start, item.end);
 	}
 
 	function quoteReporter(item) {
-		const before = item.text.slice(0, item.start);
-		const patterns = [
-			[/ニュースでは$/, "ニュース"],
-			[/駅のアナウンスで$/, "駅のアナウンス"],
-			[/メールには$/, "メール"],
-			[/看板には$/, "看板"],
-			[/店の紙には$/, "店の紙"],
-			[/(.+?)は$/, 1],
-			[/(.+?)が$/, 1],
-			[/(.+?)では$/, 1],
-			[/(.+?)で$/, 1]
-		];
-		for (const [pattern, capture] of patterns) {
-			const match = before.match(pattern);
-			if (!match) continue;
-			return capture === 1 ? match[1].replace(/[、。]$/g, "") : capture;
-		}
-		return before.replace(/[、。にではがをと\s　]+$/g, "") || "the writer";
+		return item.analysis.source;
 	}
 
 	function quoteVerbInfo(item) {
-		const after = item.text.slice(item.end);
-		if (/と聞/.test(after)) return { label: "asked", explanation: "聞きました here reports a question or asks whether something is okay." };
-		if (/と書/.test(after)) return { label: "wrote / was written", explanation: "書きました/書いてあります means the quoted content is written information." };
-		if (/と思|と考|と信じ/.test(after)) return { label: "thought / believed", explanation: "思う, 考える, and 信じる report thoughts or beliefs, not spoken words." };
-		if (/と感じ/.test(after)) return { label: "felt", explanation: "感じています reports the speaker's feeling or impression." };
-		if (/と説明|と教え/.test(after)) return { label: "explained / taught / informed", explanation: "説明する/教える present the quote as information being explained or taught." };
-		if (/アナウンス|ニュース|と言っていました/.test(item.text) && /(アナウンス|ニュース)/.test(item.text)) return { label: "announced / reported", explanation: "The source is an announcement/news report, so the quote is public information." };
-		return { label: "said / told", explanation: "言う reports spoken content or what someone told another person." };
+		return item.analysis.verb;
 	}
 
 	function quoteForceInfo(item) {
-		const content = quoteContent(item);
-		if (/(ありがとう|おはよう)/.test(content)) return { label: "Greeting / thanks", explanation: "The quoted words are a greeting or expression of thanks." };
-		if (/(てはいけません|ないでください|止めないでください|とらないでください)/.test(content)) return { label: "Rule / prohibition", explanation: "The quote tells someone not to do something." };
-		if (/(ください|なさい|聞いて|来て|書いて|持って|入れて|手を上げて|出してください|注文してください|待ちください|着なさい)/.test(content)) return { label: "Request / instruction", explanation: "The quote asks or tells someone to do something." };
-		if (/(てもいい|迎えに行こうか|かどうか|ですか|ますか|か$)/.test(content)) return { label: "Question / permission request", explanation: "The quote asks a question or checks permission/uncertainty." };
-		if (/(たい|つもり|行こう|帰ります|休みます|連絡する|遅れる|旅行したい|行けない)/.test(content)) return { label: "Plan / intention", explanation: "The quoted content describes someone's plan, intention, or future action." };
-		if (/(かもしれない|だろう|にちがいない|はず|でしょう|成功する|役立ちそう|そうだ)/.test(content)) return { label: "Belief / guess", explanation: "The quote presents a guess, belief, expectation, or appearance-based judgment." };
-		if (/(難しい|おもしろかった|心配|大丈夫|むり|よかった|便利になった|ほしい)/.test(content)) return { label: "Feeling / evaluation", explanation: "The quote expresses a feeling, desire, judgment, or evaluation." };
-		return { label: "Information / announcement", explanation: "The quote gives factual information, a schedule, or a notice." };
+		return item.analysis.force;
 	}
 
 	function quoteChoiceOptions(answer, allChoices) {
-		const distractors = shuffled(allChoices.filter((choice) => choice !== answer));
+		const overlapping = [
+			["said / told", "announced / reported"],
+			["Request / instruction", "Rule / prohibition", "Desire / wish", "Invitation / joint proposal"],
+			["Plan / intention", "Information / announcement"],
+			["Belief / guess", "Feeling / evaluation"]
+		];
+		const distractors = shuffled(allChoices.filter(choice => choice !== answer &&
+			!overlapping.some(group => group.includes(answer) && group.includes(choice))));
 		return shuffled([answer, ...distractors.slice(0, 3)]);
 	}
 
@@ -369,7 +314,7 @@
 		["使い方がわからなかったら/この番号に電話してください。", "If you do not know how to use it, please call this number."],
 		["窓を開けたまま/出かけてしまいました。", "I accidentally went out with the window left open."],
 		["毎日練習しているうちに/少しずつ話せるようになりました。", "While practicing every day, little by little I became able to speak."],
-	].map(([marked, en]) => ({ ...parseMarked(marked, "/"), en }));
+	].map(([marked, en], index) => ({ ...parseMarked(marked, "/"), en, roles: window.ReadingQuality.breakRoles[index] }));
 
 	const quoteBank = [
 		["友だちは私に[おはよう]と言った。", "My friend said \"good morning\" to me."],
@@ -395,7 +340,7 @@
 		["私は[明日は早く起きなければならない]と思いながらねました。", "I went to bed thinking I have to get up early tomorrow."],
 		["先輩は[わからないことがあったら、いつでも聞いて]と言ってくれました。", "My senior told me to ask anytime if there's something I don't understand."],
 		["父は[駅まで迎えに行こうか]と電話で言った。", "My father said on the phone, \"Shall I pick you up at the station?\""],
-		["友だちは[このケーキを半分食べてもいい]と聞きました。", "My friend asked, \"May I eat half of this cake?\""],
+		["友だちは[このケーキを半分食べてもいいか]と聞きました。", "My friend asked whether they could eat half of this cake."],
 		["先生は[漢字の宿題は明日までです]と黒板に書きました。", "The teacher wrote on the board that the kanji homework is due tomorrow."],
 		["私は[この道をまっすぐ行けば駅に着くはずだ]と思いました。", "I thought that if I went straight on this road, I should arrive at the station."],
 		["メールには[会議は三時から四時に変わりました]と書いてありました。", "The email said the meeting changed from three o'clock to four o'clock."],
@@ -428,7 +373,10 @@
 		["私は[この町は前より便利になった]と思います。", "I think this town has become more convenient than before."],
 		["店の紙には[お弁当は午後二時までに注文してください]と書いてありました。", "The shop paper said to order boxed lunches by two p.m."],
 		["友だちは[忙しくてパーティーには行けない]と言いました。", "My friend said they are busy and cannot go to the party."],
-	].map(([marked, en]) => ({ ...parseMarked(marked, "[]"), en }));
+	].map(([marked, en]) => {
+		const item = { ...parseMarked(marked, "[]"), en };
+		return { ...item, analysis: window.ReadingQuality.quotes[quoteContent(item)] };
+	});
 
 	const passageSources = [
 		{
@@ -739,7 +687,12 @@
 		sequence: "Time / sequence",
 		inference: "Inference / rule",
 		reference: "Reference tracking",
-		purpose: "Purpose / interpretation"
+		purpose: "Purpose / interpretation",
+		backward: "Reference tracking",
+		forward: "Reference tracking",
+		connector: "Choose the connection",
+		continuation: "Choose the continuation",
+		relationship: "Interpret the connection"
 	};
 
 	const passageBank = passageSources.flatMap((source) => source.questions.map((question) => ({
@@ -762,15 +715,6 @@
 		meaning: "role summary"
 	};
 
-	const agentPatternClues = {
-		"てあげる": "〜てあげました",
-		"てもらう": "〜てもらいました",
-		"てくれる": "〜てくれました",
-		passive: "〜られました",
-		causative: "〜せました",
-		"causative-passive": "〜させられました"
-	};
-
 	const agentScenarios = [
 		{ pattern: "てあげる", sentence: "私は妹に重い箱を持ってあげました。", action: "carried the heavy box", agent: "私", receiver: "妹", object: "重い箱", parties: ["私", "妹", "重い箱", "母"], note: "In てあげる, the subject does the action for someone else." },
 		{ pattern: "てあげる", sentence: "兄は弟に自転車の乗り方を教えてあげました。", action: "taught how to ride a bicycle", agent: "兄", receiver: "弟", object: "自転車の乗り方", parties: ["兄", "弟", "自転車", "先生"], note: "The person before は/が is usually the helper in てあげる." },
@@ -790,7 +734,7 @@
 		{ pattern: "passive", sentence: "私は弟にケーキを食べられました。", action: "ate the cake", agent: "弟", affected: "私", object: "ケーキ", parties: ["私", "弟", "ケーキ", "母"], note: "In this passive sentence, 私 is affected; 弟 actually ate the cake." },
 		{ pattern: "passive", sentence: "山田さんは犬に手をかまれました。", action: "bit the hand", agent: "犬", affected: "山田さん", object: "手", parties: ["山田さん", "犬", "手", "医者"], note: "The に marked noun can be the doer in passive sentences." },
 		{ pattern: "passive", sentence: "私は知らない人に写真を撮られました。", action: "took the photo", agent: "知らない人", affected: "私", object: "写真", parties: ["私", "知らない人", "写真", "友だち"], note: "私 is the affected person; 知らない人 did the action." },
-		{ pattern: "passive", sentence: "旅行中に、私は雨に降られて服がぬれました。", action: "rained on someone", agent: "雨", affected: "私", object: "服", parties: ["私", "雨", "服", "友だち"], note: "This passive shows the writer was negatively affected by rain." },
+		{ pattern: "passive", sentence: "旅行中に、私は雨に降られて服がぬれました。", action: "rained on someone", agentPrompt: "What caused the trouble?", agent: "雨", affected: "私", object: "服", objectPrompt: "What got wet as a result?", parties: ["私", "雨", "服", "友だち"], note: "This adverse passive presents the rain as the cause of trouble; 服 is what became wet, not an object of 降る." },
 		{ pattern: "passive", sentence: "兄は友だちに大切な本をなくされました。", action: "lost the important book", agent: "友だち", affected: "兄", object: "大切な本", parties: ["兄", "友だち", "大切な本", "先生"], note: "The に person did the losing; 兄 is the one affected." },
 		{ pattern: "passive", sentence: "発表の前に、私は先生に名前を呼ばれました。", action: "called the name", agent: "先生", affected: "私", object: "名前", parties: ["私", "先生", "名前", "発表"], note: "In passive sentences, the subject is often the person receiving or affected by the action." },
 		{ pattern: "causative", sentence: "先生は学生に漢字を書かせました。", action: "wrote kanji", agent: "学生", causer: "先生", object: "漢字", parties: ["先生", "学生", "漢字", "友だち"], note: "In causative, the causer makes/lets someone else do the action." },
@@ -801,18 +745,14 @@
 		{ pattern: "causative", sentence: "母は妹に好きな服を選ばせました。", action: "chose the clothes", agent: "妹", causer: "母", object: "好きな服", parties: ["母", "妹", "好きな服", "店員"], note: "Causative can also mean let someone do something; 妹 does the choosing." },
 		{ pattern: "causative-passive", sentence: "私は父に庭を掃除させられました。", action: "cleaned the garden", agent: "私", causer: "父", object: "庭", parties: ["私", "父", "庭", "弟"], note: "Causative-passive often means the subject was made to do the action." },
 		{ pattern: "causative-passive", sentence: "弟は先生に長い文を読ませられました。", action: "read the long sentence", agent: "弟", causer: "先生", object: "長い文", parties: ["弟", "先生", "長い文", "兄"], note: "弟 is made to read; 先生 is the causer." },
-		{ pattern: "causative-passive", sentence: "学生たちはコーチに校庭を走らせられました。", action: "ran around the schoolyard", agent: "学生たち", causer: "コーチ", object: "校庭", parties: ["学生たち", "コーチ", "校庭", "先生"], note: "The students are the ones running; the coach makes them do it." },
+		{ pattern: "causative-passive", sentence: "学生たちはコーチに校庭を走らせられました。", action: "ran around the schoolyard", agent: "学生たち", causer: "コーチ", object: "校庭", objectPrompt: "Where did the students run?", parties: ["学生たち", "コーチ", "校庭", "先生"], note: "The students are the ones running; the coach makes them do it. 校庭を marks the space traversed, not a thing acted on." },
 		{ pattern: "causative-passive", sentence: "私は先輩に会議の資料を作らせられました。", action: "made the meeting materials", agent: "私", causer: "先輩", object: "会議の資料", parties: ["私", "先輩", "会議の資料", "部長"], note: "私は is forced to make the materials; 先輩 is the causer." },
 		{ pattern: "causative-passive", sentence: "妹は母に苦手な野菜を食べさせられました。", action: "ate the disliked vegetables", agent: "妹", causer: "母", object: "苦手な野菜", parties: ["妹", "母", "苦手な野菜", "父"], note: "妹 performs the action unwillingly; 母 makes it happen." }
 	];
 
 	function agentQuestionOptions(answer, scenario) {
-		return shuffled(Array.from(new Set([answer, ...scenario.parties.filter((item) => item !== answer), "だれも"]))).slice(0, 4);
-	}
-
-	function agentClueOptions(answer) {
-		const clues = Object.values(agentPatternClues).filter((clue) => clue !== answer);
-		return shuffled([answer, ...shuffled(clues).slice(0, 3)]);
+		const wrong = shuffled(Array.from(new Set([...scenario.parties, "だれも"])).filter(item => item !== answer)).slice(0, 3);
+		return shuffled([answer, ...wrong]);
 	}
 
 	function agentRoleSummary(scenario) {
@@ -843,29 +783,20 @@
 
 	function buildAgentQuestionBank() {
 		return agentScenarios.flatMap((scenario) => {
-			const clue = scenario.clue || agentPatternClues[scenario.pattern];
 			const questions = [
 				{
 					role: "agent",
-					prompt: "Who actually did the action?",
+					prompt: scenario.agentPrompt || `Who ${scenario.action}?`,
 					subprompt: `Action: ${scenario.action}.`,
 					answer: scenario.agent,
 					explanation: `${scenario.note} The actual doer is ${scenario.agent}.`
 				},
 				{
 					role: "object",
-					prompt: "What was acted on?",
+					prompt: scenario.objectPrompt || "What is the object or content of the action?",
 					subprompt: "Find the thing that receives the action.",
 					answer: scenario.object,
 					explanation: `The object or target of the action is ${scenario.object}.`
-				},
-				{
-					role: "clue",
-					prompt: "Which grammar clue helps you track the roles?",
-					subprompt: "First spot the pattern, then decide whether は/が or に marks the doer.",
-					answer: clue,
-					options: agentClueOptions(clue),
-					explanation: `${clue} is the key pattern here. ${scenario.note}`
 				},
 				{
 					role: "meaning",
@@ -907,6 +838,7 @@
 				...question,
 				level: "Level 1",
 				pattern: scenario.pattern,
+				balanceKey: `${question.role}:${scenario.pattern}`,
 				sentence: scenario.sentence,
 				options: question.options || agentQuestionOptions(question.answer, scenario)
 			}));
@@ -915,7 +847,9 @@
 
 	const moodLabels = {
 		positive: "Positive (+)",
-		negative: "Negative (-)"
+		negative: "Negative (-)",
+		mixed: "Mixed feelings",
+		neutral: "No attitude established"
 	};
 
 	const moodToneOptions = [
@@ -929,20 +863,9 @@
 		"annoyed / affected",
 		"disappointed",
 		"physically uncomfortable",
-		"inconvenienced"
-	];
-
-	const moodSignalOptions = [
-		"received favor",
-		"positive evaluation word",
-		"relief or success phrase",
-		"hope or excitement phrase",
-		"regretful てしまう",
-		"negative evaluation word",
-		"passive annoyance",
-		"too much / excessive action",
-		"bad result phrase",
-		"disappointment phrase"
+		"inconvenienced",
+		"mixed feelings",
+		"no attitude established"
 	];
 
 	const moodScenarios = [
@@ -954,7 +877,7 @@
 		{ mood: "positive", category: "help received", sentence: "みんなが応援してくれたので頑張れました。", clue: "応援してくれた", explanation: "Support from others helped the writer, so the evaluation is positive." },
 		{ mood: "positive", category: "positive judgment", sentence: "この店の人はとても親切でした。", clue: "親切", explanation: "親切 is a positive judgment word." },
 		{ mood: "positive", category: "positive judgment", sentence: "駅の前は明るくて安心しました。", clue: "安心しました", explanation: "安心しました shows relief or safety, so the mood is positive." },
-		{ mood: "positive", category: "positive judgment", sentence: "山田さんは一生懸命練習しました。", clue: "一生懸命", explanation: "一生懸命 praises effort and gives a positive evaluation." },
+		{ mood: "positive", category: "positive judgment", sentence: "山田さんは一生懸命練習しました。立派だと思います。", clue: "立派", explanation: "立派だと思います explicitly expresses approval. Reporting effort alone would not establish the narrator's feelings." },
 		{ mood: "positive", category: "positive judgment", sentence: "この部屋は広くて使いやすいです。", clue: "使いやすい", explanation: "使いやすい means easy to use, a positive quality." },
 		{ mood: "positive", category: "positive judgment", sentence: "新しいアプリは便利で助かります。", clue: "助かります", explanation: "助かります means it helps or is a relief, so the writer likes the situation." },
 		{ mood: "positive", category: "positive judgment", sentence: "このケーキは甘すぎなくておいしいです。", clue: "おいしい", explanation: "Even with すぎない, the final judgment おいしい is clearly positive." },
@@ -985,7 +908,7 @@
 		{ mood: "positive", category: "positive judgment", tone: "satisfied / pleased", signal: "positive evaluation word", sentence: "思ったより安く買えたので、うれしかったです。", clue: "うれしかったです", explanation: "うれしかったです directly gives the writer's pleased feeling." },
 		{ mood: "positive", category: "hope / anticipation", tone: "hopeful / looking forward", signal: "hope or excitement phrase", sentence: "来週の文化祭をとても楽しみにしています。", clue: "楽しみにしています", explanation: "楽しみにしています shows the writer is looking forward to it." },
 		{ mood: "positive", category: "hope / anticipation", tone: "hopeful / looking forward", signal: "hope or excitement phrase", sentence: "日本で友だちに会える日が待ち遠しいです。", clue: "待ち遠しいです", explanation: "待ち遠しい means the writer can hardly wait, a positive anticipation." },
-		{ mood: "positive", category: "effort praised", tone: "approval / praise", signal: "positive evaluation word", sentence: "妹は毎朝早く起きて、一生懸命ピアノを練習しています。", clue: "一生懸命", explanation: "一生懸命 praises effort, so the evaluation is positive." },
+		{ mood: "positive", category: "effort praised", tone: "approval / praise", signal: "positive evaluation word", sentence: "妹は毎朝早く起きて、一生懸命ピアノを練習しています。感心しています。", clue: "感心しています", explanation: "感心しています explicitly states admiration. 一生懸命 describes effort, not automatically the narrator's emotion." },
 		{ mood: "negative", category: "regret / mistake", tone: "regretful / troubled", signal: "regretful てしまう", sentence: "急いでいたので、宿題を家に忘れてしまいました。", clue: "忘れてしまいました", explanation: "てしまいました shows the writer regrets the mistake." },
 		{ mood: "negative", category: "regret / mistake", tone: "regretful / troubled", signal: "regretful てしまう", sentence: "メールの送り先を間違えてしまって、恥ずかしかったです。", clue: "間違えてしまって", explanation: "The mistake plus 恥ずかしかったです shows embarrassment and regret." },
 		{ mood: "negative", category: "regret / mistake", tone: "regretful / troubled", signal: "regretful てしまう", sentence: "せっかく作った弁当を電車に置いてきてしまいました。", clue: "置いてきてしまいました", explanation: "せっかく plus てしまいました makes the loss feel regrettable." },
@@ -1003,10 +926,16 @@
 		{ mood: "negative", category: "disappointment", tone: "disappointed", signal: "disappointment phrase", sentence: "旅行の日に雨が降って、少し残念でした。", clue: "残念でした", explanation: "残念でした directly marks disappointment." },
 		{ mood: "negative", category: "disappointment", tone: "disappointed", signal: "disappointment phrase", sentence: "新しいレストランに行きましたが、料理が冷たくてがっかりしました。", clue: "がっかりしました", explanation: "がっかりしました directly shows disappointment." },
 		{ mood: "negative", category: "restriction / lack", tone: "disappointed", signal: "bad result phrase", sentence: "財布には五百円しかなくて、ほしい本が買えませんでした。", clue: "買えませんでした", explanation: "しかない and 買えませんでした show a frustrating lack." }
-	];
+	].concat(window.ReadingQuality.moods);
 
 	function moodTone(scenario) {
 		if (scenario.tone) return scenario.tone;
+		const corrected = {
+			"さびしい": "lonely / uneasy", "眠れませんでした": "physically uncomfortable",
+			"痛くなりました": "physically uncomfortable", "間に合いませんでした": "inconvenienced",
+			"狭すぎます": "inconvenienced", "しすぎて": "inconvenienced"
+		};
+		if (corrected[scenario.clue]) return corrected[scenario.clue];
 		if (scenario.category === "help received") return "appreciative / helped";
 		if (scenario.category === "positive judgment") return scenario.clue.includes("安心") || scenario.clue.includes("助か") ? "relieved / safe" : "approval / praise";
 		if (scenario.category === "regret / mistake") return "regretful / troubled";
@@ -1015,35 +944,19 @@
 		return scenario.mood === "positive" ? "satisfied / pleased" : "disappointed";
 	}
 
-	function moodSignal(scenario) {
-		if (scenario.signal) return scenario.signal;
-		if (scenario.category === "help received") return "received favor";
-		if (scenario.category === "positive judgment") return scenario.clue.includes("安心") || scenario.clue.includes("助か") ? "relief or success phrase" : "positive evaluation word";
-		if (scenario.category === "regret / mistake") return "regretful てしまう";
-		if (scenario.category === "negative judgment") return "negative evaluation word";
-		if (scenario.category === "passive annoyance") return "passive annoyance";
-		if (scenario.category === "too much") return "too much / excessive action";
-		return "bad result phrase";
-	}
-
-	function moodClueOptions(answer) {
-		const distractors = shuffled(moodScenarios.map((item) => item.clue).filter((clue) => clue !== answer)).slice(0, 3);
-		return shuffled([answer, ...distractors]);
-	}
-
 	function moodToneQuestionOptions(answer) {
-		return shuffled([answer, ...shuffled(moodToneOptions.filter((option) => option !== answer)).slice(0, 3)]);
-	}
-
-	function moodSignalQuestionOptions(answer) {
-		return shuffled([answer, ...shuffled(moodSignalOptions.filter((option) => option !== answer)).slice(0, 3)]);
+		const overlaps = [
+			["appreciative / helped", "relieved / safe", "satisfied / pleased", "approval / praise"],
+			["regretful / troubled", "annoyed / affected", "disappointed", "inconvenienced", "physically uncomfortable"]
+		];
+		return shuffled([answer, ...shuffled(moodToneOptions.filter(option => option !== answer &&
+			!overlaps.some(group => group.includes(answer) && group.includes(option)))).slice(0, 3)]);
 	}
 
 	function buildMoodQuestionBank() {
 		return moodScenarios.flatMap((scenario) => {
 			const answer = moodLabels[scenario.mood];
 			const tone = moodTone(scenario);
-			const signal = moodSignal(scenario);
 			return [
 				{
 					type: "mood",
@@ -1052,7 +965,7 @@
 					sentence: scenario.sentence,
 					prompt: "What feeling or evaluation does the writer show?",
 					answer,
-					options: shuffled([moodLabels.positive, moodLabels.negative]),
+					options: shuffled(Object.values(moodLabels)),
 					explanation: scenario.explanation
 				},
 				{
@@ -1064,28 +977,8 @@
 					answer: tone,
 					options: moodToneQuestionOptions(tone),
 					explanation: `${scenario.explanation} The closest feeling is ${tone}.`
-				},
-				{
-					type: "clue",
-					level: "Level 1",
-					category: scenario.category,
-					sentence: scenario.sentence,
-					prompt: `Which expression tells you the mood is ${answer}?`,
-					answer: scenario.clue,
-					options: moodClueOptions(scenario.clue),
-					explanation: scenario.explanation
-				},
-				{
-					type: "signal",
-					level: "Level 1",
-					category: scenario.category,
-					sentence: scenario.sentence,
-					prompt: "What kind of language is carrying the mood?",
-					answer: signal,
-					options: moodSignalQuestionOptions(signal),
-					explanation: `${scenario.explanation} This is a ${signal} clue.`
 				}
-			];
+			].map(question => ({ ...question, balanceKey: `${question.type}:${scenario.mood}` }));
 		});
 	}
 
@@ -1122,21 +1015,20 @@
 		let pool = null;
 		if (mode === "stack") {
 			const levels = { N5: ["N5"], N4: ["N5", "N4"], N3: ["N5", "N4", "N3"] }[$("#rh-level").value];
-			// Keep to everyday verbs: honorific and humble verbs make the stacked forms unnatural.
-			pool = getConjugationWords("verb", levels).filter((word) => !/respectful|humble|honorific|polite|vulgar|archaic|colloquial/i.test(word.meaning || "") && String(word.reading || "").length <= 8);
+			pool = window.ReadingQuality.stackWords.filter(word => levels.includes(word.level));
 			if (!pool.length) {
-				els.status.textContent = "Verbs haven't loaded yet. Check your connection and try again in a moment.";
+				els.status.textContent = "No reviewed verbs match this level.";
 				return;
 			}
 		}
-		const bank = mode === "breaks" ? breakBank : mode === "quotes" ? quoteBank : mode === "passages" ? passageBank : mode === "agents" ? buildAgentQuestionBank() : mode === "mood" ? buildMoodQuestionBank() : null;
+		const bank = mode === "references" ? window.ReadingSkills.references : mode === "connections" ? window.ReadingSkills.connections : mode === "breaks" ? breakBank : mode === "quotes" ? quoteBank : mode === "passages" ? passageBank : mode === "agents" ? buildAgentQuestionBank() : mode === "mood" ? buildMoodQuestionBank() : null;
 		const recent = Array.isArray(readingHistory[mode]) ? readingHistory[mode] : [];
 		const items = bank ? window.ReadingContent.selectSession(focusReadingBank(mode, bank), count, recent) : null;
 		if (items && !items.length) {
 			els.status.textContent = "No questions match these filters. Choose another focus or level.";
 			return;
 		}
-		session = { mode, count: items ? items.length : count, pool, items, index: 0, correct: 0, answered: 0, missed: [], skills: {}, current: null, checked: false };
+		session = { mode, count: items ? items.length : count, pool, items, index: 0, correct: 0, answered: 0, missed: [], skills: {}, stackUsed: new Set(), current: null, checked: false };
 		els.status.textContent = "";
 		els.setup.hidden = true;
 		els.complete.hidden = true;
@@ -1146,7 +1038,7 @@
 	}
 
 	function focusReadingBank(mode, bank) {
-		const selectorId = { agents: "rh-agent-focus", mood: "rh-mood-focus", passages: "rh-passage-focus" }[mode];
+		const selectorId = { agents: "rh-agent-focus", mood: "rh-mood-focus", passages: "rh-passage-focus", references: "rh-reference-focus", connections: "rh-connection-focus" }[mode];
 		const focus = selectorId ? $(`#${selectorId}`)?.value || "mixed" : "mixed";
 		let filtered = bank;
 		if (mode === "passages") {
@@ -1169,7 +1061,7 @@
 		els.hero.classList.remove("is-correct", "is-incorrect");
 		updateStats();
 		if (session.mode === "stack") renderStack();
-		else if (session.mode === "passages") renderPassageQuestion();
+		else if (["passages", "references", "connections"].includes(session.mode)) renderPassageQuestion();
 		else if (session.mode === "agents") renderAgentQuestion();
 		else if (session.mode === "mood") renderMoodQuestion();
 		else if (session.mode === "breaks") renderBreakQuestion();
@@ -1203,10 +1095,10 @@
 		els.session.hidden = true;
 		document.body.classList.remove("reading-fullscreen");
 		els.complete.hidden = false;
-		els.title.textContent = { stack: "Grammar stacking complete", breaks: "Sentence breaks complete", quotes: "Said & thought complete", agents: "Who did it complete", mood: "Narrator mood complete", passages: "Short passages complete" }[mode];
+		els.title.textContent = { stack: "Grammar stacking complete", breaks: "Sentence breaks complete", quotes: "Said & thought complete", agents: "Who did it complete", mood: "Narrator mood complete", passages: "Short passages complete", references: "Reference tracking complete", connections: "Sentence connections complete" }[mode];
 		const percent = answered ? Math.round((correct / answered) * 100) : 0;
 		els.result.textContent = `${correct} of ${answered} correct (${percent}%).`;
-		const labels = { ...agentRoleLabels, ...passageTypeLabels, mood: "Positive / negative", tone: "Feeling", clue: "Clue", signal: "Clue type", mark: "Boundaries", main: "Main clause", role: "Clause role", source: "Source", verb: "Reporting verb", force: "Quote meaning", stack: "Grammar stacking" };
+		const labels = { ...agentRoleLabels, ...passageTypeLabels, mood: "Overall stance", tone: "Feeling", backward: "Backward reference", forward: "Forward reference", connector: "Connector choice", continuation: "Continuation", relationship: "Relationship", mark: "Boundaries", main: "Main clause", role: "Clause role", source: "Source", verb: "Reporting verb", force: "Quote meaning", stack: "Grammar stacking", base: "Base verb", meaning: "Layer meaning", order: "Layer order" };
 		els.missed.innerHTML = `<h4>Reading skills</h4><ul>${Object.entries(session.skills).map(([skill, score]) =>
 			`<li>${escapeHtml(labels[skill] || skill)}: ${score.correct} / ${score.total}</li>`).join("")}</ul>` + (missed.length
 			? `<h4>To review</h4><ul>${missed.map((item) => `<li lang="ja">${item}</li>`).join("")}</ul>`
@@ -1223,31 +1115,37 @@
 
 	/* ---------- Mode 1 rendering ---------- */
 	function renderStack() {
-		const wordType = getVerbType;
 		let word;
 		let chain = null;
 		const wantedSteps = Number($("#rh-steps").value) || 0;
-		for (let attempt = 0; attempt < 30 && !chain; attempt += 1) {
+		for (let attempt = 0; attempt < 300 && !chain; attempt += 1) {
 			word = session.pool[Math.floor(Math.random() * session.pool.length)];
-			const type = wordType(word);
+			if (attempt < 150 && word.kanji === session.lastStackWord) continue;
+			const type = word.type;
 			let text = String(word.reading || word.kanji).replace(/[\s　]/g, "");
 			if (type === "suru" && !text.endsWith("する")) text += "する";
 			if (type === "kuru" && !text.endsWith("くる")) text = `${text.slice(0, -1)}くる`;
 			const steps = wantedSteps || 1 + Math.floor(Math.random() * 4);
 			chain = generateChain(verb(text, type), steps);
+			if (chain && session.stackUsed.has(chain.at(-1).state.text)) chain = null;
+			if (chain && attempt < 150 && Array.isArray(readingHistory.stack) && readingHistory.stack.includes(chain.at(-1).state.text)) chain = null;
 			if (chain) word = { ...word, baseText: text };
 		}
-		if (!chain) return nextQuestion();
+		if (!chain) {
+			session.index -= 1;
+			return finishSession();
+		}
+		session.stackUsed.add(chain.at(-1).state.text);
+		session.lastStackWord = word.kanji;
 		const answer = chain.map((step) => step.letter);
 		const finalText = kanjiForm(chain.at(-1).state.text, word);
 		const task = chooseStackTask(chain);
-		session.current = { word, chain, answer, entered: [], task, finalText };
+		session.current = { word, chain, answer, entered: [], task, finalText, item: { sourceId: chain.at(-1).state.text } };
 
 		els.hero.innerHTML = `
-			<p class="rh-hero-label">Starting verb</p>
-			<p class="rh-from"><span lang="ja">${escapeHtml(baseVerbLabel(word))}</span>${word.kanji && word.reading !== word.kanji ? ` <small lang="ja">${escapeHtml(word.reading)}</small>` : ""} <small>${escapeHtml(word.meaning || "")}</small></p>
-			<p class="rh-arrow" aria-hidden="true">↓</p>
-			<p class="rh-target" lang="ja">${escapeHtml(finalText)}</p>`;
+			<p class="rh-hero-label">${task.type === "base" ? "Find the dictionary form" : "Grammar layers"}</p>
+			${task.type === "base" ? "" : `<p class="rh-from"><span lang="ja">${renderJa(baseVerbLabel(word))}</span> <small>${escapeHtml(word.meaning || "")}</small></p><p class="rh-arrow" aria-hidden="true">↓</p>`}
+			<p class="rh-target" lang="ja">${renderJa(finalText)}</p>`;
 		if (task.type === "base") {
 			const baseAnswer = baseVerbLabel(word);
 			session.current.choiceAnswer = baseAnswer;
@@ -1271,14 +1169,14 @@
 					${stackMeaningChoices(target.letter).map((option) => `<button type="button" class="rh-choice-option" data-choice="${escapeHtml(option)}">${escapeHtml(option)}</button>`).join("")}
 				</div>
 				<p class="answer-feedback rh-feedback" id="rh-feedback" aria-live="polite"></p>
-				<div class="rh-hint-table"><h4>Focus layer</h4><p><strong>${target.letter}.</strong> <span lang="ja">${escapeHtml(transforms[target.letter].form)}</span> · ${escapeHtml(transforms[target.letter].name)}</p></div>
+				<div class="rh-hint-table"><p lang="ja">${renderJa(targetIndex ? kanjiForm(chain[targetIndex - 1].state.text, word) : baseVerbLabel(word))} → ${renderJa(kanjiForm(target.state.text, word))}</p></div>
 				<button class="practice-start rh-next" id="rh-next" type="button" hidden>Next →</button>`;
 			return;
 		}
 		els.band.textContent = chain.length === 1 ? "Which grammar was added?" : `Which ${chain.length} patterns were added, in order?`;
 		els.body.innerHTML = `
 			<form class="rh-answer" id="rh-answer-form" autocomplete="off">
-				<input id="rh-answer-input" type="text" inputmode="text" aria-label="Pattern letters in order" placeholder="e.g. c + b + j" spellcheck="false">
+				<input id="rh-answer-input" type="text" inputmode="text" aria-label="Pattern letters in order" spellcheck="false">
 				<button class="rh-icon-button" id="rh-undo" type="button" aria-label="Remove last letter" title="Remove last letter">⌫</button>
 				<button class="rh-submit" id="rh-submit" type="submit" aria-label="Check answer">›</button>
 			</form>
@@ -1338,13 +1236,18 @@
 	function renderPassageQuestion() {
 		const item = session.items[(session.index - 1) % session.items.length];
 		session.current = { item, selected: null };
+		const start = item.targetStart;
+		const text = Number.isInteger(start) && start >= 0
+			? `${renderJa(item.text.slice(0, start))}<strong class="rh-reference-target">${renderJa(item.target)}</strong>${renderJa(item.text.slice(start + item.target.length))}`
+			: renderJa(item.text);
+		const skillLabel = passageTypeLabels[item.type] || "Mixed";
 		els.hero.innerHTML = `
-			<p class="rh-hero-label">${escapeHtml(item.title)} · Level ${escapeHtml(item.level)} · ${escapeHtml(passageTypeLabels[item.type] || "Mixed")}</p>
-			<p class="rh-passage" lang="ja">${renderJa(item.text)}</p>`;
+			<p class="rh-hero-label">${escapeHtml(item.title)}${item.level ? ` · Level ${escapeHtml(item.level)}` : ""}${skillLabel === item.title ? "" : ` · ${escapeHtml(skillLabel)}`}</p>
+			<p class="rh-passage" lang="ja">${text}</p>`;
 		els.band.textContent = item.prompt;
 		els.body.innerHTML = `
 			<div class="rh-choice-list" role="group" aria-label="Answer choices">
-				${item.options.map((option) => `<button type="button" class="rh-choice-option" data-choice="${escapeHtml(option)}">${escapeHtml(option)}</button>`).join("")}
+				${item.options.map((option) => `<button type="button" class="rh-choice-option" data-choice="${escapeHtml(option)}"${item.japaneseOptions ? ' lang="ja"' : ""}>${item.japaneseOptions ? renderJa(option) : escapeHtml(option)}</button>`).join("")}
 			</div>
 			<p class="answer-feedback rh-feedback" id="rh-feedback" aria-live="polite"></p>
 			<button class="practice-start rh-next" id="rh-next" type="button" hidden>Next →</button>`;
@@ -1361,7 +1264,7 @@
 			${!correct && item.distractorFeedback?.[choice] ? `<span class="rh-translation">${escapeHtml(item.distractorFeedback[choice])}</span>` : ""}
 			${evidence.length ? `<span class="rh-translation"><strong>Evidence</strong></span>${evidence.map(text => `<span class="rh-answer-line" lang="ja">${renderJa(text)}</span>`).join("")}` : ""}
 			<span class="rh-translation">${escapeHtml(item.explanation)}</span>
-			<span class="rh-translation"><strong>Gist:</strong> ${escapeHtml(item.en)}</span>`;
+			${item.en ? `<span class="rh-translation"><strong>Gist:</strong> ${escapeHtml(item.en)}</span>` : ""}`;
 		document.querySelectorAll(".rh-choice-option").forEach((button) => {
 			button.disabled = true;
 			const value = button.dataset.choice;
@@ -1525,7 +1428,7 @@
 		const { item, task, choiceAnswer, verb, force } = session.current;
 		const correct = choice === choiceAnswer;
 		const feedback = $("#rh-feedback");
-		const explanation = task.type === "verb" ? verb.explanation : task.type === "force" ? force.explanation : `The source before the quote points to ${choiceAnswer}.`;
+		const explanation = task.type === "verb" ? verb.explanation : task.type === "force" ? force.explanation : `The speaker, thinker, or written source is ${choiceAnswer}. A recipient marked by に is not automatically the source.`;
 		feedback.className = `answer-feedback rh-feedback ${correct ? "is-correct" : "is-incorrect"}`;
 		feedback.innerHTML = `${correct ? "Correct!" : `Not quite. The answer is <strong>${escapeHtml(choiceAnswer)}</strong>.`}
 			<span class="rh-answer-line" lang="ja">${renderQuoteGuideSentence(item, true)}</span>
@@ -1549,7 +1452,7 @@
 		const isBreaks = session.mode === "breaks";
 		session.current = { item, task: presetTask, breaks: new Set(), start: null, end: null };
 		els.hero.innerHTML = `<p class="rh-hero-label">${isBreaks ? "Tap between words to add a /" : "Tap where the quote starts, then where it ends"}</p><p class="rh-sentence" id="rh-sentence" lang="ja"></p>`;
-		els.band.textContent = isBreaks ? "Where are the breaks in this sentence?" : "What was said, thought or written?";
+		els.band.textContent = isBreaks ? `Mark the ${item.breaks.length} major clause ${item.breaks.length === 1 ? "boundary" : "boundaries"}. Do not split noun phrases.` : "Mark only the reported words or thought, excluding the reporting と.";
 		els.body.innerHTML = `
 			<div class="rh-actions">
 				<button class="worksheet-control" id="rh-reset" type="button">Reset</button>
@@ -1671,7 +1574,7 @@
 		els.hero.classList.remove("is-correct", "is-incorrect");
 		const choice = event.target.closest(".rh-choice-option");
 		if (choice && !session.checked) {
-			if (session.mode === "passages") checkPassageChoice(choice.dataset.choice);
+			if (["passages", "references", "connections"].includes(session.mode)) checkPassageChoice(choice.dataset.choice);
 			else if (session.mode === "agents") checkAgentChoice(choice.dataset.choice);
 			else if (session.mode === "mood") checkMoodChoice(choice.dataset.choice);
 			else if (session.mode === "stack" && session.current.task?.type !== "order") checkStackChoice(choice.dataset.choice);

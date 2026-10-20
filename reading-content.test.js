@@ -17,7 +17,7 @@ function legacyBanks() {
 			return controls.get(selector);
 		}
 	};
-	const sandbox = { document, window: { ReadingContent }, shuffled: items => [...items], localStorage: { getItem: () => null } };
+	const sandbox = { document, window: { ReadingContent, ReadingQuality: require("./reading-quality.js"), ReadingSkills: require("./reading-skills.js") }, shuffled: items => [...items], localStorage: { getItem: () => null } };
 	const source = fs.readFileSync(require.resolve("./reading.js"), "utf8");
 	vm.runInNewContext(source.replace(/\}\)\(\);\s*$/, "globalThis.testApi = { passageBank, buildAgentQuestionBank, buildMoodQuestionBank, breakBank, quoteBank, focusReadingBank }; })();"), sandbox);
 	return { ...sandbox.testApi, controls };

@@ -122,7 +122,8 @@ session start, and prefer sources not among the last 60 answered in that mode.
 This history is optional local browser storage, not adaptive difficulty.
 Requested counts are capped at the number of distinct eligible sources; the
 progress counter displays the actual count. Empty filters no longer fall back
-to unrelated content. Grammar stacking retains its existing generator.
+to unrelated content. Grammar stacking uses curated verbs and reviewed chains,
+with duplicate final forms excluded from a round.
 
 Results show accuracy by reading skill and explanatory missed-item feedback.
 Answer-revealing pattern, mood, and clause-role hints are withheld until grading.
@@ -133,3 +134,15 @@ tests. With Playwright available, run
 `PLAYWRIGHT_CHANNEL=chrome node reading-browser-test.js` for all 36 new questions,
 normal ten-question selection, the other bank-backed modes, and visible results
 at 1440, 390, and 320 pixels. `READING_TEST_URL` can point at the deployed page.
+
+## Eight-Mode Reading Quality Pass
+
+`reading-skills.js` adds Reference Tracking (20 original texts) and Sentence
+Connections (20 situations, each with connector, continuation, and relationship
+tasks). A round never repeats a situation just to ask its other task variants.
+`reading-quality.js` supplies authored quotation analyses, clause roles,
+context-sensitive mood counterexamples, and reviewed stacking combinations.
+
+See `READING_QUALITY.md` for the audit scope, safeguards, and verification.
+Run `node --test reading-content.test.js reading-quality.test.js` and, with
+Playwright available, `PLAYWRIGHT_CHANNEL=chrome node reading-quality-browser-test.js`.
