@@ -488,7 +488,7 @@
 		{
 			title: "School Trip",
 			text: "遠足の日は、学校に八時までに集まってください。バスは八時十五分に出発します。昼ご飯は公園で食べるので、お弁当と飲み物を持ってきてください。雨の場合は、体育館で映画を見ます。",
-			en: "Students gather by 8:00, leave at 8:15, and bring lunch unless the rain plan happens.",
+			en: "Students gather by 8:00, leave at 8:15, and should bring lunch. If it rains, they watch a movie in the gym.",
 			questions: [
 				{ prompt: "By when should students gather at school?", answer: "By 8:00.", options: ["By 8:00.", "At 8:15.", "After lunch.", "Only if it rains."], explanation: "八時までに means by 8:00." },
 				{ prompt: "What happens if it rains?", answer: "They watch a movie in the gym.", options: ["They watch a movie in the gym.", "They eat lunch in the park.", "They leave by bus earlier.", "They cancel lunch."], explanation: "雨の場合は、体育館で映画を見ます." }
@@ -737,14 +737,9 @@
 		detail: "Detail lookup",
 		reason: "Reason",
 		sequence: "Time / sequence",
-		inference: "Inference / rule"
-	};
-
-	const passageTypeHints = {
-		detail: "Scan for the noun, place, person, or object named in the question. You usually do not need to translate every sentence.",
-		reason: "Look for reason markers like ので, から, ため, or a sentence that explains why the rule or result happens.",
-		sequence: "Track time words and order markers: before, after, until, by, first, next, or what changes at a certain time.",
-		inference: "Use the rule or condition in the passage to decide what someone should do or what will happen."
+		inference: "Inference / rule",
+		reference: "Reference tracking",
+		purpose: "Purpose / interpretation"
 	};
 
 	const passageBank = passageSources.flatMap((source) => source.questions.map((question) => ({
@@ -755,7 +750,7 @@
 		text: source.text,
 		en: source.en,
 		options: shuffled(question.options)
-	})));
+	}))).concat(window.ReadingContent.buildBank(window.ReadingContent.passages));
 
 	const agentRoleLabels = {
 		agent: "actual doer",
@@ -1107,6 +1102,12 @@
 
 	/* ---------- Session state ---------- */
 	let session = null;
+	const readingHistoryKey = "jlpt-reading-sources-v1";
+	let readingHistory = {};
+	try {
+		const saved = JSON.parse(localStorage.getItem(readingHistoryKey) || "{}");
+		if (saved && typeof saved === "object" && !Array.isArray(saved)) readingHistory = saved;
+	} catch (_) { /* Sessions still work when browser storage is unavailable. */ }
 
 	function showSetup() {
 		els.setup.hidden = false;
@@ -1129,8 +1130,13 @@
 			}
 		}
 		const bank = mode === "breaks" ? breakBank : mode === "quotes" ? quoteBank : mode === "passages" ? passageBank : mode === "agents" ? buildAgentQuestionBank() : mode === "mood" ? buildMoodQuestionBank() : null;
-		const items = bank ? shuffled(focusReadingBank(mode, bank)) : null;
-		session = { mode, count: items ? Math.min(count, items.length) : count, pool, items, index: 0, correct: 0, answered: 0, missed: [], current: null, checked: false };
+		const recent = Array.isArray(readingHistory[mode]) ? readingHistory[mode] : [];
+		const items = bank ? window.ReadingContent.selectSession(focusReadingBank(mode, bank), count, recent) : null;
+		if (items && !items.length) {
+			els.status.textContent = "No questions match these filters. Choose another focus or level.";
+			return;
+		}
+		session = { mode, count: items ? items.length : count, pool, items, index: 0, correct: 0, answered: 0, missed: [], skills: {}, current: null, checked: false };
 		els.status.textContent = "";
 		els.setup.hidden = true;
 		els.complete.hidden = true;
@@ -1148,7 +1154,7 @@
 			if (passageLevel !== "all") filtered = filtered.filter((item) => String(item.level) === passageLevel);
 		}
 		if (focus !== "mixed") filtered = filtered.filter((item) => item.role === focus || item.type === focus);
-		return filtered.length ? filtered : bank;
+		return filtered;
 	}
 
 	function updateStats() {
@@ -1160,6 +1166,7 @@
 		if (session.index >= session.count) return finishSession();
 		session.checked = false;
 		session.index += 1;
+		els.hero.classList.remove("is-correct", "is-incorrect");
 		updateStats();
 		if (session.mode === "stack") renderStack();
 		else if (session.mode === "passages") renderPassageQuestion();
@@ -1172,10 +1179,22 @@
 	}
 
 	function recordResult(correct, missedLabel) {
+		if (session.checked) return;
 		session.answered += 1;
 		if (correct) session.correct += 1;
 		else session.missed.push(missedLabel);
 		session.checked = true;
+		const item = session.current?.item;
+		const skill = item?.type || item?.role || session.current?.task?.type || session.mode;
+		const score = session.skills[skill] || (session.skills[skill] = { correct: 0, total: 0 });
+		score.total += 1;
+		if (correct) score.correct += 1;
+		if (item) {
+			const key = window.ReadingContent.sourceKey(item);
+			const previous = Array.isArray(readingHistory[session.mode]) ? readingHistory[session.mode] : [];
+			readingHistory[session.mode] = [...previous.filter(value => value !== key), key].slice(-60);
+			try { localStorage.setItem(readingHistoryKey, JSON.stringify(readingHistory)); } catch (_) { /* Optional history. */ }
+		}
 		updateStats();
 	}
 
@@ -1187,9 +1206,14 @@
 		els.title.textContent = { stack: "Grammar stacking complete", breaks: "Sentence breaks complete", quotes: "Said & thought complete", agents: "Who did it complete", mood: "Narrator mood complete", passages: "Short passages complete" }[mode];
 		const percent = answered ? Math.round((correct / answered) * 100) : 0;
 		els.result.textContent = `${correct} of ${answered} correct (${percent}%).`;
-		els.missed.innerHTML = missed.length
+		const labels = { ...agentRoleLabels, ...passageTypeLabels, mood: "Positive / negative", tone: "Feeling", clue: "Clue", signal: "Clue type", mark: "Boundaries", main: "Main clause", role: "Clause role", source: "Source", verb: "Reporting verb", force: "Quote meaning", stack: "Grammar stacking" };
+		els.missed.innerHTML = `<h4>Reading skills</h4><ul>${Object.entries(session.skills).map(([skill, score]) =>
+			`<li>${escapeHtml(labels[skill] || skill)}: ${score.correct} / ${score.total}</li>`).join("")}</ul>` + (missed.length
 			? `<h4>To review</h4><ul>${missed.map((item) => `<li lang="ja">${item}</li>`).join("")}</ul>`
-			: "<p>No mistakes — nicely done!</p>";
+			: "<p>No mistakes — nicely done!</p>");
+		els.title.tabIndex = -1;
+		els.complete.scrollIntoView({ block: "start" });
+		els.title.focus({ preventScroll: true });
 	}
 
 	function leaveSession() {
@@ -1323,7 +1347,6 @@
 				${item.options.map((option) => `<button type="button" class="rh-choice-option" data-choice="${escapeHtml(option)}">${escapeHtml(option)}</button>`).join("")}
 			</div>
 			<p class="answer-feedback rh-feedback" id="rh-feedback" aria-live="polite"></p>
-			<div class="rh-hint-table"><h4>Reading target</h4><p>${escapeHtml(passageTypeHints[item.type] || passageTypeHints.detail)}</p></div>
 			<button class="practice-start rh-next" id="rh-next" type="button" hidden>Next →</button>`;
 	}
 
@@ -1333,8 +1356,10 @@
 		session.current.selected = choice;
 		const feedback = $("#rh-feedback");
 		feedback.className = `answer-feedback rh-feedback ${correct ? "is-correct" : "is-incorrect"}`;
+		const evidence = Array.isArray(item.evidence) ? item.evidence : item.evidence ? [item.evidence] : [];
 		feedback.innerHTML = `${correct ? "Correct!" : `Not quite. The answer is <strong>${escapeHtml(item.answer)}</strong>.`}
-			${item.evidence ? `<span class="rh-answer-line" lang="ja">${renderJa(item.evidence)}</span>` : ""}
+			${!correct && item.distractorFeedback?.[choice] ? `<span class="rh-translation">${escapeHtml(item.distractorFeedback[choice])}</span>` : ""}
+			${evidence.length ? `<span class="rh-translation"><strong>Evidence</strong></span>${evidence.map(text => `<span class="rh-answer-line" lang="ja">${renderJa(text)}</span>`).join("")}` : ""}
 			<span class="rh-translation">${escapeHtml(item.explanation)}</span>
 			<span class="rh-translation"><strong>Gist:</strong> ${escapeHtml(item.en)}</span>`;
 		document.querySelectorAll(".rh-choice-option").forEach((button) => {
@@ -1347,7 +1372,7 @@
 		const next = $("#rh-next");
 		next.hidden = false;
 		next.focus();
-		recordResult(correct, `${escapeHtml(item.title)}: ${escapeHtml(item.prompt)} → ${escapeHtml(item.answer)}`);
+		recordResult(correct, `${escapeHtml(item.title)}: ${escapeHtml(item.prompt)} → ${escapeHtml(item.answer)}<br>${escapeHtml(item.explanation)}`);
 	}
 
 	function renderAgentQuestion() {
@@ -1355,15 +1380,14 @@
 		const answerLang = item.role === "meaning" ? "" : ' lang="ja"';
 		session.current = { item, choiceAnswer: item.answer };
 		els.hero.innerHTML = `
-			<p class="rh-hero-label">Who did it? · ${escapeHtml(item.level)} · ${escapeHtml(item.pattern)}</p>
+			<p class="rh-hero-label">Who did it? · ${escapeHtml(item.level)}</p>
 			<p class="rh-sentence" lang="ja">${renderJa(item.sentence)}</p>`;
 		els.band.textContent = item.prompt;
 		els.body.innerHTML = `
 			<div class="rh-choice-list" role="group" aria-label="Agent role choices">
-				${item.options.map((option) => `<button type="button" class="rh-choice-option" data-choice="${escapeHtml(option)}"><span${answerLang}>${escapeHtml(option)}</span></button>`).join("")}
+				${item.options.map((option) => `<button type="button" class="rh-choice-option" data-choice="${escapeHtml(option)}"><span${answerLang}>${renderJa(option)}</span></button>`).join("")}
 			</div>
 			<p class="answer-feedback rh-feedback" id="rh-feedback" aria-live="polite"></p>
-			<div class="rh-hint-table"><h4>Reading move</h4><p>${escapeHtml(item.subprompt)} Pattern focus: ${escapeHtml(agentRoleLabels[item.role] || item.role)}.</p></div>
 			<button class="practice-start rh-next" id="rh-next" type="button" hidden>Next →</button>`;
 	}
 
@@ -1393,7 +1417,7 @@
 		const item = session.items[(session.index - 1) % session.items.length];
 		session.current = { item, choiceAnswer: item.answer };
 		els.hero.innerHTML = `
-			<p class="rh-hero-label">Narrator mood · ${escapeHtml(item.level)} · ${escapeHtml(item.category)}</p>
+			<p class="rh-hero-label">Narrator mood · ${escapeHtml(item.level)}</p>
 			<p class="rh-sentence" lang="ja">${renderJa(item.sentence)}</p>`;
 		els.band.textContent = item.prompt;
 		els.body.innerHTML = `
@@ -1401,7 +1425,6 @@
 				${item.options.map((option) => `<button type="button" class="rh-choice-option" data-choice="${escapeHtml(option)}">${escapeHtml(option)}</button>`).join("")}
 			</div>
 			<p class="answer-feedback rh-feedback" id="rh-feedback" aria-live="polite"></p>
-			<div class="rh-hint-table"><h4>Reading move</h4><p>Look for evaluation words, received favors, regretful てしまう, passive annoyance, or bad-result phrases.</p></div>
 			<button class="practice-start rh-next" id="rh-next" type="button" hidden>Next →</button>`;
 	}
 
@@ -1449,7 +1472,6 @@
 				${shuffled(options).map((option) => `<button type="button" class="rh-choice-option" data-choice="${escapeHtml(option)}">${task.type === "main" ? `<span lang="ja">${renderJa(option)}</span>` : escapeHtml(option)}</button>`).join("")}
 			</div>
 			<p class="answer-feedback rh-feedback" id="rh-feedback" aria-live="polite"></p>
-			<div class="rh-hint-table"><h4>${task.type === "main" ? "Reading move" : "Connector clue"}</h4><p>${task.type === "main" ? "Supporting chunks often come first. The main clause is usually the final chunk that completes the sentence." : escapeHtml(role.explanation)}</p></div>
 			<button class="practice-start rh-next" id="rh-next" type="button" hidden>Next →</button>`;
 	}
 

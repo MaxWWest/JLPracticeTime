@@ -917,7 +917,10 @@ body.reading-fullscreen { overflow: hidden; }
 .rh-mode-card .practice-start { margin: auto 0 0; align-self: flex-start; }
 .rh-complete-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 14px; }
 .rh-complete-actions .practice-start { margin: 0; }
-.rh-session[hidden], #rh-complete[hidden] { display: none; }
+.rh-session[hidden], #rh-complete[hidden], #rh-setup[hidden] { display: none; }
+#rh-complete .pitch-missed { width: min(100%, 760px); text-align: left; }
+#rh-complete li { margin: 8px 0; line-height: 1.6; }
+#rh-result { font-size: 18px; color: var(--ink); }
 
 .rh-session { position: fixed; z-index: 200; inset: 0; display: flex; flex-direction: column; overflow-y: auto; background: #f4f4f4; }
 .rh-top { position: absolute; z-index: 2; top: 0; right: 0; left: 0; display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; color: #315e4b; }
@@ -932,7 +935,7 @@ body.reading-fullscreen { overflow: hidden; }
 .rh-arrow { margin: 2px 0; color: #6f9c82; font-size: 22px; }
 .rh-target { margin: 0; font-size: clamp(32px, 6.5vw, 64px); font-weight: 500; line-height: 1.3; overflow-wrap: anywhere; }
 .rh-sentence { max-width: 1000px; margin: 0; font-size: clamp(24px, 4.2vw, 42px); line-height: 2.1; font-family: "Noto Sans JP", sans-serif; }
-.rh-passage { width: min(100%, 900px); margin: 0; color: #21352b; font-family: "Noto Sans JP", sans-serif; font-size: clamp(19px, 2.8vw, 30px); line-height: 1.9; text-align: left; }
+.rh-passage { width: min(100%, 900px); margin: 0; color: #21352b; font-family: "Noto Sans JP", sans-serif; font-size: 24px; line-height: 2; text-align: left; white-space: pre-line; overflow-wrap: anywhere; }
 .rh-sentence ruby, .rh-passage ruby, .rh-answer-line ruby, .rh-choice-option ruby { ruby-position: over; }
 .rh-sentence rt, .rh-passage rt, .rh-answer-line rt, .rh-choice-option rt { color: #6f8b7c; font-family: "Noto Sans JP", sans-serif; font-size: .34em; font-weight: 500; line-height: 1; }
 .rh-char { display: inline; }

@@ -106,3 +106,30 @@ meaning-sensitive answers, scenario rotation, writing coverage, and kana
 acceptance. `node review-feedback-browser-test.js` completes ten-question rounds
 for all five units at desktop and mobile sizes, checking scores and visible
 results rather than merely checking whether the result elements exist.
+
+## Reading Comprehension Expansion
+
+`reading-content.js` adds 12 authored passages (six compact, six longer) and
+36 questions to the existing reading bank. These include paired notices,
+polite refusals, omitted subjects, referents, practical constraints, and
+contrasting information. Reference tracking and purpose/interpretation can be
+selected independently. Every new question has exact passage evidence and
+feedback for each distractor. The legacy detail questions remain available.
+
+Bank-backed reading modes now select at most one question per source in a round,
+balance question skills where the filtered bank permits, shuffle choices at
+session start, and prefer sources not among the last 60 answered in that mode.
+This history is optional local browser storage, not adaptive difficulty.
+Requested counts are capped at the number of distinct eligible sources; the
+progress counter displays the actual count. Empty filters no longer fall back
+to unrelated content. Grammar stacking retains its existing generator.
+
+Results show accuracy by reading skill and explanatory missed-item feedback.
+Answer-revealing pattern, mood, and clause-role hints are withheld until grading.
+Dialogue and paired-notice line breaks are preserved.
+
+Run `node --test reading-content.test.js` for content integrity and selection
+tests. With Playwright available, run
+`PLAYWRIGHT_CHANNEL=chrome node reading-browser-test.js` for all 36 new questions,
+normal ten-question selection, the other bank-backed modes, and visible results
+at 1440, 390, and 320 pixels. `READING_TEST_URL` can point at the deployed page.
