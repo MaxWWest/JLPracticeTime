@@ -289,7 +289,10 @@ function renderJapaneseWithFurigana(example) {
 	return renderJapaneseTextWithFurigana(example.furigana || example.ja || "");
 }
 
+const meaningPracticeModules = { permission: PermissionPractice, desire: DesirePractice, appearance: AppearancePractice, reason: ReasonPractice, purpose: PurposePractice };
+const meaningPracticeReadings = [...Object.values(meaningPracticeModules).flatMap(module => module.readings), ...BossSixTen.readings];
 const furiganaAutoEntries = [
+	...meaningPracticeReadings.filter(([word]) => word.length > 1 && /[一-龯]/.test(word)),
 	...BossPractice.readings.filter(([word]) => word.length > 1 && /[一-龯]/.test(word)),
 	...AbilityPractice.readings.filter(([word]) => word.length > 1 && /[一-龯]/.test(word)),
 	...ExperiencePractice.readings.filter(([word]) => word.length > 1 && /[一-龯]/.test(word)),
@@ -350,7 +353,7 @@ function getJapaneseFuriganaTokens(value, options = {}) {
 	// Initialize after the lesson vocabulary has been declared; grading aliases are unchanged.
 	if (!furiganaRenderer) {
 		const entries = [...furiganaAutoEntries, ...comparisonKanaAnswerAliases, ...ComparisonPractice.readings,
-			...TimePractice.readings, ...InvitationPractice.readings, ...AbilityPractice.readings, ...ExperiencePractice.readings, ...BossPractice.readings];
+			...TimePractice.readings, ...InvitationPractice.readings, ...AbilityPractice.readings, ...ExperiencePractice.readings, ...BossPractice.readings, ...meaningPracticeReadings];
 		const readings = new Map(entries);
 		for (const { adj, neg } of comparisonAdjectivePool) {
 			const reading = readings.get(adj);
@@ -2985,6 +2988,8 @@ function selectTimeReview(bank, count) {
 }
 
 function generatedGrammarEngine(question) {
+	if (question.meta?.engine === BossSixTen.version) return getBossSixTenEngine();
+	for (const [unit, module] of Object.entries(meaningPracticeModules)) if (question.meta?.engine === module.version) return getMeaningPracticeEngine(unit);
 	if (question.meta?.engine === BossPractice.version) return getBossPracticeEngine();
 	if (question.meta?.engine === AbilityPractice.version) return getAbilityPracticeEngine();
 	if (question.meta?.engine === ExperiencePractice.version) return getExperiencePracticeEngine();
@@ -3047,48 +3052,41 @@ function selectBossPilot(bank, count) {
 	return BossPractice.selectQueue(bank, count, { recent: contextualReviewHistory("boss-01-05") });
 }
 
+const meaningPracticeEngines = new Map();
+function getMeaningPracticeEngine(unit) {
+	if (!meaningPracticeEngines.has(unit)) meaningPracticeEngines.set(unit, meaningPracticeModules[unit].create({ aliases: comparisonKanaAnswerAliases }));
+	return meaningPracticeEngines.get(unit);
+}
+let bossSixTenEngine;
+function getBossSixTenEngine() {
+	if (!bossSixTenEngine) bossSixTenEngine = BossSixTen.create({ aliases: comparisonKanaAnswerAliases });
+	return bossSixTenEngine;
+}
+function selectMeaningReview(unit, bank, count) {
+	return meaningPracticeModules[unit].selectQueue(bank, count, { recent: contextualReviewHistory(unit) });
+}
+function selectBossSixTen(bank, count) {
+	return BossSixTen.selectQueue(bank, count, { recent: contextualReviewHistory("boss-06-10") });
+}
+
 function buildPermissionPracticeBank() {
-	return [
-		...allowBanScenarios.flatMap((item) => permissionQuestionTemplates.allowBan.map((template) => template(item))),
-		...noNeedMustScenarios.flatMap((item) => permissionQuestionTemplates.noNeedMust.map((template) => template(item))),
-		...buildPermissionPitfallQuestions()
-	];
+	return getMeaningPracticeEngine("permission").buildBank();
 }
 
 function buildDesirePracticeBank() {
-	return [
-		...desireNounScenarios.flatMap((item) => desireQuestionTemplates.noun.map((template) => template(item))),
-		...desireActionScenarios.flatMap((item) => desireQuestionTemplates.action.map((template) => template(item))),
-		...hopeSituationScenarios.flatMap((item) => desireQuestionTemplates.hope.map((template) => template(item))),
-		...buildDesirePitfallQuestions()
-	];
+	return getMeaningPracticeEngine("desire").buildBank();
 }
 
 function buildAppearancePracticeBank() {
-	return [
-		...souAppearanceScenarios.flatMap((item) => appearanceQuestionTemplates.sou.map((template) => template(item))),
-		...visibleEmotionScenarios.flatMap((item) => appearanceQuestionTemplates.gari.map((template) => template(item))),
-		...mamaScenarios.flatMap((item) => appearanceQuestionTemplates.mama.map((template) => template(item))),
-		...buildAppearancePitfallQuestions()
-	];
+	return getMeaningPracticeEngine("appearance").buildBank();
 }
 
 function buildReasonPracticeBank() {
-	return [
-		...karaReasonScenarios.flatMap((item) => reasonQuestionTemplates.kara.map((template) => template(item))),
-		...nodeReasonScenarios.flatMap((item) => reasonQuestionTemplates.node.map((template) => template(item))),
-		...teCauseScenarios.flatMap((item) => reasonQuestionTemplates.te.map((template) => template(item))),
-		...buildReasonPitfallQuestions()
-	];
+	return getMeaningPracticeEngine("reason").buildBank();
 }
 
 function buildPurposePracticeBank() {
-	return [
-		...movementPurposeScenarios.flatMap((item) => purposeQuestionTemplates.movement.map((template) => template(item))),
-		...tamePurposeScenarios.flatMap((item) => purposeQuestionTemplates.tame.map((template) => template(item))),
-		...youniPurposeScenarios.flatMap((item) => purposeQuestionTemplates.youni.map((template) => template(item))),
-		...buildPurposePitfallQuestions()
-	];
+	return getMeaningPracticeEngine("purpose").buildBank();
 }
 
 function uniqueGrammarOptions(options, fallback = []) {
@@ -4344,7 +4342,7 @@ const grammarPracticeRuleNotes = {
 		],
 		pitfalls: [
 			"Do not use ほしい for actions. Use verb stem + たいです.",
-			"Do not directly state another person's private desire with ほしい/たい when you mean visible behavior; use ほしがる/たがる.",
+			"Use ほしがる/たがる for observed desire. Another person's own words can use ほしい/たい in a quotation; third-person subjects do not automatically make たい wrong.",
 			"Do not put past forms like 見つかった before といいです for this future hope pattern."
 		]
 	},
@@ -4368,7 +4366,7 @@ const grammarPracticeRuleNotes = {
 				points: [
 					"Verb negatives often use 〜そうもありません: 降りそうもありません.",
 					"i-adjective negatives use 〜くなさそうです: おいしくなさそうです.",
-					"na-adjectives and nouns use 〜ではなさそうです. The special forms いい and ない become よさそう and なさそう."
+					"na-adjectives use 〜ではなさそうです. The special forms いい and ない become よさそう and なさそう. Positive hearsay uses a plain clause, including だ after nouns and na-adjectives."
 				],
 				examples: ["時間はなさそうです。", "天気はよくなさそうです。", "この町は静かではなさそうです。"]
 			},
@@ -4396,7 +4394,7 @@ const grammarPracticeRuleNotes = {
 		pitfalls: [
 			"Do not confuse appearance そうです with hearsay plain-form + そうです. 降りそうです means looks like rain; 降るそうです means I heard it will rain.",
 			"Do not use そうもありません for adjective negatives like おいしい; use おいしくなさそうです.",
-			"Do not use がります for a current visible moment when がっています is needed.",
+			"がっている focuses on a current display; がる can describe a tendency. Choose the intended viewpoint, rather than treating every other description as ungrammatical.",
 			"Do not forget な before まま for na-adjectives or の before まま for nouns."
 		]
 	},
@@ -4447,7 +4445,7 @@ const grammarPracticeRuleNotes = {
 		],
 		pitfalls: [
 			"Do not forget な before ので after nouns or na-adjectives.",
-			"Do not use ので before blunt commands like 待て or 読め.",
+			"ので can precede polite requests. Its softer tendency does not make から wrong in every polite situation; avoid treating register preferences as absolute grammar rules.",
 			"Do not use reason て/くて/で before volitional endings such as ましょう or direct requests.",
 			"Do not put the result before からです; the reason belongs before からです."
 		]
@@ -4501,7 +4499,7 @@ const grammarPracticeRuleNotes = {
 			"Do not use movement-purpose に unless there is a movement verb like 行く, 来る, 帰る, or 戻る.",
 			"Do not put a ます-stem before ために when the purpose is a full action; use dictionary form.",
 			"Do not forget の before ために or ための after nouns.",
-			"Do not use ために when the goal is a potential, non-volitional, negative-prevention, or third-person outcome; ように is usually the safer N4 pattern."
+			"ように often presents an attainable state or prevention, while ために emphasizes purpose. Some contexts allow both, so do not treat verb type alone as an absolute rule."
 		]
 	},
 	...extensionGrammarPracticeRuleNotes
@@ -7199,7 +7197,7 @@ function buildGenericAdvancedGrammarQuestions(sessionId, baseBank) {
 
 function buildAdvancedGrammarPracticeBank(sessionId, baseBank) {
 	// Generated units must never be mixed with legacy hard, correction, or generic packs.
-	if (["comparison", "time", "invitation", "ability", "experience"].includes(sessionId)) return baseBank.map((q) => withGrammarPracticeMetadata(q, sessionId));
+	if (["comparison", "time", "invitation", "ability", "experience", ...Object.keys(meaningPracticeModules)].includes(sessionId)) return baseBank.map((q) => withGrammarPracticeMetadata(q, sessionId));
 	const advanced = [
 		...(advancedGrammarPracticePacks[sessionId] || []),
 		...(grammarCorrectionPacks[sessionId] || []),
@@ -7278,6 +7276,7 @@ function getGrammarBossBlockConfig(sessionId) {
 }
 
 function buildGrammarBossBlockPracticeBank(config) {
+	if (config.id === "boss-06-10") return getBossSixTenEngine().buildBank().map(question => withGrammarPracticeMetadata(question, config.id));
 	if (config.id === "boss-01-05") return getBossPracticeEngine().buildBank().map((question) => withGrammarPracticeMetadata(question, config.id));
 	const seen = new Set();
 	return config.sessions.flatMap((sourceSessionId) => {
@@ -7388,6 +7387,7 @@ function buildGrammarPracticeBank(sessionId = gpState.sessionId || "comparison")
 }
 
 function buildBossBlockGrammarQueue(sessionId, bank, questionCount = 25) {
+	if (sessionId === "boss-06-10") return selectBossSixTen(bank, questionCount);
 	if (sessionId === "boss-01-05") return selectBossPilot(bank, questionCount);
 	const bossBlock = getGrammarBossBlockConfig(sessionId);
 	if (!bossBlock) return shuffled(bank);
@@ -7413,6 +7413,8 @@ function buildBossBlockGrammarQueue(sessionId, bank, questionCount = 25) {
 }
 
 function buildFocusedGrammarQueue(sessionId, bank, focus, questionCount) {
+	if (sessionId === "boss-06-10") return selectBossSixTen(bank, questionCount);
+	if (meaningPracticeModules[sessionId]) return selectMeaningReview(sessionId, bank, questionCount);
 	if (sessionId === "boss-01-05") return selectBossPilot(bank, questionCount);
 	if (sessionId === "ability") return selectAbilityReview(bank, questionCount);
 	if (sessionId === "experience") return selectExperienceReview(bank, questionCount);
@@ -7470,10 +7472,14 @@ function startGrammarPractice(sessionId = "comparison", questionCount = Number(g
 	}
 	const comparisonKeys = gpState.queue.filter((q) => q.meta?.engine === ComparisonPractice.version).map((q) => q.meta.familyKey);
 	const bossKeys = gpState.queue.filter((q) => q.meta?.engine === BossPractice.version).map((q) => q.meta.sceneKey);
+	const laterBossKeys = gpState.queue.filter(q => q.meta?.engine === BossSixTen.version).map(q => q.meta.sceneKey);
+	if (laterBossKeys.length) {
+		try { localStorage.setItem("boss-06-10-review-history-v1", JSON.stringify([...contextualReviewHistory("boss-06-10"), ...laterBossKeys].slice(-50))); } catch { /* Optional freshness history. */ }
+	}
 	if (bossKeys.length) {
 		try { localStorage.setItem("boss-01-05-review-history-v1", JSON.stringify([...contextualReviewHistory("boss-01-05"), ...bossKeys].slice(-50))); } catch { /* Freshness only; no adaptive question insertion. */ }
 	}
-	for (const [unit, engine] of [["ability", AbilityPractice], ["experience", ExperiencePractice]]) {
+	for (const [unit, engine] of [["ability", AbilityPractice], ["experience", ExperiencePractice], ...Object.entries(meaningPracticeModules)]) {
 		const keys = gpState.queue.filter((q) => q.meta?.engine === engine.version).map((q) => q.meta.familyKey);
 		if (keys.length) {
 			try { localStorage.setItem(`${unit}-review-history-v1`, JSON.stringify([...contextualReviewHistory(unit), ...keys].slice(-50))); } catch { /* Freshness only; performance does not alter the queue. */ }
@@ -7497,7 +7503,7 @@ function startGrammarPractice(sessionId = "comparison", questionCount = Number(g
 	gpState.answered = false;
 	gpState.recorded = false;
 	gpEls["session-notes"].dataset.gpNotes = sessionId;
-	gpEls["session-notes"].hidden = sessionId === "boss-01-05";
+	gpEls["session-notes"].hidden = ["boss-01-05", "boss-06-10"].includes(sessionId);
 	gpEls["session-notes"].setAttribute("aria-expanded", "false");
 	gpEls["session-note-panel"].innerHTML = renderGrammarPracticeRuleNotes(sessionId);
 	gpEls["session-note-panel"].hidden = true;
@@ -7593,7 +7599,12 @@ function showGrammarPracticeQuestion() {
 function findGrammarRetryCandidate(question) {
 	if (!question?.meta || !gpState.bank?.length) return null;
 	// A Boss round stays bounded: eight choices followed by two writing challenges.
-	if (question.meta.engine === BossPractice.version) return null;
+	if ([BossPractice.version, BossSixTen.version].includes(question.meta.engine)) return null;
+	for (const [unit, module] of Object.entries(meaningPracticeModules)) {
+		if (question.meta.engine !== module.version) continue;
+		const used = new Set(gpState.queue.map(q => q.meta?.familyKey));
+		return module.selectQueue(gpState.bank.filter(q => q.meta.task === question.meta.task && !used.has(q.meta.familyKey)), 1)[0] || null;
+	}
 	for (const [unit, engine] of [["ability", AbilityPractice], ["experience", ExperiencePractice]]) {
 		if (question.meta.engine !== engine.version) continue;
 		const used = new Set(gpState.queue.filter((q) => q.meta?.engine === engine.version).map((q) => q.meta.familyKey));

@@ -55,6 +55,8 @@ globalThis.__grammarAuditApi = {
 	getAbilityPracticeEngine,
 	getExperiencePracticeEngine,
 	getBossPracticeEngine,
+	getMeaningPracticeEngine,
+	getBossSixTenEngine,
 	comparisonNounPools,
 	comparisonAdjectivePool,
 	grammarVerbPool,
@@ -79,6 +81,12 @@ globalThis.__grammarAuditApi = {
 		AbilityPractice: require("./ability-practice.js"),
 		ExperiencePractice: require("./experience-practice.js"),
 		BossPractice: require("./boss-practice.js"),
+		PermissionPractice: require("./permission-practice.js"),
+		DesirePractice: require("./desire-practice.js"),
+		AppearancePractice: require("./appearance-practice.js"),
+		ReasonPractice: require("./reason-practice.js"),
+		PurposePractice: require("./purpose-practice.js"),
+		BossSixTen: require("./boss-six-ten.js"),
 		document,
 		window: {
 			addEventListener() {},
@@ -251,14 +259,14 @@ function auditQuestion(sessionId, question, index, findings) {
 function auditFurigana(api, findings) {
 	const checks = [
 		{ text: "タクシーは地下鉄より高いです。", mustContain: "<ruby>地下鉄<rt>ちかてつ</rt></ruby>", mustNotContain: "<ruby>下<rt>した</rt></ruby>鉄", label: "地下鉄" },
-		{ text: "辞書はノートほど軽くありません。", mustContain: "<ruby>軽く<rt>かるく</rt></ruby>", mustNotContain: "軽くありません", label: "軽く" },
+		{ text: "辞書はノートほど軽くありません。", mustContain: "<ruby>軽<rt>かる</rt></ruby>く", mustNotContain: "軽くありません", label: "軽く" },
 		{
 			text: "週末、兄は山へ行きました。私は海へ行きました。兄は『山のほうが静かだった』と言いましたが、私は海のほうが楽しかったです。",
 			mustContain: [
 				"<ruby>週末<rt>しゅうまつ</rt></ruby>",
 				"<ruby>山<rt>やま</rt></ruby>",
 				"<ruby>私<rt>わたし</rt></ruby>",
-				"<ruby>楽しかった<rt>たのしかった</rt></ruby>"
+				"<ruby>楽<rt>たの</rt></ruby>しかった"
 			],
 			mustNotContain: "山へ",
 			label: "boss reading passage"
@@ -276,8 +284,8 @@ function auditFurigana(api, findings) {
 				kind: check.label,
 				prompt: clip(check.text),
 				answer: clip(rendered),
-				message: `${check.label} did not render with the expected full-word reading.`,
-				suggestion: "Add or reorder the full word in furiganaAutoEntries so the longest match wins."
+				message: `${check.label} did not render with the expected reading and kana suffix.`,
+				suggestion: "Check the authored word reading and the renderer's separation of kana endings."
 			});
 		}
 	}
@@ -285,8 +293,8 @@ function auditFurigana(api, findings) {
 
 function auditHardPracticeQueues(api, sessionBanks, findings) {
 	for (const { sessionId, bank } of sessionBanks) {
-		if (sessionId === "boss-01-05") {
-			const boss = require("./boss-practice.js");
+		if (["boss-01-05", "boss-06-10"].includes(sessionId)) {
+			const boss = require(sessionId === "boss-01-05" ? "./boss-practice.js" : "./boss-six-ten.js");
 			const queue = api.buildFocusedGrammarQueue(sessionId, bank, "boss", boss.roundSize) || [];
 			if (queue.length !== boss.roundSize || queue.some((q) => q.meta?.engine !== boss.version) || new Set(queue.map((q) => q.meta?.familyKey)).size !== boss.roundSize) {
 				addFinding(findings, "high", "invalid-boss-pilot", sessionId, 0, queue[0] || {}, "Boss pilot must contain ten different new-engine situations.", "Keep one item per pilot family, without padding with Review or legacy questions.");
@@ -348,11 +356,11 @@ function buildSessionBanks(api, requestedSessionIds) {
 	const allSessionIds = Object.keys(api.grammarPracticeSessions)
 		.filter((id) => !id.startsWith("family-") && !["mixed-boss", "mock-test"].includes(id))
 		.slice(0, coreSessionLimit);
-	const sessionIds = requestedSessionIds.length ? requestedSessionIds : [...new Set([...allSessionIds, "boss-01-05"])];
+	const sessionIds = requestedSessionIds.length ? requestedSessionIds : [...new Set([...allSessionIds, "boss-01-05", "boss-06-10"])];
 	return sessionIds.map((sessionId) => {
 		const session = api.grammarPracticeSessions[sessionId];
 		if (!session) throw new Error(`Unknown grammar session: ${sessionId}`);
-		const bank = sessionId === "boss-01-05"
+		const bank = ["boss-01-05", "boss-06-10"].includes(sessionId)
 			? api.buildGrammarPracticeBank(sessionId)
 			: api.buildAdvancedGrammarPracticeBank(sessionId, session.buildBank());
 		return { sessionId, title: session.title, bank };

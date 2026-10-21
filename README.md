@@ -6,7 +6,7 @@ A static Japanese vocabulary, grammar, and practice site.
 
 `furigana.js` matches authored word readings using Japanese word boundaries,
 with explicit irregular-verb and counter readings. The renderer draws on all
-five lesson reading lists plus the shared comparison vocabulary, and leaves
+ten lesson reading lists plus the shared comparison vocabulary, and leaves
 kana endings outside ruby. It does not infer readings for arbitrary unknown
 words. Unknown compounds remain plain rather than receiving misleading
 character-by-character readings. Ambiguous authored text can use
@@ -72,7 +72,7 @@ Eight contextual choice questions lead into two one-sentence writing challenges,
 without naming the target grammar in advance. Thirty situation families each
 have four fact variants. Each round draws two families per unit and avoids the
 previous two rounds' families. The writing finale draws from all five units.
-Other Boss blocks and Review question counts are unchanged.
+Boss 06-10 follows the same ten-question format; later Boss blocks are unchanged.
 
 Inspect [BOSS_PILOT_SAMPLE.md](BOSS_PILOT_SAMPLE.md) for Japanese questions with
 English passages and an answer key. Regenerate it with
@@ -86,11 +86,11 @@ variant freshness, and every pilot item at desktop and mobile widths.
 
 ## Compact Review Answers
 
-Review in Units 01-05 uses short grammar blanks and dropdowns inside explicit
+Review in Units 01-10 uses short grammar blanks and dropdowns inside explicit
 Japanese sentence frames. Names, objects and unrelated vocabulary are supplied;
 grammar choices, meaning, roles and polarity are still assessed. Full-sentence
-writing is reserved for the last two questions of Boss 01-05. Other Boss blocks
-and legacy units are unchanged.
+writing is reserved for the last two questions of Boss 01-05 and Boss 06-10.
+Later Boss blocks and legacy units are unchanged.
 
 See [RESPONSE_DESIGN.md](RESPONSE_DESIGN.md). Run
 `node --test response-practice.test.js` to check reconstructed sentences, kana,
@@ -106,6 +106,19 @@ meaning-sensitive answers, scenario rotation, writing coverage, and kana
 acceptance. `node review-feedback-browser-test.js` completes ten-question rounds
 for all five units at desktop and mobile sizes, checking scores and visible
 results rather than merely checking whether the result elements exist.
+
+## Units 06-10
+
+Permission, desire, appearance, reasons and purpose use separate grammar-first
+generators with brief contexts, meaning-sensitive options, checked conjugations,
+and 10/25/40-question Reviews. Boss 06-10 combines two units per item and ends
+with two short writing challenges. These routes exclude the old question packs.
+
+See [UNITS_06_10.md](UNITS_06_10.md) for coverage, finite variety, grammar rules
+and grading limits. Run `node --test units-six-ten.test.js` and
+`PLAYWRIGHT_CHANNEL=chrome node units-six-ten-browser-test.js` for generation,
+grading, freshness, scoring and desktop/mobile checks. The browser test accepts
+`GRAMMAR_TEST_URL` for live verification. Listening is unchanged.
 
 ## Reading Comprehension Expansion
 

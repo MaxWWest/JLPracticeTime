@@ -162,7 +162,7 @@ test("actual Boss routing excludes all Review banks, while focused reviews stay 
 		for (const unit of units) assert.equal(queue.filter((q) => q.meta.sourceSessionId === unit).length, 2);
 	}
 	const otherBoss = runtime.buildGrammarPracticeBank("boss-06-10");
-	assert.equal(runtime.buildFocusedGrammarQueue("boss-06-10", otherBoss, "boss", 25).slice(0, 25).length, 25);
+	assert.equal(runtime.buildFocusedGrammarQueue("boss-06-10", otherBoss, "boss", 25).length, 10);
 	assert.equal(runtime.grammarPracticeSessions["adaptive-review"], undefined);
 	const html = fs.readFileSync(path.join(__dirname, "main.html"), "utf8");
 	assert.ok(html.indexOf('src="grammar-practice-core.js') < html.indexOf('src="boss-practice.js'));
