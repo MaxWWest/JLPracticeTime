@@ -26,13 +26,13 @@
 				const explanation = `${meaning[state]} Permission allows an action; obligation requires it. なくてもいい permits not doing it, while てはいけない forbids doing it.`;
 				const row = { label: "Message", segments: [a.prefix,k.gap("Rule",forms(a,state),options),"。"] };
 				bank.push(k.cloze(unit,"rule-report","four-meanings",a,v,`You are explaining the rule for this action: ${a.actionEn}.\n${meaning[state]}`,[row],explanation,{ state },"Convey exactly the stated rule."));
-				bank.push(k.choice(unit,"interpret-rule","scope",a,v,`${a.prefix}${forms(a,state)[0]}。`,states.map(s=>meaning[s]),meaning[state],explanation,{state}));
+				bank.push(k.choice(unit,"interpret-rule","scope",a,v,`${a.prefix}${forms(a,state)[0]}。`,states.map(s=>meaning[s]),meaning[state],explanation,{state},"Which rule does the expression state directly?"));
 				const other = states[(v+2)%4];
 				bank.push(k.cloze(unit,"change-rule","rule-change",a,v,`Old notice: ${a.prefix}${forms(a,other)[0]}。\nThe new notice must say: ${meaning[state]}`,[row],"The new instruction replaces the old one. " + explanation,{state,old:other},"Complete the NEW notice."));
 				const asked=state==="required"||state==="unnecessary"?"required":"allowed";
 				const yes=state==="required"||state==="allowed";
 				bank.push(k.cloze(unit,"answer-rule-question","reply",a,v,`A：${a.prefix}${forms(a,asked)[0]}か。`,
-					[{label:"B's answer",segments:[yes?"はい、":"いいえ、",a.prefix,k.gap("Reply",forms(a,state),options),"。"]}],"A no-answer to 'must I?' removes necessity; a no-answer to 'may I?' denies permission. " + explanation,{state,asked,yes},"Complete B's reply consistently with はい or いいえ."));
+					[{label:"B's answer",segments:[yes?"はい、":"いいえ、",a.prefix,k.gap("Reply",forms(a,state),options),"。"]}],"A no-answer to 'must I?' removes necessity; a no-answer to 'may I?' denies permission. " + explanation,{state,asked,yes},"Answer exactly what A asked, following はい or いいえ. Do not add a stronger rule."));
 			}
 			const conditions = [
 				["広い","広","spacious","ひろ"],["新しい","新し","new","あたらし"],["近い","近","nearby","ちか"],["安い","安","cheap","やす"],
