@@ -2,7 +2,7 @@ const assert=require('node:assert/strict');
 const path=require('node:path');
 const {pathToFileURL}=require('node:url');
 const {chromium}=require('playwright');
-const units=['permission','desire','appearance','reason','purpose','boss-06-10'];
+const units=process.env.GRAMMAR_TEST_UNITS?.split(',')||['permission','desire','appearance','reason','purpose','boss-06-10'];
 async function main(){
  const browser=await chromium.launch({headless:true,...(process.env.PLAYWRIGHT_CHANNEL?{channel:process.env.PLAYWRIGHT_CHANNEL}:{})});
  const errors=[];
@@ -20,12 +20,16 @@ async function main(){
     assert.equal(await page.evaluate(()=>gpState.queue.length),10);
     for(let i=0;i<10;i++){
      const q=await page.evaluate(()=>gpState.queue[gpState.index]),wrong=i<2;
-     assert.equal(q.meta.engine,unit.startsWith('boss')?'boss-06-10-v1':`${unit}-meaning-v1`);
+     assert.equal(q.meta.engine,unit.startsWith('boss')?`${unit}-v1`:`${unit}-meaning-v1`);
      if(unit.startsWith('boss'))assert.equal(Boolean(q.fields),i>=8);
      if(q.fields){
       for(const [part,f] of q.fields.entries()){
        const control=page.locator(`[data-gp-part="${part}"]`);
        assert.equal(await control.inputValue(),'');
+       if(f.options){
+        const labels=await control.locator('option').allTextContents();
+        for(const [i,option]of f.options.entries())if(/[一-龯々]/.test(option))assert.match(labels[i+1],/\([^)]*[ぁ-ん][^)]*\)/,`${unit}: dropdown reading for ${option}`);
+       }
        const value=wrong&&part===0?(f.options?.find(o=>!f.accepted.includes(o))||'wrong'):f.answer;
        if(f.options)await control.selectOption(value);else await control.fill(value);
       }

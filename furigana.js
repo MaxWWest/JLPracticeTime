@@ -58,7 +58,7 @@
 			if (!explicit) while (base.length > 1 && /[ぁ-ゖァ-ヺー]/.test(base.at(-1)) && base.at(-1) === kana.at(-1)) {
 				suffix = base.at(-1) + suffix; base = base.slice(0, -1); kana = kana.slice(0, -1);
 			}
-			return { text, html: `<ruby>${escape(base)}<rt>${escape(kana)}</rt></ruby>${escape(suffix)}` };
+			return { text, reading, html: `<ruby>${escape(base)}<rt>${escape(kana)}</rt></ruby>${escape(suffix)}` };
 		}
 		function tokens(value, { auto = true } = {}) {
 			const source = String(value || ""), output = [];

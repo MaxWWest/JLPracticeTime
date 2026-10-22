@@ -57,6 +57,9 @@ globalThis.__grammarAuditApi = {
 	getBossPracticeEngine,
 	getMeaningPracticeEngine,
 	getBossSixTenEngine,
+	getBossElevenFifteenEngine,
+	getBossSixteenTwentyEngine,
+	getBossTwentyoneTwentyfiveEngine,
 	comparisonNounPools,
 	comparisonAdjectivePool,
 	grammarVerbPool,
@@ -87,6 +90,20 @@ globalThis.__grammarAuditApi = {
 		ReasonPractice: require("./reason-practice.js"),
 		PurposePractice: require("./purpose-practice.js"),
 		BossSixTen: require("./boss-six-ten.js"),
+		ListingPractice: require("./listing-practice.js"),
+		CertaintyPractice: require("./certainty-practice.js"),
+		AdvicePractice: require("./advice-practice.js"),
+		ConditionalsPractice: require("./conditionals-practice.js"),
+		TaraNaraPractice: require("./tara-nara-practice.js"),
+		BossElevenFifteen: require("./boss-eleven-fifteen.js"),
+		ConcessionPractice: require("./concession-practice.js"),
+		QuotationPractice: require("./quotation-practice.js"),
+		IntentionPractice: require("./intention-practice.js"),
+		HearsayPractice: require("./hearsay-practice.js"),
+		ChangePractice: require("./change-practice.js"),
+		BossSixteenTwenty: require("./boss-sixteen-twenty.js"),
+		FinalGrammarPractice: require("./final-grammar-practice.js"),
+		BossTwentyoneTwentyfive: require("./boss-twentyone-twentyfive.js"),
 		document,
 		window: {
 			addEventListener() {},
@@ -293,8 +310,8 @@ function auditFurigana(api, findings) {
 
 function auditHardPracticeQueues(api, sessionBanks, findings) {
 	for (const { sessionId, bank } of sessionBanks) {
-		if (["boss-01-05", "boss-06-10"].includes(sessionId)) {
-			const boss = require(sessionId === "boss-01-05" ? "./boss-practice.js" : "./boss-six-ten.js");
+		if (["boss-01-05", "boss-06-10", "boss-11-15", "boss-16-20", "boss-21-25"].includes(sessionId)) {
+			const boss = require(sessionId === "boss-01-05" ? "./boss-practice.js" : sessionId === "boss-06-10" ? "./boss-six-ten.js" : sessionId === "boss-11-15" ? "./boss-eleven-fifteen.js" : sessionId === "boss-16-20" ? "./boss-sixteen-twenty.js" : "./boss-twentyone-twentyfive.js");
 			const queue = api.buildFocusedGrammarQueue(sessionId, bank, "boss", boss.roundSize) || [];
 			if (queue.length !== boss.roundSize || queue.some((q) => q.meta?.engine !== boss.version) || new Set(queue.map((q) => q.meta?.familyKey)).size !== boss.roundSize) {
 				addFinding(findings, "high", "invalid-boss-pilot", sessionId, 0, queue[0] || {}, "Boss pilot must contain ten different new-engine situations.", "Keep one item per pilot family, without padding with Review or legacy questions.");
@@ -356,11 +373,11 @@ function buildSessionBanks(api, requestedSessionIds) {
 	const allSessionIds = Object.keys(api.grammarPracticeSessions)
 		.filter((id) => !id.startsWith("family-") && !["mixed-boss", "mock-test"].includes(id))
 		.slice(0, coreSessionLimit);
-	const sessionIds = requestedSessionIds.length ? requestedSessionIds : [...new Set([...allSessionIds, "boss-01-05", "boss-06-10"])];
+	const sessionIds = requestedSessionIds.length ? requestedSessionIds : [...new Set([...allSessionIds, "boss-01-05", "boss-06-10", "boss-11-15", "boss-16-20", "boss-21-25"])];
 	return sessionIds.map((sessionId) => {
 		const session = api.grammarPracticeSessions[sessionId];
 		if (!session) throw new Error(`Unknown grammar session: ${sessionId}`);
-		const bank = ["boss-01-05", "boss-06-10"].includes(sessionId)
+		const bank = ["boss-01-05", "boss-06-10", "boss-11-15", "boss-16-20", "boss-21-25"].includes(sessionId)
 			? api.buildGrammarPracticeBank(sessionId)
 			: api.buildAdvancedGrammarPracticeBank(sessionId, session.buildBank());
 		return { sessionId, title: session.title, bank };

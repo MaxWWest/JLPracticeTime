@@ -28,5 +28,10 @@
 		const normalize = core.normalizer([...aliases, ...readings]);
 		return { buildBank, normalize, grade: core.grader(normalize) };
 	}
-	return { ...core, version, make, cloze, choice, select, engine };
+	function bossPrompt(question) {
+		if (!question.writing) return question;
+		const prompt = question.prompt.replace(/ \([^)]*[ぁ-龯][^)]*\)/g, "").replace(/ Use [^\n.]*[ぁ-龯][^\n.]*\.?/g, "");
+		return { ...question, prompt, writing: { ...question.writing, prompt: question.prompt } };
+	}
+	return { ...core, version, make, cloze, choice, select, engine, bossPrompt };
 });

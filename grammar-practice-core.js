@@ -65,7 +65,11 @@
 			const feedback = question.fields.map((f, i) => {
 				if (parts[i]) return null;
 				const known = (f.contrasts || []).find((c) => c.accepted.some((a) => normalize(a) === normalize(input[i])));
-				return `${f.label}: ${known?.message || "This wording is not among the checked answers. Compare the people, time, and meaning with the model; an unmatched answer is not automatically bad Japanese."}`;
+					const offered = f.options?.find(option => normalize(option) === normalize(input[i]));
+					const message = known?.message || (offered !== undefined
+						? f.optionFeedback?.[offered] || `“${offered}” does not express the requested meaning. ${question.explanation || "Compare the role, polarity, and timing with the model."}`
+						: "This wording is not among the checked answers. Compare the people, time, and meaning with the model; an unmatched answer is not automatically bad Japanese.");
+					return `${f.label}: ${message}`;
 			}).filter(Boolean);
 			return { correct: input.length === question.fields.length && parts.every(Boolean), parts, feedback };
 		};

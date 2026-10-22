@@ -15,6 +15,7 @@
 		["電車に間に合う","電車に間に合わない","you catch the train in time","でんしゃにまにあう","でんしゃにまにあわない"]
 	];
 	const readings=[...lex.readings,...hopes.flatMap(([a,b,,ka,kb])=>[[a,ka],[b,kb]])];
+	const displayReadings=[...lex.readings,["雨","あめ"],["降る","ふる"],["降らない","ふらない"],["天気","てんき"],["部屋","へや"],["静か","しずか"],["店","みせ"],["開いて","あいて"],["閉まって","しまって"],["買える","かえる"],["買えない","かえない"],["席","せき"],["仕事","しごと"],["見つかる","みつかる"],["見つからない","みつからない"],["電車","でんしゃ"],["間に合う","まにあう"],["間に合わない","まにあわない"]];
 	function desire(a,positive=true) { return `${a.stem}${positive?"たいです":"たくないです"}`; }
 	function create({aliases=[]}={}) {
 		function buildBank() {
@@ -41,5 +42,5 @@
 		}
 		return k.engine(buildBank,readings,aliases);
 	}
-	return {version,create,readings,desire,hopes,selectQueue:(bank,count,options)=>k.select(unit,bank,count,options)};
+	return {version,create,readings,displayReadings,desire,hopes,selectQueue:(bank,count,options)=>k.select(unit,bank,count,options)};
 });

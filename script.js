@@ -289,8 +289,8 @@ function renderJapaneseWithFurigana(example) {
 	return renderJapaneseTextWithFurigana(example.furigana || example.ja || "");
 }
 
-const meaningPracticeModules = { permission: PermissionPractice, desire: DesirePractice, appearance: AppearancePractice, reason: ReasonPractice, purpose: PurposePractice };
-const meaningPracticeReadings = [...Object.values(meaningPracticeModules).flatMap(module => module.readings), ...BossSixTen.readings];
+const meaningPracticeModules = { ...FinalGrammarPractice.modules, permission: PermissionPractice, desire: DesirePractice, appearance: AppearancePractice, reason: ReasonPractice, purpose: PurposePractice, listing: ListingPractice, certainty: CertaintyPractice, advice: AdvicePractice, conditionals: ConditionalsPractice, "tara-nara": TaraNaraPractice, concession: ConcessionPractice, quotation: QuotationPractice, intention: IntentionPractice, hearsay: HearsayPractice, change: ChangePractice };
+const meaningPracticeReadings = [...Object.values(meaningPracticeModules).flatMap(module => module.displayReadings || module.readings), ...BossSixTen.readings, ...BossElevenFifteen.displayReadings, ...BossSixteenTwenty.displayReadings, ...BossTwentyoneTwentyfive.displayReadings];
 const furiganaAutoEntries = [
 	...meaningPracticeReadings.filter(([word]) => word.length > 1 && /[一-龯]/.test(word)),
 	...BossPractice.readings.filter(([word]) => word.length > 1 && /[一-龯]/.test(word)),
@@ -360,7 +360,11 @@ function getJapaneseFuriganaTokens(value, options = {}) {
 			if (!reading || !adj.endsWith("い") || !neg.endsWith("く")) continue;
 			for (const suffix of ["かった", "く", "ければ", "さ"]) entries.push([adj.slice(0, -1) + suffix, reading.slice(0, -1) + suffix]);
 		}
-		furiganaRenderer = Furigana.create(entries);
+		const gradingOnly = new Set(Object.values(meaningPracticeModules).filter(module => module.displayReadings).flatMap(module => {
+			const displayWords = new Set(module.displayReadings.map(([word]) => word));
+			return module.readings.filter(([word]) => !displayWords.has(word)).map(([word]) => word);
+		}));
+		furiganaRenderer = Furigana.create(entries.filter(([word]) => !gradingOnly.has(word)));
 	}
 	return furiganaRenderer.tokens(value, options);
 }
@@ -2989,6 +2993,9 @@ function selectTimeReview(bank, count) {
 
 function generatedGrammarEngine(question) {
 	if (question.meta?.engine === BossSixTen.version) return getBossSixTenEngine();
+	if (question.meta?.engine === BossElevenFifteen.version) return getBossElevenFifteenEngine();
+	if (question.meta?.engine === BossSixteenTwenty.version) return getBossSixteenTwentyEngine();
+	if (question.meta?.engine === BossTwentyoneTwentyfive.version) return getBossTwentyoneTwentyfiveEngine();
 	for (const [unit, module] of Object.entries(meaningPracticeModules)) if (question.meta?.engine === module.version) return getMeaningPracticeEngine(unit);
 	if (question.meta?.engine === BossPractice.version) return getBossPracticeEngine();
 	if (question.meta?.engine === AbilityPractice.version) return getAbilityPracticeEngine();
@@ -3068,6 +3075,30 @@ function selectMeaningReview(unit, bank, count) {
 function selectBossSixTen(bank, count) {
 	return BossSixTen.selectQueue(bank, count, { recent: contextualReviewHistory("boss-06-10") });
 }
+let bossElevenFifteenEngine;
+function getBossElevenFifteenEngine() {
+	if (!bossElevenFifteenEngine) bossElevenFifteenEngine = BossElevenFifteen.create({ aliases: comparisonKanaAnswerAliases });
+	return bossElevenFifteenEngine;
+}
+function selectBossElevenFifteen(bank, count) {
+	return BossElevenFifteen.selectQueue(bank, count, { recent: contextualReviewHistory("boss-11-15") });
+}
+let bossSixteenTwentyEngine;
+function getBossSixteenTwentyEngine() {
+	if (!bossSixteenTwentyEngine) bossSixteenTwentyEngine = BossSixteenTwenty.create({ aliases: comparisonKanaAnswerAliases });
+	return bossSixteenTwentyEngine;
+}
+function selectBossSixteenTwenty(bank, count) {
+	return BossSixteenTwenty.selectQueue(bank, count, { recent: contextualReviewHistory("boss-16-20") });
+}
+let bossTwentyoneTwentyfiveEngine;
+function getBossTwentyoneTwentyfiveEngine() {
+	if (!bossTwentyoneTwentyfiveEngine) bossTwentyoneTwentyfiveEngine = BossTwentyoneTwentyfive.create({ aliases: comparisonKanaAnswerAliases });
+	return bossTwentyoneTwentyfiveEngine;
+}
+function selectBossTwentyoneTwentyfive(bank, count) {
+	return BossTwentyoneTwentyfive.selectQueue(bank, count, { recent: contextualReviewHistory("boss-21-25") });
+}
 
 function buildPermissionPracticeBank() {
 	return getMeaningPracticeEngine("permission").buildBank();
@@ -3095,6 +3126,7 @@ function uniqueGrammarOptions(options, fallback = []) {
 }
 
 function buildExtensionGrammarPracticeBank(config) {
+	if (meaningPracticeModules[config.id]) return getMeaningPracticeEngine(config.id).buildBank();
 	const labels = config.patterns.map((pattern) => pattern.label);
 	const usages = config.patterns.map((pattern) => pattern.usage);
 	const explanations = config.patterns.map((pattern) => pattern.explanation);
@@ -3299,7 +3331,7 @@ const extensionGrammarPracticeConfigs = [
 		number: "11",
 		title: "Listing reasons and actions",
 		label: "LISTING",
-		intro: "This session separates reason-listing with し from representative-action listing with たり〜たり. The main trap is reading たり as a complete schedule or using し when the sentence is really listing actions.",
+		intro: "Use し for parallel facts or supporting reasons, and たり〜たり for representative activities. Distinguish examples from an explicitly ordered sequence; neither construction is an exhaustive inventory by itself.",
 		pitfalls: ["し lists reasons, qualities, or parallel facts and often implies there are more.", "たり〜たり lists representative actions without fixing the exact order.", "Use たり after the た-form and finish with します or しました."],
 		patterns: [
 			{
@@ -3345,15 +3377,15 @@ const extensionGrammarPracticeConfigs = [
 		number: "12",
 		title: "Possibility and evidence",
 		label: "POSSIBILITY",
-		intro: "This session separates weak possibility, confident expectation, and evidence-based appearance. The subtle skill is deciding how certain the speaker sounds and what kind of evidence they have.",
-		pitfalls: ["かもしれません is weak: maybe, perhaps.", "はずです is stronger and needs a reason or objective basis.", "ようです and みたいです are based on observation or impression; みたい is more casual."],
+		intro: "Distinguish an open possibility, a reasoned expectation, and an inference from clues. None of these automatically guarantees that the proposition is true.",
+		pitfalls: ["かもしれません leaves a possibility open; it has no fixed probability.", "はずです presents an expectation based on information, not a verified fact or an obligation.", "ようです and みたいです overlap in evidence-based inference; みたい is more conversational."],
 		patterns: [
 			{
 				label: "〜かもしれません",
 				form: "plain form + かもしれません",
 				usage: "Express possibility or uncertainty.",
 				explanation: "かもしれません means the speaker thinks something may be true, but is not certain.",
-				points: ["Use plain forms before it.", "It is weaker than はずです.", "Nouns and na-adjectives do not need だ before かもしれません in polite Japanese."],
+				points: ["Use plain forms before it.", "Possibility is different from claiming a reasoned expectation.", "Omit present affirmative だ after nouns and na-adjectives before かもしれません."],
 				items: [
 					{ sentence: "明日は雪が降るかもしれません。", meaning: "It may snow tomorrow.", clue: "Say that snow tomorrow is possible.", blankPrompt: "明日は雪が降る＿＿＿＿。", blankAnswer: "かもしれません" },
 					{ sentence: "このノートはサキさんのかもしれません。", meaning: "This notebook might be Saki's.", clue: "You are not sure whose notebook it is.", blankPrompt: "このノートはサキさんの＿＿＿＿。", blankAnswer: "かもしれません" }
@@ -3411,14 +3443,14 @@ const extensionGrammarPracticeConfigs = [
 		number: "14",
 		title: "Conditionals",
 		label: "CONDITIONALS",
-		intro: "This session compares the four major N4 conditional shapes. たら is flexible, ば focuses on condition-result, なら responds to a topic or information, and と is for automatic or natural results.",
-		pitfalls: ["Do not use と before requests, commands, invitations, or speaker intentions.", "なら often picks up someone else's topic: if it is X you mean...", "ば can sound unnatural before speaker-volitional results when the condition is an action verb."],
+		intro: "Compare conditions, consequences, and assumed plans. The four forms overlap; choose according to the intended relationship instead of treating each as a mutually exclusive translation of if.",
+		pitfalls: ["Conditional と normally does not introduce a request or invitation; narrative と can report a past discovery.", "なら takes a premise or topic and does not require it to happen first.", "State conditions with ば can precede requests and advice: 時間があれば、手伝ってください."],
 		patterns: [
 			{ label: "〜たら", form: "た-form + ら", usage: "If/when a condition happens, another result or action follows.", explanation: "たら is flexible and can be used before requests or volitional actions.", points: ["Can mean if or when.", "Can follow もし.", "Works well before commands, requests, and invitations."], items: [
 				{ sentence: "もし水がなかったら、わたしたちは生きられません。", meaning: "If there were no water, we could not live.", clue: "Use an assumed condition.", blankPrompt: "水がなかっ＿＿、生きられません。", blankAnswer: "たら" },
 				{ sentence: "天気がよかったら、どこかへ行きませんか。", meaning: "If the weather is good, shall we go somewhere?", clue: "A condition before an invitation.", blankPrompt: "天気がよかっ＿＿、どこかへ行きませんか。", blankAnswer: "たら" }
 			] },
-			{ label: "〜ば", form: "conditional ば", usage: "State that if a condition is met, a result follows.", explanation: "ば focuses on condition-result and often appears with adjectives or non-volitional results.", points: ["Often natural with adjectives: 寒ければ.", "For action verbs, avoid following it with commands or speaker intentions in basic N4 practice.", "もし can appear before it."], items: [
+			{ label: "〜ば", form: "conditional ば", usage: "State that if a condition is met, a result follows.", explanation: "ば expresses a condition-result relationship; what follows depends on the type of condition and the context.", points: ["Often natural with adjectives: 寒ければ.", "State conditions can precede requests or intentions. With action conditions, check the subjects and timing rather than applying an absolute ban.", "もし can appear before it."], items: [
 				{ sentence: "バスに乗れば、駅まで十分です。", meaning: "If you take the bus, it takes ten minutes to the station.", clue: "A condition-result statement.", blankPrompt: "バスに乗れ＿＿、駅まで十分です。", blankAnswer: "ば" },
 				{ sentence: "じしょを使わなければ、この本は読めません。", meaning: "If you do not use a dictionary, you cannot read this book.", clue: "A negative condition.", blankPrompt: "じしょを使わなけれ＿＿、この本は読めません。", blankAnswer: "ば" }
 			] },
@@ -3426,7 +3458,7 @@ const extensionGrammarPracticeConfigs = [
 				{ sentence: "京都に行くなら、ガイドブックを貸しましょうか。", meaning: "If you are going to Kyoto, shall I lend you a guidebook?", clue: "Respond to the topic of going to Kyoto.", blankPrompt: "京都に行く＿＿、ガイドブックを貸しましょうか。", blankAnswer: "なら" },
 				{ sentence: "子どもの名前なら、『みちる』がいいです。", meaning: "If it is a child's name, Michiru is good.", clue: "Give advice based on a topic.", blankPrompt: "子どもの名前＿＿、『みちる』がいいです。", blankAnswer: "なら" }
 			] },
-			{ label: "〜と", form: "plain non-past + と", usage: "Show an automatic, natural, or definite result.", explanation: "と connects a trigger to a result that naturally or inevitably follows.", points: ["Common with machines, directions, nature, and habits.", "Do not follow it with commands or invitations.", "Past forms are not used before this conditional と in the basic pattern."], items: [
+			{ label: "〜と", form: "plain non-past + と", usage: "Describe a regular result or a result encountered in a narrative.", explanation: "と can connect a trigger with its regular result, or an action with what was discovered afterward.", points: ["Common with machines, directions, nature, and habits.", "Conditional と normally does not introduce commands or invitations.", "Narrative と also uses a non-past form before と, with the past result establishing the event: 行くと、休みでした."], items: [
 				{ sentence: "このボタンを押すと、きっぷが出ます。", meaning: "When you press this button, a ticket comes out.", clue: "A machine result happens automatically.", blankPrompt: "このボタンを押す＿＿、きっぷが出ます。", blankAnswer: "と" },
 				{ sentence: "あの角を左に曲がると、駅が見えます。", meaning: "When you turn left at that corner, the station comes into view.", clue: "A direction-result sentence.", blankPrompt: "あの角を左に曲がる＿＿、駅が見えます。", blankAnswer: "と" }
 			] }
@@ -3438,7 +3470,7 @@ const extensionGrammarPracticeConfigs = [
 		title: "After it happens vs if that topic",
 		label: "たら / なら",
 		intro: "This session zooms in on the contrast between たら and なら. たら often means after or once something happens; なら often means if that is the topic or if what you said is true.",
-		pitfalls: ["Use たら for after/when an event has actually occurred.", "Use なら when responding to another person's plan, topic, or information.", "なら does not necessarily mean the first action happens before the second."],
+		pitfalls: ["たら can describe a future condition or an actual past discovery; inspect the rest of the sentence.", "なら can introduce advice based on an assumed plan or topic, even before the planned action.", "なら does not independently require the first action to precede the second."],
 		patterns: [
 			{ label: "〜たら", form: "た-form + ら", usage: "When/after the event happens, do the following action.", explanation: "たら can mark a future event that must happen before the next action.", points: ["Often means once/after in practical instructions.", "Can be used when the speaker knows the event will occur.", "Works naturally with requests and decisions after the condition."], items: [
 				{ sentence: "三時になったら、休みましょう。", meaning: "When it becomes 3:00, let's take a break.", clue: "Do something after the time comes.", blankPrompt: "三時になっ＿＿、休みましょう。", blankAnswer: "たら" },
@@ -3458,7 +3490,7 @@ const extensionGrammarPracticeConfigs = [
 		intro: "This session compares ても and のに. ても means even if/regardless of, while のに says the actual result is unexpected and often carries surprise, disappointment, or reproach.",
 		pitfalls: ["ても can describe a hypothetical condition or a fact.", "のに is often emotional: surprise, dissatisfaction, or reproach.", "Avoid using のに before requests, commands, or speaker intentions."],
 		patterns: [
-			{ label: "〜ても", form: "て-form / くても / でも + も", usage: "Even if or regardless of a condition.", explanation: "ても says the expected result does not happen even under that condition.", points: ["Use verb て-form + も.", "Use i-adjective くても and noun/na-adjective でも.", "Often appears with もし, いくら, or どんなに."], items: [
+			{ label: "〜ても", form: "verb て-form + も / i-adjective くても / noun・na-adjective でも", usage: "Even if or regardless of a condition.", explanation: "ても presents a result that holds despite the condition, whether that condition is real or hypothetical.", points: ["Use verb て-form + も.", "Use i-adjective くても and noun/na-adjective でも.", "Often appears with もし, いくら, or どんなに."], items: [
 				{ sentence: "雨が降っても、れんしゅうは休みません。", meaning: "Even if it rains, practice will not be canceled.", clue: "Regardless of rain, practice continues.", blankPrompt: "雨が降っ＿＿、れんしゅうは休みません。", blankAnswer: "ても" },
 				{ sentence: "この説明は何回読んでも、意味がわかりません。", meaning: "No matter how many times I read this explanation, I do not understand it.", clue: "Repeated effort still does not work.", blankPrompt: "何回読ん＿＿、意味がわかりません。", blankAnswer: "でも" }
 			] },
@@ -3480,7 +3512,7 @@ const extensionGrammarPracticeConfigs = [
 				{ sentence: "先生は『宿題を出してください』と言いました。", meaning: "The teacher said, 'Please turn in the homework.'", clue: "Quote what the teacher said.", blankPrompt: "先生は『宿題を出してください』＿＿言いました。", blankAnswer: "と" },
 				{ sentence: "私は日本へ行きたいと思っています。", meaning: "I have been thinking that I want to go to Japan.", clue: "Quote a thought.", blankPrompt: "日本へ行きたい＿＿思っています。", blankAnswer: "と" }
 			] },
-			{ label: "〜か", form: "question word clause + か", usage: "Embed a question that includes a question word.", explanation: "Embedded questions with words like だれ, 何, いつ, or どこ take か.", points: ["Do not keep ですか inside the embedded clause.", "The whole embedded question becomes part of a larger sentence.", "Common with 知っています, 教えてください, 忘れました."], items: [
+			{ label: "〜か", form: "question clause + か", usage: "Embed a question, with or without a question word.", explanation: "Embedded questions with words like だれ, 何, いつ, or どこ take か. Yes/no questions can also use か.", points: ["Basic indirect questions use plain forms; a direct quotation can retain polite speech.", "The whole embedded question becomes part of a larger sentence.", "Common with 知っています, 教えてください, 忘れました."], items: [
 				{ sentence: "パーティーにだれが来るか教えてください。", meaning: "Please tell me who is coming to the party.", clue: "Embed a who-question.", blankPrompt: "だれが来る＿＿教えてください。", blankAnswer: "か" },
 				{ sentence: "きのうどうやって帰ったか覚えていません。", meaning: "I do not remember how I got home yesterday.", clue: "Embed a how-question.", blankPrompt: "どうやって帰った＿＿覚えていません。", blankAnswer: "か" }
 			] },
@@ -3495,10 +3527,10 @@ const extensionGrammarPracticeConfigs = [
 		number: "18",
 		title: "Intentions and plans",
 		label: "INTENTION",
-		intro: "This session compares ようと思います, ようと思っています, and つもりです. They all describe plans, but they differ in how newly formed or firm the intention feels.",
+		intro: "Express intentions with ようと思います, ようと思っています, and つもりです. Their uses overlap; focus on intention, polarity, and what has or has not actually happened, not a fixed certainty scale.",
 		pitfalls: ["ようと思います often describes an intention decided now or expressed at the moment.", "ようと思っています suggests an intention that has continued for some time.", "つもりはありません is a strong way to deny intention."],
 		patterns: [
-			{ label: "〜ようと思います", form: "volitional form + と思います", usage: "Express intention, often formed now.", explanation: "ようと思います states that the speaker intends to do something.", points: ["Subject is usually first person.", "Use volitional form: 行こう, 買おう, しよう.", "Negative intention can be 〜ないようにしよう or 〜つもりはありません depending on nuance."], items: [
+			{ label: "〜ようと思います", form: "volitional form + と思います", usage: "Express intention, often formed now.", explanation: "ようと思います states that the speaker intends to do something.", points: ["Subject is usually first person.", "Use volitional form: 行こう, 買おう, しよう.", "Compare ないつもりです (intend not to) and つもりはありません (have no intention to)."], items: [
 				{ sentence: "いい天気だから、出かけようと思います。", meaning: "Because the weather is nice, I think I will go out.", clue: "State an intention being formed now.", blankPrompt: "出かけ＿＿と思います。", blankAnswer: "よう" },
 				{ sentence: "旅行に行くので、かばんを買おうと思います。", meaning: "Because I am going on a trip, I think I will buy a bag.", clue: "State a plan to buy a bag.", blankPrompt: "かばんを買＿＿と思います。", blankAnswer: "おう" }
 			] },
@@ -3506,7 +3538,7 @@ const extensionGrammarPracticeConfigs = [
 				{ sentence: "来年ヨーロッパを旅行しようと思っています。", meaning: "I am thinking of traveling in Europe next year.", clue: "A plan held over time.", blankPrompt: "旅行し＿＿と思っています。", blankAnswer: "よう" },
 				{ sentence: "今日は図書館に寄ろうと思っています。", meaning: "I am planning to stop by the library today.", clue: "A plan already in mind.", blankPrompt: "図書館に寄＿＿と思っています。", blankAnswer: "ろう" }
 			] },
-			{ label: "〜つもりです", form: "dictionary / ない-form + つもりです", usage: "State a plan or intention.", explanation: "つもりです expresses a planned intention; つもりはありません is a strong denial.", points: ["Use dictionary form for do, ない-form for not do.", "Can sound firmer than ようと思っています.", "For third-person plans, add そうです/らしいです/と言っていました."], items: [
+			{ label: "〜つもりです", form: "dictionary / ない-form + つもりです", usage: "State a plan or intention.", explanation: "つもりです expresses a planned intention; つもりはありません is a strong denial.", points: ["Use dictionary form for do, ない-form for not do.", "A stated intention does not guarantee that it will be carried out.", "Third-person intentions need a basis in context; reporting with と言っていました can make that source explicit."], items: [
 				{ sentence: "夏休みに国へ帰るつもりです。", meaning: "I plan to return to my country during summer vacation.", clue: "State a firm plan.", blankPrompt: "国へ帰る＿＿＿＿。", blankAnswer: "つもりです" },
 				{ sentence: "私は自分の意見を変えるつもりはありません。", meaning: "I have no intention of changing my opinion.", clue: "Strongly deny intention.", blankPrompt: "意見を変える＿＿＿＿。", blankAnswer: "つもりはありません" }
 			] }
@@ -3517,8 +3549,8 @@ const extensionGrammarPracticeConfigs = [
 		number: "19",
 		title: "Reported speech and hearsay",
 		label: "HEARSAY",
-		intro: "This session separates direct reported speech from information you heard or read. と言っていました keeps somebody's words, そうです passes along information, and らしいです is hearsay or an inference with less definite detail.",
-		pitfalls: ["Hearsay そうです attaches to plain forms, unlike appearance そうです from Session 8.", "らしいです is often less direct or less detailed than そうです.", "In questions, reported speech often uses 何と言っていましたか."],
+		intro: "Track whose information is being reported, its tense, and its polarity. と言っていました reports previous speech; そうです relays information; らしいです can relay information or express an inference.",
+		pitfalls: ["Hearsay そうです attaches to plain forms, unlike appearance そうです from Session 8.", "そうです and らしいです can overlap in hearsay contexts; they are not fixed confidence levels.", "A report is not independent proof that the reported event happened."],
 		patterns: [
 			{ label: "〜と言っていました", form: "plain/quoted content + と言っていました", usage: "Report what someone said earlier.", explanation: "と言っていました restates previous speech.", points: ["Use と to mark the said content.", "Question form often uses 何と言っていましたか.", "Useful for passing on messages."], items: [
 				{ sentence: "トムさんは今日休むと言っていました。", meaning: "Tom said he would be absent today.", clue: "Report what Tom said earlier.", blankPrompt: "今日休む＿＿言っていました。", blankAnswer: "と" },
@@ -3528,7 +3560,7 @@ const extensionGrammarPracticeConfigs = [
 				{ sentence: "天気予報によると、明日は寒いそうです。", meaning: "According to the weather forecast, tomorrow will be cold.", clue: "Report information from the forecast.", blankPrompt: "明日は寒い＿＿＿＿。", blankAnswer: "そうです" },
 				{ sentence: "新聞で読みましたが、駅前で火事があったそうです。", meaning: "I read in the newspaper that there was a fire in front of the station.", clue: "Report read information.", blankPrompt: "火事があった＿＿＿＿。", blankAnswer: "そうです" }
 			] },
-			{ label: "〜らしいです", form: "plain form + らしいです", usage: "Pass on less direct information or a reasonable inference.", explanation: "らしいです says something seems to be true based on what you heard, noticed, or inferred.", points: ["Often less source-specific than そうです.", "Can also describe something typical: 男らしい, 春らしい.", "For this session, focus on hearsay/inference."], items: [
+			{ label: "〜らしいです", form: "plain form + らしいです; noun・na-adjective without だ + らしいです", usage: "Relay information or express an inference.", explanation: "らしいです says something seems to be true based on what you heard, noticed, or inferred.", points: ["Can overlap with hearsay そうです when relaying received information.", "Can also describe something typical: 男らしい, 春らしい.", "For this session, focus on hearsay/inference."], items: [
 				{ sentence: "聞いた話では、あの山にはさるがいるらしいです。", meaning: "From what I heard, there seem to be monkeys on that mountain.", clue: "Pass on information heard indirectly.", blankPrompt: "さるがいる＿＿＿＿。", blankAnswer: "らしいです" },
 				{ sentence: "この店は有名らしいね。よく名前を聞くよ。", meaning: "This shop seems to be famous; I hear the name often.", clue: "Infer from reputation.", blankPrompt: "この店は有名＿＿ね。", blankAnswer: "らしい" }
 			] }
@@ -3539,14 +3571,14 @@ const extensionGrammarPracticeConfigs = [
 		number: "20",
 		title: "Making and becoming",
 		label: "CHANGE",
-		intro: "This session separates deliberate change with します from natural change with なります, then adds ようになります for new abilities or habits and なくなります for habits or states that stop.",
+		intro: "Separate making a change with します from describing a changed state with なります. A change described with なる may still have been caused deliberately. Then distinguish new abilities, new habits, and things that stop.",
 		pitfalls: ["Use します when someone deliberately makes the change.", "Use なります when the thing or situation changes.", "Use なくなります, not ようになりません, for the basic idea that a habit or state no longer happens."],
 		patterns: [
 			{ label: "〜く/〜にします", form: "i-adj く / na-adj・noun に + します", usage: "Someone deliberately changes a state.", explanation: "します marks intentional change caused by someone.", points: ["i-adjectives become くします.", "na-adjectives and nouns use にします.", "Good for volume, length, color, portions, and choices."], items: [
 				{ sentence: "テレビの音を大きくしました。", meaning: "I made the TV volume louder.", clue: "Someone deliberately changed the volume.", blankPrompt: "テレビの音を大き＿＿しました。", blankAnswer: "く" },
 				{ sentence: "ご飯の量を半分にしてください。", meaning: "Please make the amount of rice half.", clue: "Ask someone to change an amount.", blankPrompt: "ご飯の量を半分＿＿してください。", blankAnswer: "に" }
 			] },
-			{ label: "〜く/〜になります", form: "i-adj く / na-adj・noun に + なります", usage: "A state changes or becomes something.", explanation: "なります describes the result of a change, not deliberate action by the subject.", points: ["i-adjectives become くなります.", "na-adjectives and nouns use になります.", "Used for weather, age, skill level, quantity, and states."], items: [
+			{ label: "〜く/〜になります", form: "i-adj く / na-adj・noun に + なります", usage: "A state changes or becomes something.", explanation: "なります describes the changed state without naming an agent; it does not assert that the change was spontaneous.", points: ["i-adjectives become くなります.", "na-adjectives and nouns use になります.", "Used for weather, age, skill level, quantity, and states."], items: [
 				{ sentence: "子犬はすぐ大きくなります。", meaning: "Puppies get big quickly.", clue: "A natural change.", blankPrompt: "子犬はすぐ大き＿＿なります。", blankAnswer: "く" },
 				{ sentence: "この店ではおきゃくさんの数が半分になりました。", meaning: "At this shop, the number of customers became half.", clue: "A situation changed.", blankPrompt: "数が半分＿＿なりました。", blankAnswer: "に" }
 			] },
@@ -3561,7 +3593,7 @@ const extensionGrammarPracticeConfigs = [
 		number: "21",
 		title: "Decisions and arrangements",
 		label: "DECISIONS",
-		intro: "This session separates personal choice, personal action decisions, and decisions arranged by outside factors. にします and ことにします are speaker-side decisions; になります and ことになります present the decision as settled externally.",
+		intro: "Distinguish choosing an item, deciding on an action, and presenting a settled arrangement. ことにする foregrounds making the decision; ことになる foregrounds its settled outcome, without necessarily identifying who decided.",
 		pitfalls: ["Noun + にします means choose/decide on a thing.", "Verb dictionary/ない + ことにします means personally decide to do or not do.", "ことになります often hides the decider and sounds like an arrangement or rule."],
 		patterns: [
 			{ label: "〜にします", form: "noun + にします", usage: "Choose or decide on a noun.", explanation: "にします is used when the speaker chooses an option.", points: ["Common when ordering food or choosing plans.", "It implies an active decision.", "Do not use ことにします after a simple noun choice."], items: [
@@ -3605,7 +3637,7 @@ const extensionGrammarPracticeConfigs = [
 		number: "23",
 		title: "Giving and receiving favors",
 		label: "GIVING",
-		intro: "This session trains direction and benefit. あげる moves from the speaker side outward, くれる moves toward the speaker side, and もらう focuses on the receiver getting something or having someone do a favor.",
+		intro: "Track the giver, receiver, performer, and beneficiary. あげる presents giving to another person; くれる presents giving toward the speaker or their side; もらう places the receiver in subject position. The same favor can be described from different viewpoints.",
 		pitfalls: ["Do not use あげる when the speaker side receives the benefit.", "Use くれる when someone does something for me/my side.", "Use もらう when the receiver is the topic and gets the benefit; use いただく/さしあげる for higher status situations."],
 		patterns: [
 			{ label: "あげます / 〜てあげます", form: "giver は receiver に noun をあげます / te-form + あげます", usage: "The speaker side or someone close gives/does for someone else.", explanation: "あげます sends a thing or favor outward from the speaker side.", points: ["Receiver is marked with に.", "Use さしあげます for higher-status receivers.", "Avoid using it too directly when it sounds self-congratulatory."], items: [
@@ -7277,6 +7309,9 @@ function getGrammarBossBlockConfig(sessionId) {
 
 function buildGrammarBossBlockPracticeBank(config) {
 	if (config.id === "boss-06-10") return getBossSixTenEngine().buildBank().map(question => withGrammarPracticeMetadata(question, config.id));
+	if (config.id === "boss-11-15") return getBossElevenFifteenEngine().buildBank().map(question => withGrammarPracticeMetadata(question, config.id));
+	if (config.id === "boss-16-20") return getBossSixteenTwentyEngine().buildBank().map(question => withGrammarPracticeMetadata(question, config.id));
+	if (config.id === "boss-21-25") return getBossTwentyoneTwentyfiveEngine().buildBank().map(question => withGrammarPracticeMetadata(question, config.id));
 	if (config.id === "boss-01-05") return getBossPracticeEngine().buildBank().map((question) => withGrammarPracticeMetadata(question, config.id));
 	const seen = new Set();
 	return config.sessions.flatMap((sourceSessionId) => {
@@ -7388,6 +7423,9 @@ function buildGrammarPracticeBank(sessionId = gpState.sessionId || "comparison")
 
 function buildBossBlockGrammarQueue(sessionId, bank, questionCount = 25) {
 	if (sessionId === "boss-06-10") return selectBossSixTen(bank, questionCount);
+	if (sessionId === "boss-11-15") return selectBossElevenFifteen(bank, questionCount);
+	if (sessionId === "boss-16-20") return selectBossSixteenTwenty(bank, questionCount);
+	if (sessionId === "boss-21-25") return selectBossTwentyoneTwentyfive(bank, questionCount);
 	if (sessionId === "boss-01-05") return selectBossPilot(bank, questionCount);
 	const bossBlock = getGrammarBossBlockConfig(sessionId);
 	if (!bossBlock) return shuffled(bank);
@@ -7414,6 +7452,9 @@ function buildBossBlockGrammarQueue(sessionId, bank, questionCount = 25) {
 
 function buildFocusedGrammarQueue(sessionId, bank, focus, questionCount) {
 	if (sessionId === "boss-06-10") return selectBossSixTen(bank, questionCount);
+	if (sessionId === "boss-11-15") return selectBossElevenFifteen(bank, questionCount);
+	if (sessionId === "boss-16-20") return selectBossSixteenTwenty(bank, questionCount);
+	if (sessionId === "boss-21-25") return selectBossTwentyoneTwentyfive(bank, questionCount);
 	if (meaningPracticeModules[sessionId]) return selectMeaningReview(sessionId, bank, questionCount);
 	if (sessionId === "boss-01-05") return selectBossPilot(bank, questionCount);
 	if (sessionId === "ability") return selectAbilityReview(bank, questionCount);
@@ -7473,6 +7514,18 @@ function startGrammarPractice(sessionId = "comparison", questionCount = Number(g
 	const comparisonKeys = gpState.queue.filter((q) => q.meta?.engine === ComparisonPractice.version).map((q) => q.meta.familyKey);
 	const bossKeys = gpState.queue.filter((q) => q.meta?.engine === BossPractice.version).map((q) => q.meta.sceneKey);
 	const laterBossKeys = gpState.queue.filter(q => q.meta?.engine === BossSixTen.version).map(q => q.meta.sceneKey);
+	const newestBossKeys = gpState.queue.filter(q => q.meta?.engine === BossElevenFifteen.version).map(q => q.meta.sceneKey);
+	const blockFourBossKeys = gpState.queue.filter(q => q.meta?.engine === BossSixteenTwenty.version).map(q => q.meta.sceneKey);
+	const blockFiveBossKeys = gpState.queue.filter(q => q.meta?.engine === BossTwentyoneTwentyfive.version).map(q => q.meta.sceneKey);
+	if (blockFiveBossKeys.length) {
+		try { localStorage.setItem("boss-21-25-review-history-v1", JSON.stringify([...contextualReviewHistory("boss-21-25"), ...blockFiveBossKeys].slice(-50))); } catch { /* Optional freshness history. */ }
+	}
+	if (blockFourBossKeys.length) {
+		try { localStorage.setItem("boss-16-20-review-history-v1", JSON.stringify([...contextualReviewHistory("boss-16-20"), ...blockFourBossKeys].slice(-50))); } catch { /* Optional freshness history. */ }
+	}
+	if (newestBossKeys.length) {
+		try { localStorage.setItem("boss-11-15-review-history-v1", JSON.stringify([...contextualReviewHistory("boss-11-15"), ...newestBossKeys].slice(-50))); } catch { /* Optional freshness history. */ }
+	}
 	if (laterBossKeys.length) {
 		try { localStorage.setItem("boss-06-10-review-history-v1", JSON.stringify([...contextualReviewHistory("boss-06-10"), ...laterBossKeys].slice(-50))); } catch { /* Optional freshness history. */ }
 	}
@@ -7503,7 +7556,7 @@ function startGrammarPractice(sessionId = "comparison", questionCount = Number(g
 	gpState.answered = false;
 	gpState.recorded = false;
 	gpEls["session-notes"].dataset.gpNotes = sessionId;
-	gpEls["session-notes"].hidden = ["boss-01-05", "boss-06-10"].includes(sessionId);
+	gpEls["session-notes"].hidden = ["boss-01-05", "boss-06-10", "boss-11-15", "boss-16-20", "boss-21-25"].includes(sessionId);
 	gpEls["session-notes"].setAttribute("aria-expanded", "false");
 	gpEls["session-note-panel"].innerHTML = renderGrammarPracticeRuleNotes(sessionId);
 	gpEls["session-note-panel"].hidden = true;
@@ -7515,6 +7568,10 @@ function startGrammarPractice(sessionId = "comparison", questionCount = Number(g
 }
 
 function renderGrammarResponseRows(question) {
+	const optionLabel = option => {
+		const reading = getJapaneseFuriganaTokens(option).map(token => token.reading || token.text).join("");
+		return /[一-龯々]/.test(option) && !/[一-龯々]/.test(reading) ? `${option} (${reading})` : option;
+	};
 	return `<div class="gp-response-rows">${question.responseRows.map((row) => `
 		<div class="gp-response-row"><p class="gp-response-label">${escapeHtml(row.label)}</p>
 		<div class="gp-response-line" lang="ja">${row.segments.map((part) => {
@@ -7523,7 +7580,7 @@ function renderGrammarResponseRows(question) {
 			const width = field.options ? Math.max(...field.options.map((option) => [...option].length)) + 2 : 7;
 			const attributes = `id="gp-part-${index}" data-gp-part="${index}" lang="ja" required`;
 			return `<label class="gp-field gp-gap" for="gp-part-${index}" style="--gap-width:${width}em"><span class="visually-hidden">${escapeHtml(field.label)}</span>${field.options
-				? `<select ${attributes}><option value="" disabled selected>...</option>${field.options.map((option) => `<option value="${escapeHtml(option)}">${escapeHtml(option)}</option>`).join("")}</select>`
+					? `<select ${attributes}><option value="" disabled selected>...</option>${field.options.map((option) => `<option value="${escapeHtml(option)}">${escapeHtml(optionLabel(option))}</option>`).join("")}</select>`
 				: `<input ${attributes} autocomplete="off" spellcheck="false">`}</label>`;
 		}).join("")}</div></div>`).join("")}</div>`;
 }
@@ -7599,7 +7656,7 @@ function showGrammarPracticeQuestion() {
 function findGrammarRetryCandidate(question) {
 	if (!question?.meta || !gpState.bank?.length) return null;
 	// A Boss round stays bounded: eight choices followed by two writing challenges.
-	if ([BossPractice.version, BossSixTen.version].includes(question.meta.engine)) return null;
+	if ([BossPractice.version, BossSixTen.version, BossElevenFifteen.version, BossSixteenTwenty.version, BossTwentyoneTwentyfive.version].includes(question.meta.engine)) return null;
 	for (const [unit, module] of Object.entries(meaningPracticeModules)) {
 		if (question.meta.engine !== module.version) continue;
 		const used = new Set(gpState.queue.map(q => q.meta?.familyKey));
