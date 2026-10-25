@@ -50,6 +50,8 @@ const subTabsContainer = document.querySelector("#sub-tabs");
 const vocabularyPanel = document.querySelector("#vocabulary-panel");
 const grammarPanel = document.querySelector("#grammar-panel");
 const grammarPracticePanel = document.querySelector("#grammar-practice-panel");
+const particlePracticePanel = document.querySelector("#particle-practice-panel");
+const particleSetup = document.querySelector("#particle-setup");
 const practicePanel = document.querySelector("#practice-panel");
 const conjugationPanel = document.querySelector("#conjugation-panel");
 const pitchPanel = document.querySelector("#pitch-panel");
@@ -227,7 +229,7 @@ updateFuriganaToggle();
 
 const sectionTabs = [
 	{ name: "vocabulary", tab: vocabularyTab, panels: [vocabularyPanel, practicePanel], defaultPanel: "vocabulary-panel" },
-	{ name: "grammar", tab: grammarTab, panels: [grammarPanel, grammarPracticePanel, conjugationPanel, nominalConjugationPanel], defaultPanel: "grammar-panel" },
+	{ name: "grammar", tab: grammarTab, panels: [grammarPanel, grammarPracticePanel, particlePracticePanel, conjugationPanel, nominalConjugationPanel], defaultPanel: "grammar-panel" },
 	{ name: "reading", tab: readingTab, panels: [readingPanel], defaultPanel: "reading-panel" },
 	{ name: "speaking", tab: speakingTab, panels: [pitchPanel], defaultPanel: "pitch-panel" }
 ];
@@ -289,7 +291,7 @@ function renderJapaneseWithFurigana(example) {
 	return renderJapaneseTextWithFurigana(example.furigana || example.ja || "");
 }
 
-const meaningPracticeModules = { ...FinalGrammarPractice.modules, permission: PermissionPractice, desire: DesirePractice, appearance: AppearancePractice, reason: ReasonPractice, purpose: PurposePractice, listing: ListingPractice, certainty: CertaintyPractice, advice: AdvicePractice, conditionals: ConditionalsPractice, "tara-nara": TaraNaraPractice, concession: ConcessionPractice, quotation: QuotationPractice, intention: IntentionPractice, hearsay: HearsayPractice, change: ChangePractice };
+const meaningPracticeModules = { ...FinalGrammarPractice.modules, ...ParticlePractice.modules, permission: PermissionPractice, desire: DesirePractice, appearance: AppearancePractice, reason: ReasonPractice, purpose: PurposePractice, listing: ListingPractice, certainty: CertaintyPractice, advice: AdvicePractice, conditionals: ConditionalsPractice, "tara-nara": TaraNaraPractice, concession: ConcessionPractice, quotation: QuotationPractice, intention: IntentionPractice, hearsay: HearsayPractice, change: ChangePractice };
 const meaningPracticeReadings = [...Object.values(meaningPracticeModules).flatMap(module => module.displayReadings || module.readings), ...BossSixTen.readings, ...BossElevenFifteen.displayReadings, ...BossSixteenTwenty.displayReadings, ...BossTwentyoneTwentyfive.displayReadings];
 const furiganaAutoEntries = [
 	...meaningPracticeReadings.filter(([word]) => word.length > 1 && /[一-龯]/.test(word)),
@@ -6892,6 +6894,7 @@ const grammarPracticeBaseSessionMetadata = {
 };
 
 function getGrammarPracticeFamilyForSession(sessionId) {
+	if (ParticlePractice.modules[sessionId]) return { id: "particles", label: "PARTICLES", title: "Particle practice" };
 	const direct = grammarPracticeFamilyConfigs[sessionId];
 	if (direct) return { id: sessionId, label: direct.label, title: direct.title };
 	const found = Object.entries(grammarPracticeFamilyConfigs).find(([, config]) => config.sessions.includes(sessionId));
@@ -7338,6 +7341,11 @@ function buildGrammarBossBlockPracticeBank(config) {
 }
 
 const grammarPracticeSessions = {
+	...Object.fromEntries([...ParticlePractice.topics, ParticlePractice.mixed].map(topic => [topic.unit, {
+		title: topic.title,
+		label: `PARTICLES · ${topic.particles}`,
+		buildBank: () => getMeaningPracticeEngine(topic.unit).buildBank()
+	}])),
 	comparison: {
 		title: "Session 01 · Comparison patterns",
 		label: "SESSION 01 · COMPARISONS",
@@ -7495,6 +7503,13 @@ function buildFocusedGrammarQueue(sessionId, bank, focus, questionCount) {
 }
 
 function startGrammarPractice(sessionId = "comparison", questionCount = Number(gpEls.count.value), options = {}) {
+	const isParticleRound = Boolean(ParticlePractice.modules[sessionId]);
+	const host = isParticleRound ? particlePracticePanel : grammarPracticePanel;
+	// One renderer and one set of event listeners serve both Grammar sub-tabs.
+	host.append(gpEls.session, gpEls.complete);
+	particleSetup.hidden = isParticleRound;
+	activeSubtabs.grammar = host.id;
+	activateTab("grammar");
 	const session = grammarPracticeSessions[sessionId] || grammarPracticeSessions.comparison;
 	const isBossBlock = Boolean(getGrammarBossBlockConfig(sessionId));
 	const isReviewRound = options.focus === "review" || (!isBossBlock && !["mixed-boss", "mock-test"].includes(sessionId));
@@ -7556,12 +7571,12 @@ function startGrammarPractice(sessionId = "comparison", questionCount = Number(g
 	gpState.answered = false;
 	gpState.recorded = false;
 	gpEls["session-notes"].dataset.gpNotes = sessionId;
-	gpEls["session-notes"].hidden = ["boss-01-05", "boss-06-10", "boss-11-15", "boss-16-20", "boss-21-25"].includes(sessionId);
+	gpEls["session-notes"].hidden = isParticleRound || ["boss-01-05", "boss-06-10", "boss-11-15", "boss-16-20", "boss-21-25"].includes(sessionId);
 	gpEls["session-notes"].setAttribute("aria-expanded", "false");
 	gpEls["session-note-panel"].innerHTML = renderGrammarPracticeRuleNotes(sessionId);
 	gpEls["session-note-panel"].hidden = true;
-	gpEls.setup.hidden = true;
-	gpEls.status.hidden = true;
+	gpEls.setup.hidden = !isParticleRound;
+	gpEls.status.hidden = !isParticleRound;
 	gpEls.complete.hidden = true;
 	gpEls.session.hidden = false;
 	showGrammarPracticeQuestion();
@@ -7918,6 +7933,16 @@ function exitGrammarPractice() {
 	gpEls.complete.hidden = true;
 	gpEls.setup.hidden = false;
 	gpEls.status.hidden = false;
+	particleSetup.hidden = false;
+}
+
+function renderParticlePracticeTopics() {
+	document.querySelector("#particle-topics").innerHTML = ParticlePractice.topics.map((topic, index) => `
+		<article class="particle-topic">
+			<span class="particle-index">${String(index + 1).padStart(2,"0")}</span>
+			<div><h3 lang="ja">${escapeHtml(topic.particles)}</h3><h4>${escapeHtml(topic.title)}</h4><p>${escapeHtml(topic.detail)}</p></div>
+			<button class="practice-start" type="button" data-particle-start="${topic.unit}" aria-label="Practise ${escapeHtml(topic.particles)}">Practise <span aria-hidden="true">→</span></button>
+		</article>`).join("");
 }
 
 const conjugationPatterns = {
@@ -9058,6 +9083,11 @@ furiganaToggle?.addEventListener("click", () => {
 	updateFuriganaToggle();
 });
 hydrateGrammarPracticeNotes();
+renderParticlePracticeTopics();
+particleSetup.addEventListener("click", event => {
+	const button = event.target.closest("[data-particle-start]");
+	if (button) startGrammarPractice(button.dataset.particleStart, Number(document.querySelector("#particle-count").value), { focus: "review" });
+});
 renderGrammarReviewSummary();
 hydrateGrammarPracticeCards();
 gpEls.setup.addEventListener("click", (event) => {
@@ -9088,6 +9118,7 @@ gpEls.again.addEventListener("click", () => {
 	gpEls.complete.hidden = true;
 	gpEls.setup.hidden = false;
 	gpEls.status.hidden = false;
+	particleSetup.hidden = false;
 });
 gpEls.body.addEventListener("click", (event) => {
 	const retry = event.target.closest("#gp-retry-pattern");

@@ -778,6 +778,24 @@ body.practice-fullscreen { overflow: hidden; }
 .gp-roadmap { display: grid; grid-template-columns: repeat(25, minmax(24px, 1fr)); gap: 5px; padding: 11px; border: 1px solid var(--line); border-radius: 10px; background: #f0efe7; }
 .gp-roadmap span { display: grid; min-height: 24px; place-items: center; border-radius: 6px; background: #fffefa; color: #9a9d95; font-size: 9px; font-weight: 700; }
 .gp-roadmap .is-active { background: #315e4b; color: #fff; }
+.particle-heading { display: flex; align-items: end; justify-content: space-between; gap: 20px; padding-bottom: 24px; }
+.particle-heading h2 { margin: 8px 0 0; font-size: 28px; letter-spacing: 0; }
+.particle-count { display: grid; gap: 8px; color: var(--ink); font-size: 13px; }
+.particle-count select { min-width: 90px; min-height: 42px; border: 1px solid var(--line); border-radius: 4px; background: white; padding: 8px; font: inherit; }
+.particle-mixed { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; padding: 20px 0; border-block: 1px solid var(--line); }
+.particle-mixed h3 { margin: 0; font-size: 19px; }
+.particle-mixed .practice-start, .particle-topic .practice-start { margin: 0; min-height: 42px; border-radius: 4px; white-space: nowrap; }
+.particle-topic { display: grid; grid-template-columns: 32px minmax(0, 1fr) auto; gap: 16px; align-items: center; padding: 22px 0; border-bottom: 1px solid var(--line); }
+.particle-index { align-self: start; padding-top: 4px; color: #69756b; font-size: 13px; }
+.particle-topic h3 { margin: 0 0 8px; font: 600 22px/1.5 "Noto Sans JP", sans-serif; letter-spacing: 0; overflow-wrap: anywhere; }
+.particle-topic h4 { margin: 0 0 6px; font-size: 15px; letter-spacing: 0; }
+.particle-topic p { margin: 0; color: #657165; font-size: 13px; line-height: 1.7; }
+#particle-setup[hidden] { display: none; }
+@media (max-width: 520px) {
+    .particle-topic { grid-template-columns: 24px minmax(0, 1fr); gap: 12px; }
+    .particle-topic > button { grid-column: 2; justify-self: start; }
+    .particle-heading h2 { font-size: 24px; }
+}
 .gp-session[hidden], #gp-complete[hidden], #gp-setup[hidden], #gp-prompt-label[hidden] { display: none; }
 .gp-session { position: fixed; z-index: 200; inset: 0; display: flex; flex-direction: column; overflow-y: auto; background: #f4f4f4; }
 .gp-session .rh-top svg { width: 22px; height: 22px; fill: currentColor; }

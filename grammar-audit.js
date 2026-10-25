@@ -103,6 +103,7 @@ globalThis.__grammarAuditApi = {
 		ChangePractice: require("./change-practice.js"),
 		BossSixteenTwenty: require("./boss-sixteen-twenty.js"),
 		FinalGrammarPractice: require("./final-grammar-practice.js"),
+		ParticlePractice: require("./particle-practice.js"),
 		BossTwentyoneTwentyfive: require("./boss-twentyone-twentyfive.js"),
 		document,
 		window: {
@@ -310,6 +311,15 @@ function auditFurigana(api, findings) {
 
 function auditHardPracticeQueues(api, sessionBanks, findings) {
 	for (const { sessionId, bank } of sessionBanks) {
+		if (sessionId.startsWith("particles-")) {
+			for (const count of [10,20]) {
+				const queue = api.buildFocusedGrammarQueue(sessionId, bank, "review", count) || [];
+				if (queue.length !== count || new Set(queue.map(q=>q.meta?.familyKey)).size !== count || queue.some(q=>q.meta?.engine !== `${sessionId}-meaning-v1`)) {
+					addFinding(findings,"high","invalid-particle-round",sessionId,0,queue[0] || {},`Particle Review must supply ${count} different checked frames.`,"Keep particle rounds separate from legacy grammar packs.");
+				}
+			}
+			continue;
+		}
 		if (["boss-01-05", "boss-06-10", "boss-11-15", "boss-16-20", "boss-21-25"].includes(sessionId)) {
 			const boss = require(sessionId === "boss-01-05" ? "./boss-practice.js" : sessionId === "boss-06-10" ? "./boss-six-ten.js" : sessionId === "boss-11-15" ? "./boss-eleven-fifteen.js" : sessionId === "boss-16-20" ? "./boss-sixteen-twenty.js" : "./boss-twentyone-twentyfive.js");
 			const queue = api.buildFocusedGrammarQueue(sessionId, bank, "boss", boss.roundSize) || [];
@@ -371,9 +381,9 @@ function auditHardPracticeQueues(api, sessionBanks, findings) {
 
 function buildSessionBanks(api, requestedSessionIds) {
 	const allSessionIds = Object.keys(api.grammarPracticeSessions)
-		.filter((id) => !id.startsWith("family-") && !["mixed-boss", "mock-test"].includes(id))
+		.filter((id) => !id.startsWith("family-") && !id.startsWith("particles-") && !["mixed-boss", "mock-test"].includes(id))
 		.slice(0, coreSessionLimit);
-	const sessionIds = requestedSessionIds.length ? requestedSessionIds : [...new Set([...allSessionIds, "boss-01-05", "boss-06-10", "boss-11-15", "boss-16-20", "boss-21-25"])];
+	const sessionIds = requestedSessionIds.length ? requestedSessionIds : [...new Set([...allSessionIds, ...Object.keys(require("./particle-practice.js").modules), "boss-01-05", "boss-06-10", "boss-11-15", "boss-16-20", "boss-21-25"])];
 	return sessionIds.map((sessionId) => {
 		const session = api.grammarPracticeSessions[sessionId];
 		if (!session) throw new Error(`Unknown grammar session: ${sessionId}`);
