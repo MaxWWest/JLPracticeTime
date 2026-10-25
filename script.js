@@ -7675,6 +7675,7 @@ function findGrammarRetryCandidate(question) {
 	for (const [unit, module] of Object.entries(meaningPracticeModules)) {
 		if (question.meta.engine !== module.version) continue;
 		const used = new Set(gpState.queue.map(q => q.meta?.familyKey));
+		if (module.selectRetry) return module.selectRetry(question, gpState.bank, used);
 		return module.selectQueue(gpState.bank.filter(q => q.meta.task === question.meta.task && !used.has(q.meta.familyKey)), 1)[0] || null;
 	}
 	for (const [unit, engine] of [["ability", AbilityPractice], ["experience", ExperiencePractice]]) {
@@ -7941,7 +7942,7 @@ function renderParticlePracticeTopics() {
 		<article class="particle-topic">
 			<span class="particle-index">${String(index + 1).padStart(2,"0")}</span>
 			<div><h3 lang="ja">${escapeHtml(topic.particles)}</h3><h4>${escapeHtml(topic.title)}</h4><p>${escapeHtml(topic.detail)}</p></div>
-			<button class="practice-start" type="button" data-particle-start="${topic.unit}" aria-label="Practise ${escapeHtml(topic.particles)}">Practise <span aria-hidden="true">→</span></button>
+			<button class="practice-start" type="button" data-particle-start="${topic.unit}" aria-label="Practice ${escapeHtml(topic.particles)}">Practice <span aria-hidden="true">→</span></button>
 		</article>`).join("");
 }
 

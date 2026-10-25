@@ -50,7 +50,7 @@
 	}
 	function compact(question, seed = Date.now()) {
 		if (!question.responseSpec) return question;
-		const rng = random(seed);
+		const rng = typeof seed === "function" ? seed : random(seed);
 		const result = { ...question, ...question.responseSpec, meta: { ...question.meta, answerMode: "cloze" } };
 		result.fields = result.fields.map((f) => f.options ? { ...f, options: shuffle(f.options, rng) } : f);
 		result.answer = result.fields.map((f) => f.answer).join(" / ");

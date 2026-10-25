@@ -22,7 +22,10 @@
 		const eligible = bank.filter(q => q.meta?.sourceSessionId === unit && q.meta.engine === version(unit));
 		const ids = core.unique(eligible.map(q => q.meta.task));
 		const tasks = ids.map(id => ({ id, count: 25 / ids.length }));
-		return core.selectQueue(eligible, count, options, version(unit), tasks).map(q => core.compact({ ...q, responseSpec: q.fields ? { fields: q.fields, responseRows: q.responseRows, subprompt: q.subprompt, band: q.band } : undefined }, options.seed));
+		const seed = options.seed ?? Date.now();
+		// Advance one stream across the round instead of restarting it for every field.
+		const rng = core.random(seed);
+		return core.selectQueue(eligible, count, { ...options, seed }, version(unit), tasks).map(q => core.compact({ ...q, responseSpec: q.fields ? { fields: q.fields, responseRows: q.responseRows, subprompt: q.subprompt, band: q.band } : undefined }, rng));
 	}
 	function engine(buildBank, readings, aliases = []) {
 		const normalize = core.normalizer([...aliases, ...readings]);

@@ -29,6 +29,7 @@ async function main(){
             await page.locator("#grammar-tab").click();
             await page.locator("#particle-practice-tab").click();
             assert.equal(await page.locator(".particle-topic").count(),8);
+            assert.doesNotMatch(await page.locator("#particle-setup").textContent(),/practise/i);
             await page.screenshot({path:`/tmp/kotoba-particles-${width}-setup.png`,fullPage:true});
             for(const topic of [...p.topics,p.mixed]){
                 await page.locator("#particle-count").selectOption("10");
@@ -74,6 +75,39 @@ async function main(){
             await page.locator('[data-particle-start="particles-mixed"]').click();
             assert.equal(await page.evaluate(()=>gpState.queue.length),20);
             assert.equal(await page.evaluate(()=>new Set(gpState.queue.map(q=>q.meta.topic)).size),8);
+            // Exercise the real retry and grading UI with controlled regression frames.
+            const installFrame=async(topic,id)=>page.evaluate(({topic,id})=>{
+                const q=gpState.bank.find(q=>q.fields && q.meta.facts.topic===topic && q.meta.facts.recordId===id);
+                gpState.queue=[q];gpState.index=0;showGrammarPracticeQuestion();
+            },{topic,id});
+            for(const accepted of ["に","で"]){
+                await installFrame("de-ni","manifest");
+                await page.locator('[data-gp-part="0"]').selectOption(accepted);
+                await page.locator("#gp-answer-form button[type=submit]").click();
+                assert.equal(await page.locator("#gp-feedback").textContent(),"Correct.");
+            }
+            await installFrame("dake-demo","any:何");
+            assert.match(await page.locator(".gp-response-row").innerHTML(),/<rt>なん<\/rt>/);
+            await page.locator('[data-gp-part="0"]').selectOption("でも");
+            await page.locator("#gp-answer-form button[type=submit]").click();
+            assert.match(await page.locator(".gp-coaching-answer").innerHTML(),/<rt>なん<\/rt>/);
+            await installFrame("mo-shika","zero:一枚");
+            await page.locator('[data-gp-part="0"]').selectOption("しか");
+            await page.locator("#gp-answer-form button[type=submit]").click();
+            assert.equal(await page.locator("#gp-retry-pattern").isVisible(),true);
+            await page.locator("#gp-retry-pattern").click();
+            const retry=await page.evaluate(()=>gpState.queue[gpState.index]);
+            assert.equal(retry.meta.domain,"mo-shika:zero");
+            assert.notEqual(retry.meta.facts.recordId,"zero:一枚");
+            await page.evaluate(()=>{
+                const q=gpState.bank.find(q=>q.fields && q.meta.facts.recordId==="zero:一枚");
+                gpState.queue=[q,...gpState.bank.filter(r=>r.meta.domain===q.meta.domain && r.meta.familyKey!==q.meta.familyKey)];
+                gpState.index=0;showGrammarPracticeQuestion();
+            });
+            await page.locator('[data-gp-part="0"]').selectOption("しか");
+            await page.locator("#gp-answer-form button[type=submit]").click();
+            assert.equal(await page.locator("#gp-retry-pattern").count(),0);
+            console.log(`PASS ${width}px: alternative answers, exact furigana, targeted retry and exhausted retry.`);
             const bank=await page.evaluate(()=>gpState.bank);
             for(const size of [width,320]){
                 await page.setViewportSize({width:size,height:1000});

@@ -10,8 +10,10 @@ units and five Boss blocks keep their existing banks and routes.
 - Mixed practice uses the same checked frames, not another inflated content bank.
 - 10- or 20-question rounds. Short dropdown blanks are the majority, with some
   interpretation choices. No full-sentence transcription or adaptive insertion.
-- 242 authored lexical frames produce 468 question variants. These are not 468
-  independent grammar patterns: vocabulary variants share functional structures.
+- 374 authored frames cover 370 distinct completed sentences and produce 731
+  question variants. These are not 731 independent grammar patterns: vocabulary
+  variants share functional structures. Each focused area has 45-48 distinct
+  sentences, enough for two nonoverlapping 20-question rounds.
 
 ## Teaching Constraints
 
@@ -24,8 +26,11 @@ own their meanings and feedback rather than freely combining incompatible words.
   ask what the particle contributes. Do not add unrelated reading passages.
 - Event location can use de with aru; existence uses ni. Movement direction he
   is not incorrectly marked wrong by presenting it as a distractor for ni.
+- The blooming-in-the-garden frame accepts both ni (location of a state) and de
+  (site of the event). The explanation distinguishes perspectives, not correctness.
 - Shika with a negative predicate expresses a positive restriction, while one +
-  counter + mo + negative expresses zero.
+  counter + mo + negative denies even that minimum. With discrete whole-item
+  counts this means zero; a duration such as one hour can mean less than an hour.
 - Wa/ga questions specify discourse focus or explicit contrast; feedback does
   not declare every alternative universally ungrammatical.
 - Both no and koto are accepted before ga suki. Direct sensory perception and
@@ -48,8 +53,15 @@ The same session/result DOM is mounted in the selected Grammar sub-tab. Starting
 leaving, completing and returning to ordinary Grammar practice are browser-tested.
 
 Queue selection balances function families and avoids a constant blank answer.
-Within a round, a lexical frame cannot appear again as an interpretation item.
-Freshness history deprioritizes recently used frames; it does not adapt to scores.
+Dropdown shuffling advances a seeded random stream across the round rather than
+resetting it for each question. A completed sentence cannot recur within a round,
+even when the alternative frame blanks a different particle. Selection exhausts
+unseen sentences before releasing the least recently seen ones. The stored last
+50 frame IDs remain compatible; history does not adapt to scores.
+
+User-requested retries match both task and grammatical function. If all matching
+sentences are already queued, the retry is unavailable rather than substituting
+unrelated grammar. No retry is inserted automatically.
 
 ## Verification
 
@@ -59,5 +71,11 @@ Freshness history deprioritizes recently used frames; it does not adapt to score
 - All nine sessions completed at 1440px and 390px with deliberate wrong answers
   and visible 8/10, 80% stats; every variant rendered at 320px without overflow.
 - Regression: a normal comparison round still completes after particle practice.
+- Repeated 20-question rounds exclude the preceding round's completed sentences;
+  seeded position tests detect systematic answer-position leaks.
+- Real browser checks cover both accepted blooming answers, targeted/exhausted
+  retries, and nan-demo in both the blank and completed sentence.
 - Every authored particle sentence has ruby coverage for all kanji. Coverage does
   not itself certify pronunciation, so key counters and readings remain explicit.
+  Exact-reading tests distinguish nan-demo from nani-ga; isolated nani is not
+  globally changed to nan.
