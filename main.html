@@ -10,6 +10,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css?v=20261025-particles-v1">
+    <link rel="stylesheet" href="n4-mock.css?v=20261028-n4-v1">
     <script src="grammar-practice-core.js?v=20261025-particles-v2" defer></script>
     <script src="comparison-practice.js?v=20261017-quality-v1" defer></script>
     <script src="time-practice.js?v=20261017-quality-v1" defer></script>
@@ -46,7 +47,9 @@
     <script src="final-grammar-practice.js?v=20261022-roles-v1" defer></script>
     <script src="boss-twentyone-twentyfive.js?v=20261022-roles-v1" defer></script>
     <script src="furigana.js?v=20261022-roles-v1" defer></script>
-    <script src="script.js?v=20261025-particles-v2" defer></script>
+    <script src="script.js?v=20261028-n4-v1" defer></script>
+    <script src="n4-mock-test.js?v=20261028-n4-v1" defer></script>
+    <script src="n4-mock-ui.js?v=20261028-n4-v1" defer></script>
     <script src="reading-content.js?v=20261020-reading-v2" defer></script>
     <script src="reading-skills.js?v=20261020-reading-v2" defer></script>
     <script src="reading-quality.js?v=20261020-reading-v2" defer></script>
@@ -97,6 +100,7 @@
                     <button class="sub-tab" id="particle-practice-tab" type="button" role="tab" aria-selected="false" aria-controls="particle-practice-panel" data-subtab-section="grammar" data-subtab-target="particle-practice-panel">Particle practice</button>
                     <button class="sub-tab" type="button" role="tab" aria-selected="false" aria-controls="conjugation-panel" data-subtab-section="grammar" data-subtab-target="conjugation-panel">Verb conjugation</button>
                     <button class="sub-tab" type="button" role="tab" aria-selected="false" aria-controls="nominal-conjugation-panel" data-subtab-section="grammar" data-subtab-target="nominal-conjugation-panel">Adjective conjugation</button>
+                    <button class="sub-tab" id="n4-mock-tab" type="button" role="tab" aria-selected="false" aria-controls="n4-mock-panel" data-subtab-section="grammar" data-subtab-target="n4-mock-panel">N4 Mock Test</button>
                 </div>
                 <div class="sub-tab-group" data-subtab-group="reading" role="tablist" aria-label="Reading tools" hidden>
                     <button class="sub-tab is-active" type="button" role="tab" aria-selected="true" aria-controls="reading-panel" data-subtab-section="reading" data-subtab-target="reading-panel">Reading help</button>
@@ -753,19 +757,6 @@
                             <button class="practice-start" data-gp-start="mixed-boss" type="button">Start boss <span aria-hidden="true">→</span></button>
                         </div>
                     </article>
-                    <article class="gp-session-card is-ready" data-gp-session-card="mock-test" data-gp-category="legacy">
-                        <span class="gp-session-number">MT</span>
-                        <div>
-                            <h4>Mock Test</h4>
-                            <p>No instant feedback. Take a timed-feeling mixed round, then review your score by grammar family at the end.</p>
-                        </div>
-                        <div class="gp-session-controls">
-                            <label>Questions
-                                <select id="gp-count-mock-test"><option value="10">10</option><option value="25" selected>25</option><option value="40">40</option></select>
-                            </label>
-                            <button class="practice-start" data-gp-start="mock-test" type="button">Start mock test <span aria-hidden="true">→</span></button>
-                        </div>
-                    </article>
                     <article class="gp-session-card is-ready" data-gp-session-card="family-core" data-gp-category="legacy">
                         <span class="gp-session-number">M1</span>
                         <div>
@@ -899,6 +890,21 @@
                     </div>
                     <div class="particle-topic-list" id="particle-topics"></div>
                 </div>
+            </section>
+
+            <section class="grammar-practice-section tab-panel n4-mock" id="n4-mock-panel" role="tabpanel" aria-labelledby="n4-mock-tab" tabindex="0" aria-hidden="true" hidden>
+                <div id="n4-mock-root"></div>
+                <dialog id="n4-mock-confirm" aria-labelledby="n4-confirm-title" aria-describedby="n4-confirm-summary">
+                    <form method="dialog">
+                        <h2 id="n4-confirm-title">Submit test?</h2>
+                        <p id="n4-confirm-summary"></p>
+                        <div class="n4-actions">
+                            <button value="cancel" autofocus>Keep reviewing</button>
+                            <button value="submit" class="n4-primary">Submit test</button>
+                        </div>
+                    </form>
+                </dialog>
+                <p id="n4-storage-status" role="status" hidden></p>
             </section>
 
             <section class="practice-section tab-panel" id="practice-panel" role="tabpanel" aria-labelledby="vocabulary-tab" tabindex="0" aria-hidden="true" hidden>

@@ -51,6 +51,7 @@ const vocabularyPanel = document.querySelector("#vocabulary-panel");
 const grammarPanel = document.querySelector("#grammar-panel");
 const grammarPracticePanel = document.querySelector("#grammar-practice-panel");
 const particlePracticePanel = document.querySelector("#particle-practice-panel");
+const n4MockPanel = document.querySelector("#n4-mock-panel");
 const particleSetup = document.querySelector("#particle-setup");
 const practicePanel = document.querySelector("#practice-panel");
 const conjugationPanel = document.querySelector("#conjugation-panel");
@@ -229,7 +230,7 @@ updateFuriganaToggle();
 
 const sectionTabs = [
 	{ name: "vocabulary", tab: vocabularyTab, panels: [vocabularyPanel, practicePanel], defaultPanel: "vocabulary-panel" },
-	{ name: "grammar", tab: grammarTab, panels: [grammarPanel, grammarPracticePanel, particlePracticePanel, conjugationPanel, nominalConjugationPanel], defaultPanel: "grammar-panel" },
+	{ name: "grammar", tab: grammarTab, panels: [grammarPanel, grammarPracticePanel, particlePracticePanel, conjugationPanel, nominalConjugationPanel, n4MockPanel], defaultPanel: "grammar-panel" },
 	{ name: "reading", tab: readingTab, panels: [readingPanel], defaultPanel: "reading-panel" },
 	{ name: "speaking", tab: speakingTab, panels: [pitchPanel], defaultPanel: "pitch-panel" }
 ];

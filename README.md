@@ -34,6 +34,16 @@ practice progress are stored in the current browser.
 
 ## Developer checks
 
+Grammar > N4 Mock Test has three original 25-question papers following a
+15 grammar-form / 5 sentence-composition / 5 passage-gap format. Choices stay
+editable until submission; results include raw scores, section scores and answer
+explanations. The latest attempt resumes from browser storage. Open
+`main.html?mock=n4` to go directly to the tab.
+
+See [N4_MOCK_TEST.md](N4_MOCK_TEST.md) for content rules and assessment limits.
+Run `node --test n4-mock-test.test.js` and, with Playwright installed,
+`node n4-mock-browser-test.js`. The browser checks accept `GRAMMAR_TEST_URL`.
+
 Run `node grammar-audit.js` to audit generated grammar practice questions for
 missing context, duplicated choices, answer/option mismatches, and format drift.
 Use `node grammar-audit.js --session comparison` to inspect one session.
