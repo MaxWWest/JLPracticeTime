@@ -34,14 +34,19 @@ practice progress are stored in the current browser.
 
 ## Developer checks
 
-Grammar > N4 Mock Test has three original 25-question papers following a
+Grammar > N4 Mock Test generates 25-question tests from 150 grammar-form items,
+42 sentence-composition items and 12 coherent five-gap passages, following a
 15 grammar-form / 5 sentence-composition / 5 passage-gap format. Choices stay
-editable until submission; results include raw scores, section scores and answer
-explanations. The latest attempt resumes from browser storage. Open
+editable until submission; results include raw scores, section/domain counts,
+answer-specific explanations and optional links to fresh practice drills. The latest
+100 completed attempts are retained alongside a resumable active test. Original
+saves keep their original questions and scores. Generated tests store full snapshots,
+balance six grammar domains, and prefer unseen questions and less-recent families.
+Passages stay intact. The bank is finite; generation does not promise no repeats. Open
 `main.html?mock=n4` to go directly to the tab.
 
 See [N4_MOCK_TEST.md](N4_MOCK_TEST.md) for content rules and assessment limits.
-Run `node --test n4-mock-test.test.js` and, with Playwright installed,
+Run `node --test n4-mock-test.test.js n4-mock-generator.test.js` and, with Playwright installed,
 `node n4-mock-browser-test.js`. The browser checks accept `GRAMMAR_TEST_URL`.
 
 Run `node grammar-audit.js` to audit generated grammar practice questions for

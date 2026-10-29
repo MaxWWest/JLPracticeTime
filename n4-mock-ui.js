@@ -1,16 +1,21 @@
 (function() {
     "use strict";
-    const model=N4MockTest;
+    const model=N4MockGenerator;
     const panel=document.querySelector("#n4-mock-panel");
     const root=document.querySelector("#n4-mock-root");
     const dialog=document.querySelector("#n4-mock-confirm");
-    const storageKey="kotoba-n4-mock-v1";
+    const storageKey="kotoba-n4-mock-v3";
     const ruby=Furigana.create([...ParticlePractice.readings,...model.readings]);
     const jp=value=>ruby.render(value);
     const esc=escapeHtml;
-    let state=null,paper=null,view="setup",lastTick=Date.now(),saveTicks=0,timingActive=false;
-    try { state=model.restore(localStorage.getItem(storageKey)); } catch { /* The test also runs without storage. */ }
-    if(state)paper=model.createPaper(state.paperId,state.seed);
+    let library=model.restoreLibrary(null),state=null,paper=null,view="setup",lastTick=Date.now(),saveTicks=0,timingActive=false;
+    try { library=model.restoreLibrary(localStorage.getItem(storageKey),localStorage.getItem("kotoba-n4-mock-v2"),localStorage.getItem("kotoba-n4-mock-v1")); } catch { /* The test also runs without storage. */ }
+    const edition=attempt=>attempt.version===model.version?"Generated edition":attempt.version==="n4-mock-v2"?"Revised fixed edition":"Original fixed edition";
+    function selectAttempt(attempt) {
+        state=attempt;
+        paper=attempt?model.paperForAttempt(attempt):null;
+    }
+    selectAttempt(library.active);
 
     function time(ms) {
         const seconds=Math.floor(ms/1000);
@@ -26,7 +31,7 @@
     }
     function save() {
         try {
-            localStorage.setItem(storageKey,JSON.stringify(state));
+            localStorage.setItem(storageKey,JSON.stringify(library));
             document.querySelector("#n4-storage-status").hidden=true;
         }catch{
             const status=document.querySelector("#n4-storage-status");
@@ -35,9 +40,9 @@
         }
     }
     function start() {
-        const paperId=root.querySelector("#n4-paper").value;
-        state={version:model.version,paperId,seed:Date.now(),answers:{},flags:[],index:0,elapsed:0,submitted:false};
-        paper=model.createPaper(paperId,state.seed);
+        if(library.active&&!library.active.submitted)return;
+        selectAttempt(model.createAttempt(library));
+        library.active=state;
         view="test";lastTick=Date.now();save();render();focusQuestion();
     }
     function focusQuestion() {
@@ -45,14 +50,19 @@
         root.scrollIntoView({block:"start"});
     }
     function renderSetup() {
-        const next=state ? model.papers[(model.papers.findIndex(p=>p.id===state.paperId)+1)%model.papers.length].id : "a";
+        selectAttempt(library.active);
         root.innerHTML=`<header class="n4-heading"><div><p class="eyebrow section-eyebrow">GRAMMAR</p><h2>N4 Mock Test</h2>
-            <p>25 questions · 3 parts</p></div><span class="n4-unofficial">Original practice papers · Grammar only</span></header>
-            ${state ? `<div class="n4-resume"><div><strong>${esc(paper.title)}</strong><p>${state.submitted ? `${model.score(paper,state.answers).correct}/25 · Completed` : `${Object.keys(state.answers).length}/25 answered · ${time(state.elapsed)} elapsed`}</p></div>
+            <p>25 questions · 3 parts</p></div><span class="n4-unofficial">Unofficial practice · Grammar only</span></header>
+            ${state ? `<div class="n4-resume"><div><strong>${esc(paper.title)} · ${edition(state)}</strong><p>${state.submitted ? `${model.score(paper,state.answers).correct}/25 · Completed` : `${Object.keys(state.answers).length}/25 answered · ${time(state.elapsed)} elapsed`}</p></div>
                 <button data-mock="resume" class="n4-primary">${state.submitted ? "View results" : "Resume test"}</button></div>` : ""}
             <table class="n4-outline"><caption>Test sections</caption><tbody>${model.sections.map((s,i)=>`<tr><th scope="row"><span>0${i+1}</span> ${esc(s.title)}</th><td>${s.count} questions</td></tr>`).join("")}</tbody></table>
-            <div class="n4-start"><label>Paper<select id="n4-paper" ${state&&!state.submitted?"disabled":""}>${model.papers.map(p=>`<option value="${p.id}" ${p.id===next?"selected":""}>${esc(p.title)}</option>`).join("")}</select></label>
-                ${state&&!state.submitted ? `<span>Finish your current attempt before starting another paper.</span>` : `<button data-mock="start" class="n4-primary">Start test <span aria-hidden="true">→</span></button>`}</div>`;
+            <div class="n4-start">${state&&!state.submitted ? `<span>Finish your current attempt before starting another test.</span>` : `<button data-mock="start" class="n4-primary">Generate a new test <span aria-hidden="true">→</span></button>`}</div>
+            <p class="n4-disclaimer">${model.bank.forms.length} grammar questions · ${model.bank.orders.length} sentence-order questions · ${model.bank.passages.length} passages. Finite question bank; repeats are possible.</p>
+            ${library.history.length?`<section class="n4-history"><h3>Attempt history</h3><p class="n4-disclaimer">Saved on this browser · Latest ${model.historyLimit} completed attempts</p>
+                <ol>${[...library.history].reverse().map(a=>{
+                    const p=model.paperForAttempt(a),result=model.score(p,a.answers);
+                    return `<li><div><strong>${esc(p.title)} · ${result.correct}/25</strong><span>${edition(a)} · ${a.completedAt?esc(new Date(a.completedAt).toLocaleString()):"Completion date unavailable"} · ${time(a.elapsed)}</span></div><button data-history="${esc(a.id)}">Review results</button></li>`;
+                }).join("")}</ol></section>`:""}`;
     }
     function renderPassage(current,completed=false) {
         return `<div class="n4-passage"><h3 lang="ja">${jp(paper.passage.title)}</h3>${paper.passage.paragraphs.map(p=>{
@@ -79,7 +89,7 @@
     }
     function renderTest() {
         const q=paper.questions[state.index],section=model.sections.find(s=>s.id===q.section);
-        root.innerHTML=`<header class="n4-toolbar"><div><strong>N4 Mock Test · ${esc(paper.title)}</strong>
+        root.innerHTML=`<header class="n4-toolbar"><div><strong>N4 Mock Test · ${edition(state)}</strong>
             <span id="n4-answer-count" role="status">${Object.keys(state.answers).length}/25 answered</span></div>
             <div class="n4-toolbar-actions"><span>Elapsed <time id="n4-clock">${time(state.elapsed)}</time></span><button data-mock="exit">Save & exit</button></div></header>
             <div class="n4-workspace"><div class="n4-main"><div class="n4-question-heading"><h2 id="n4-question-title" tabindex="-1">Question ${q.number} <small>/ 25</small></h2>
@@ -92,17 +102,26 @@
     }
     function renderResults() {
         const result=model.score(paper,state.answers);
-        root.innerHTML=`<header class="n4-heading"><div><p class="eyebrow section-eyebrow">${esc(paper.title)} · COMPLETE</p><h2 id="n4-result-title" tabindex="-1">Mock test results</h2></div><button data-mock="exit">All papers</button></header>
+        const prior=library.history.filter(a=>a.paperId===state.paperId && a.id!==state.id && library.history.indexOf(a)<library.history.findIndex(a=>a.id===state.id)).length;
+        root.innerHTML=`<header class="n4-heading"><div><p class="eyebrow section-eyebrow">${esc(paper.title)} · COMPLETE</p><h2 id="n4-result-title" tabindex="-1">Mock test results</h2></div><button data-mock="exit">All tests</button></header>
             <dl class="n4-scores"><div><dt>Correct</dt><dd id="n4-score">${result.correct} / ${result.total}</dd></div><div><dt>Accuracy</dt><dd>${result.percent}%</dd></div><div><dt>Unanswered</dt><dd>${result.unanswered}</dd></div><div><dt>Elapsed</dt><dd>${time(state.elapsed)}</dd></div></dl>
             <p class="n4-disclaimer">Raw practice score, not a JLPT scaled score or pass prediction.</p>
+            <p class="n4-disclaimer">${edition(state)} · ${state.version===model.version?`${paper.exposure.previouslySeen} / 25 questions appeared in previously saved attempts when this test was created. ${paper.exposure.passageSeen?"The passage has appeared before.":"This passage had not appeared in saved attempts."}`:prior?"Repeat attempt; familiarity may affect the score.":"First recorded attempt of this fixed paper."}</p>
             <table class="n4-outline"><caption>Section results</caption><tbody>${result.sections.map(s=>`<tr><th scope="row">${esc(s.title)}</th><td>${s.correct} / ${s.count}</td></tr>`).join("")}</tbody></table>
+            ${result.domains.length?`<table class="n4-breakdown"><caption>Grammar decisions in this attempt</caption><thead><tr><th scope="col">Area</th><th scope="col">Correct / tested</th></tr></thead><tbody>${result.domains.map(d=>`<tr><th scope="row">${esc(d.title)}</th><td>${d.correct} / ${d.total}</td></tr>`).join("")}</tbody></table>
+            <p class="n4-disclaimer">Small samples, not mastery ratings. Review individual mistakes before drawing conclusions.</p>`:""}
             <div class="n4-review-heading"><h3>Answer review</h3><label>Show<select id="n4-review-filter"><option value="all">All questions</option><option value="missed">Incorrect and unanswered</option></select></label></div>
             <div id="n4-review-list">${result.items.map(q=>`<details class="n4-review-item" data-correct="${q.correct}"><summary>Question ${q.number} · ${q.correct?"Correct":q.selected?"Incorrect":"Unanswered"}<span>${esc(q.topic)}</span></summary><div>
                 ${q.section==="text"?`<p>Gap ${q.number} · ${jp(paper.passage.title)}</p>`:sentence(q)}
                 <p><strong>Your answer:</strong> <span lang="ja">${q.selected?jp(q.selected):"Unanswered"}</span></p>
                 <p><strong>Correct answer:</strong> <span lang="ja">${jp(q.answer)}</span></p>
                 ${q.section==="order"?`<p class="n4-solution" lang="ja">${jp(q.before)}${q.chunks.map((chunk,i)=>i===q.star?`<strong>${jp(chunk)}</strong>`:jp(chunk)).join("")}${jp(q.after)}</p>`:""}
-                <p class="n4-explanation">${jp(q.explanation)}</p></div></details>`).join("")}</div>
+                ${model.answerFeedback(q,q.selected)?`<p class="n4-choice-feedback"><strong>Why your choice does not fit:</strong> ${jp(model.answerFeedback(q,q.selected))}</p>`:""}
+                <p class="n4-explanation"><strong>Key distinction:</strong> ${jp(q.explanation)}</p>
+                ${q.review?.example?`<div class="n4-contrast"><p lang="ja">${jp(q.review.example)}</p><p>${esc(q.review.translation)}</p></div>`:""}
+                ${q.review?`<button data-practice="${esc(q.review.unit)}" title="${esc(q.review.focus)}">Practice this topic <span aria-hidden="true">→</span></button>`:""}
+                ${q.review?.distractors?`<details class="n4-alternatives"><summary>Other choices</summary><dl>${q.options.filter(o=>o!==q.answer&&o!==q.selected).map(o=>`<dt lang="ja">${jp(o)}</dt><dd>${jp(q.review.distractors[o])}</dd>`).join("")}</dl></details>`:""}
+                </div></details>`).join("")}</div>
             <details class="n4-completed-passage"><summary>Completed passage</summary>${renderPassage(0,true)}</details>`;
     }
     function render() {
@@ -133,6 +152,17 @@
         const button=event.target.closest("button");
         if(!button)return;
         tick();
+        if(button.dataset.history){
+            const attempt=library.history.find(a=>a.id===button.dataset.history);
+            if(attempt){selectAttempt(attempt);view="results";render();focusQuestion();}
+            return;
+        }
+        if(button.dataset.practice && state?.submitted){
+            if(!paper.questions.some(q=>q.review?.unit===button.dataset.practice))return;
+            save();
+            startGrammarPractice(button.dataset.practice,10,{focus:"review"});
+            return;
+        }
         if(button.dataset.mock==="start"){start();return;}
         if(button.dataset.mock==="resume"){view=state.submitted?"results":"test";lastTick=Date.now();render();focusQuestion();return;}
         if(button.dataset.mock==="exit"){save();view="setup";render();root.scrollIntoView({block:"start"});return;}
@@ -150,12 +180,13 @@
     });
     dialog.addEventListener("close",()=>{
         if(dialog.returnValue!=="submit" || !state || state.submitted)return;
-        tick();state.submitted=true;view="results";save();render();focusQuestion();
+        tick();state.submitted=true;state.completedAt=Date.now();library=model.remember(library,state);view="results";save();render();focusQuestion();
     });
     window.addEventListener("pagehide",()=>{tick();if(state)save();});
     document.addEventListener("visibilitychange",()=>{tick();if(state)save();});
     new MutationObserver(()=>{tick();if(state)save();}).observe(panel,{attributes:true,attributeFilter:["hidden"]});
     setInterval(()=>{tick();if(view==="test" && ++saveTicks%10===0)save();},1000);
+    if(library.active||library.history.length)save();
     render();
     if(new URLSearchParams(location.search).get("mock")==="n4"){
         document.querySelector("#grammar-tab").click();

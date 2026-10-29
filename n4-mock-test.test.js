@@ -3,10 +3,15 @@ const assert = require("node:assert/strict");
 const mock = require("./n4-mock-test.js");
 const furigana = require("./furigana.js").create([...require("./particle-practice.js").readings,...mock.readings]);
 
-const keys = {
+const legacyKeys = {
     a:["に","を","までに","熱そうです","行ったことがありません","歩こう","あります","来なくてもいいです","届くか","泳げるように","持ちましょうか","ほど","おく","くれました","聞き","これが","早く","電話する","ように","使うか","という","洗ってから","もらいました","でも","作ろう"],
     b:["で","しか","食べる","降る","もいいですか","帰ったら","なければなりません","壊されました","ことになりました","みます","はず","寝た","食べないで","ために","のに","教えて","買うことが","ないのに","のは","撮る","来たとき","なくてもいい","決めてから","おかげで","話せるように"],
     c:["に","は","まで","終わった","遊びたがって","したり","どう読むか","勉強させました","ことにしました","しまいました","のかもしれません","見ませんか","ゆっくり","と","ほど","読むことが","コピーして","日本語を","出て","できる","ので","置くなら","測ってから","置いてあります","ように"]
+};
+const keys = {
+    a:["に","を","までに","熱そうです","行ったことがありません","歩こう","あります","来なくてもいいです","届くか","泳げるように","持ちましょうか","昨日ほど暖かくありません","おく","くれました","聞き","これが","早く","電話する","ように","使うか","という","洗ってから","もらいました","でも","作ろう"],
+    b:["で","しか","食べる","合格した","もいいですか","帰ったら","なければなりません","壊されました","ことになりました","みます","はず","寝た","食べないで","ために","のに","教えて","買うことが","ないのに","のは","撮る","まで","払わなくてもかまいません","降っても","かどうか","その場合は"],
+    c:["に","は","まで","終わった","遊びたがって","したり","どう読むか","勉強させました","ことにしました","しまいました","かもしれません","見ませんか","ように","と","あの道のほうが安全です","読むことが","コピーして","ほうが","出て","できる","のに","くれて","かけてあります","行くなら","行かない場合は"]
 };
 
 for (const p of mock.papers) {
@@ -82,11 +87,94 @@ test("Context-sensitive furigana distinguishes snow falling from getting off a b
 });
 test("Restoring an attempt preserves choices, flags, progress and option order",()=>{
     const paper=mock.createPaper("a",100);
-    const state={version:mock.version,paperId:"a",seed:100,answers:{a1:"に",a4:"熱そうです"},flags:["a4"],index:3,elapsed:15600,submitted:false};
+    const state={...mock.createAttempt("a",100,1000),answers:{a1:"に",a4:"熱そうです"},flags:["a4"],index:3,elapsed:15600};
     const restored=mock.restore(JSON.stringify(state));
     assert.deepEqual(restored,state);
     assert.deepEqual(mock.createPaper(restored.paperId,restored.seed),paper);
     assert.equal(mock.restore(JSON.stringify({...state,submitted:true})).submitted,true);
+});
+test("Every revised item has a valid practice destination and specific feedback for each wrong choice",()=>{
+    const fs=require("node:fs");
+    const html=fs.readFileSync(require("node:path").join(__dirname,"main.html"),"utf8");
+    const units=new Set([...html.matchAll(/data-gp-start="([^"]+)"/g)].map(m=>m[1]));
+    Object.keys(require("./particle-practice.js").modules).forEach(id=>units.add(id));
+    assert.equal(Object.keys(mock.review.items).length,75);
+    for(const p of mock.papers)for(const q of mock.createPaper(p.id,10).questions){
+        assert.ok(mock.review.domains[q.review.domain]);
+        assert.ok(units.has(q.review.unit),q.id+" practice destination");
+        assert.equal(mock.answerFeedback(q,q.answer),null);
+        assert.equal(mock.answerFeedback(q,null),null);
+        for(const wrong of q.options.filter(o=>o!==q.answer)){
+            const feedback=mock.answerFeedback(q,wrong);
+            assert.ok(feedback?.length>40,q.id+": "+wrong);
+            assert.deepEqual(furigana.tokens(feedback).filter(t=>!t.reading&&/[一-龯々]/.test(t.text)),[],feedback);
+        }
+        if(q.section!=="order"){
+            assert.deepEqual(Object.keys(q.review.distractors).sort(),q.options.filter(o=>o!==q.answer).sort());
+            assert.ok(q.review.example && q.review.translation);
+            assert.deepEqual(furigana.tokens(q.review.example).filter(t=>!t.reading&&/[一-龯々]/.test(t.text)),[],q.review.example);
+        }
+    }
+});
+test("Each paper covers all six domains with bounded concentration and explicit cognitive demands",()=>{
+    for(const p of mock.papers){
+        const paper=mock.createPaper(p.id,7),score=mock.score(paper);
+        assert.equal(score.domains.length,6);
+        assert.equal(score.domains.reduce((sum,d)=>sum+d.total,0),25);
+        assert.ok(score.domains.every(d=>d.total>=2&&d.total<=6),p.id);
+        const demands=paper.questions.map(q=>q.review.demand);
+        assert.equal(demands.filter(d=>d==="composition").length,5);
+        assert.equal(demands.filter(d=>d==="discourse").length,5);
+        assert.ok(demands.filter(d=>d==="meaning").length>=9);
+        assert.ok(demands.filter(d=>d==="formation").length>=1);
+    }
+});
+test("Migration preserves both unfinished and completed original papers without regrading",()=>{
+    const original=require("./n4-mock-v1.js");
+    const digest=value=>require("node:crypto").createHash("sha256").update(JSON.stringify(value)).digest("hex");
+    assert.equal(digest(original.papers),"032c30fef3f85d420e37d826681020e32ef749b49326016e48d7666a501fc181");
+    assert.equal(digest(original.papers.map(p=>original.createPaper(p.id,92))),"db96365e82c377f6d0b90b40d00bd4e3c268d9998693650bebbaaf0595c8d90c");
+    for(const p of mock.papers){
+        const original=mock.createPaper(p.id,92,"n4-mock-v1");
+        assert.deepEqual(original.questions.map(q=>q.answer),legacyKeys[p.id]);
+        const old={version:"n4-mock-v1",paperId:p.id,seed:92,index:12,elapsed:25000,flags:[p.id+"12"],answers:Object.fromEntries(original.questions.map(q=>[q.id,q.answer]))};
+        for(const submitted of [false,true]){
+            const library=mock.restoreLibrary(null,JSON.stringify({...old,submitted}));
+            assert.equal(library.active.version,"n4-mock-v1");
+            assert.deepEqual(library.active.answers,old.answers);
+            assert.equal(library.active.index,12);
+            assert.equal(library.history.length,submitted?1:0);
+            assert.equal(mock.score(mock.createPaper(p.id,92,library.active.version),library.active.answers).correct,25);
+            assert.equal(mock.answerFeedback(original.questions[0],"invalid"),null);
+        }
+    }
+});
+test("History keeps snapshots, deduplicates, caps retention, and tolerates corrupt entries",()=>{
+    let library=mock.restoreLibrary(null);
+    for(let i=0;i<110;i++){
+        const a={...mock.createAttempt("b",i,1000+i),submitted:true,completedAt:2000+i,answers:{b1:"で"}};
+        library=mock.remember(library,a);
+        a.answers.b1="に";
+    }
+    assert.equal(library.history.length,mock.historyLimit);
+    assert.equal(library.history[0].seed,10);
+    assert.equal(library.history[0].answers.b1,"で");
+    library.active=library.history.at(-1);
+    const restored=mock.restoreLibrary(JSON.stringify({...library,history:[null,{},...library.history,library.active]}));
+    assert.deepEqual(restored,library);
+    assert.equal(mock.restoreLibrary(JSON.stringify({schema:2,active:null,history:[]}),JSON.stringify(library.active)).active,null);
+    assert.equal(mock.restoreLibrary("broken",JSON.stringify(library.active)).active.id,library.active.id);
+    assert.equal(mock.restoreLibrary(JSON.stringify({schema:2,active:{version:"unknown"},history:[]})).active,null);
+});
+test("Updated options avoid the old tense giveaway and generic adverb quiz",()=>{
+    const q=id=>mock.papers.flatMap(p=>p.questions).find(q=>q.id===id);
+    assert.deepEqual(q("b10").options,["みます","おきます","あげます","もらいます"]);
+    assert.equal(q("c13").topic,"Purpose and prevention");
+    assert.ok(q("a8").options.every(o=>!o.includes("でした")));
+    assert.ok(q("a12").options.every(o=>o.length>5));
+    assert.ok(q("c15").options.includes("どちらの道も安全ではありません"));
+    assert.match(mock.papers[2].passage.paragraphs[0],/貸して【22】ありがとう/);
+    assert.match(furigana.render(mock.papers[1].passage.paragraphs[0]),/<rt>ひらき<\/rt>/);
 });
 test("Corrupt or older storage cannot inject answers, flags or invalid navigation",()=>{
     for(const value of [null,"bad","null","[]",'{"version":"old"}','{"version":"n4-mock-v1","paperId":"missing","seed":4}'])assert.equal(mock.restore(value),null);

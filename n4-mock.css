@@ -84,6 +84,22 @@
 .n4-completed-passage { margin-top: 28px; }
 .n4-completed-passage summary { cursor: pointer; margin-bottom: 20px; font-weight: 600; }
 #n4-storage-status { padding: 12px; color: #803d17; background: #fff0df; line-height: 1.6; }
+.n4-breakdown { width: 100%; border-collapse: collapse; margin: 28px 0 12px; text-align: left; }
+.n4-breakdown caption { text-align: left; font-weight: 700; margin-bottom: 12px; }
+.n4-breakdown th, .n4-breakdown td { padding: 12px 8px 12px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
+.n4-breakdown td, .n4-breakdown thead th:last-child { text-align: right; font-variant-numeric: tabular-nums; }
+.n4-choice-feedback { border-left: 3px solid #aa6630; padding: 10px 16px; background: #fbf5ed; }
+.n4-contrast { border-block: 1px solid var(--line); margin: 16px 0; padding: 8px 0; }
+.n4-contrast p { margin: 8px 0; }
+.n4-contrast p[lang="ja"] { font-size: 18px; }
+.n4-alternatives { margin-top: 18px; }
+.n4-alternatives dt { font-weight: 600; line-height: 2; margin-top: 16px; }
+.n4-alternatives dd { margin: 6px 0 12px; line-height: 1.8; overflow-wrap: anywhere; }
+.n4-history { border-top: 1px solid var(--line); margin-top: 32px; padding-top: 12px; }
+.n4-history ol { list-style: none; padding: 0; }
+.n4-history li { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; padding: 18px 0; border-bottom: 1px solid var(--line); }
+.n4-history li > div { min-width: 0; }
+.n4-history li span { display: block; margin-top: 6px; font-size: 13px; line-height: 1.6; color: #536258; overflow-wrap: anywhere; }
 @media (max-width: 760px) {
     .n4-workspace { grid-template-columns: minmax(0,1fr); gap: 20px; }
     .n4-nav { border-left: 0; border-top: 1px solid var(--line); padding: 20px 0 0; }

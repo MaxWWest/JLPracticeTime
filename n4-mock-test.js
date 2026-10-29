@@ -1,9 +1,9 @@
 (function(root, factory) {
-    if (typeof module === "object" && module.exports) module.exports = factory(require("./grammar-practice-core.js"));
-    else root.N4MockTest = factory(root.GrammarPracticeCore);
-})(typeof globalThis === "object" ? globalThis : this, function(core) {
+    if (typeof module === "object" && module.exports) module.exports = factory(require("./grammar-practice-core.js"), require("./n4-mock-v1.js"), require("./n4-mock-review.js"));
+    else root.N4MockTest = factory(root.GrammarPracticeCore, root.N4MockV1, root.N4MockReview);
+})(typeof globalThis === "object" ? globalThis : this, function(core, legacy, review) {
     "use strict";
-    const version = "n4-mock-v1";
+    const version = "n4-mock-v2";
     const sections = [
         {id:"form",title:"Grammar forms",count:15,instruction:"Choose the best expression for the blank."},
         {id:"order",title:"Sentence composition",count:5,instruction:"Arrange all four parts. Choose the part that belongs at ★."},
@@ -23,15 +23,15 @@
             form("a1","Destination particle","読み終わった本は、この箱（　）入れてください。",["に","で","を","と"],"に","に marks the container receiving the books. で would mark where an activity happens, not where the books are put."),
             form("a2","Departure particle","急いでバス（　）降りたので、傘を忘れてしまいました。",["を","に","が","と"],"を","降りる takes を for the vehicle being left. に would suit boarding with 乗る, not getting off."),
             form("a3","Deadline","レポートは金曜日（　）出してください。早く出してもかまいません。",["までに","まで","から","の間"],"までに","までに sets a deadline and permits earlier completion. まで describes continuation up to an endpoint."),
-            form("a4","Appearance","湯気が出ています。このスープはまだ（　）ね。少し待ってから飲みましょう。",["熱そうです","熱いような","熱くそうです","熱いそうな"],"熱そうです","Visible signs of heat take the い-adjective stem + そうです: 熱そうです. A modifier ending in な needs a following noun; 熱くそう is not the appearance form."),
+            form("a4","Appearance","湯気が出ていますね。このスープはまだ（　）。",["熱そうです","熱いそうです","熱くなさそうです","熱かったそうです"],"熱そうです","The speaker is judging the soup from visible steam. 熱そうです expresses that impression; 熱いそうです reports information from someone else. Nothing here supplies such a report."),
             form("a5","Experience","A：北海道に行ったことがありますか。\nB：いいえ、一度も（　）。",["行ったことがありません","行くことがあります","行ったところです","行くことにしました"],"行ったことがありません","一度も + negative experience means never having done it. A recent action or a new decision does not answer this experience question."),
             form("a6","Intention","明日から毎朝、駅まで（　）と思っています。",["歩こう","歩いて","歩いたら","歩けば"],"歩こう","The volitional form + と思っています expresses an intention: 歩こうと思っています."),
             form("a7","Resulting state","会議のために、机の上に資料が並べて（　）。",["あります","います","みます","しまいます"],"あります","資料が並べてあります describes the result of someone deliberately arranging the materials. The materials are not doing the arranging."),
-            form("a8","No obligation","A：日曜日も会社に来なければなりませんか。\nB：いいえ、日曜日は（　）。",["来なくてもいいです","来てはいけませんでした","来なければなりません","来ないほうがよかったです"],"来なくてもいいです","来なくてもいい releases the obligation to come. It does not mean attendance is forbidden or give advice about a past action."),
+            form("a8","No obligation","A：日曜日も会社に来なければなりませんか。\nB：いいえ、（　）。仕事が残っている人は来てもかまいません。",["来なくてもいいです","来てはいけません","来なければなりません","来ることになっています"],"来なくてもいいです","Attendance is optional: not coming is allowed, and coming is also allowed. なくてもいい removes an obligation; it does not forbid attendance."),
             form("a9","Embedded question","荷物がいつ（　）、店に電話して聞いてみます。",["届くか","届くが","届いても","届けるのを"],"届くか","いつ届くか embeds the question 'when will it arrive?' as the content to ask about."),
             form("a10","Change in ability","去年は泳げませんでしたが、今は百メートル（　）なりました。",["泳げるように","泳ぐことに","泳いだように","泳げるために"],"泳げるように","Potential form + ようになる expresses a newly acquired ability. ことになる is an arrangement or decision, not this change in ability."),
             form("a11","Offer of help","A：その箱、重そうですね。私が（　）。\nB：ありがとうございます。お願いします。",["持ちましょうか","持ちませんか","持ってください","持ちたいですか"],"持ちましょうか","私が持ちましょうか offers the speaker's help. The other choices invite or ask the other person to carry it."),
-            form("a12","Comparison","昨日は二十度でした。今日は十五度なので、昨日（　）暖かくありません。",["ほど","のほうが","のような","のために"],"ほど","ほど + negative expresses 'not as warm as yesterday.' It preserves the temperature relationship; のほうが would make yesterday the subject of the negative predicate."),
+            form("a12","Comparison","昨日は二十度、今日は十五度です。今日は（　）。",["昨日ほど暖かくありません","昨日より暖かいです","昨日と同じくらい暖かいです","昨日ほど寒くありません"],"昨日ほど暖かくありません","Today is cooler. 昨日ほど暖かくありません preserves that relationship. Changing the adjective to 寒い while keeping the negative comparison reverses the relationship."),
             form("a13","Doing in advance","明日の朝は忙しいので、今夜のうちにお弁当を作って（　）つもりです。",["おく","ある","いるところ","くれる"],"おく","ておく expresses preparation in advance. The speaker plans to make tomorrow's lunch tonight."),
             form("a14","Giving and receiving","道が分からなくて困っていたら、知らない人が駅まで案内して（　）。",["くれました","あげました","もらいました","さしあげました"],"くれました","The stranger is the subject and the speaker receives the benefit, so 案内してくれました fits. もらう would make the recipient the subject."),
             form("a15","Simultaneous actions","音楽を（　）ながら、部屋を掃除しました。",["聞き","聞く","聞いて","聞いた"],"聞き","ながら attaches to the masu-stem, 聞き, to link two actions performed by the same person."),
@@ -46,7 +46,7 @@
             text("a24","Contrasting facts",["でも","それで","だから","例えば"],"でも","The class was enjoyable, but the next class is on a work day. でも marks that obstacle, not a consequence or an example."),
             text("a25","Intention",["作ろう","作って","作れば","作られよう"],"作ろう","作ろうと思っています expresses the speaker's intention to make the dish at home.")
         ],passage:{title:"料理教室",paragraphs:[
-            "先週、友達と「おかずの時間」【21】料理教室に参加しました。野菜のスープを作りました。先生は「まず野菜を洗いましょう。その後で切ってください」と言いました。私たちは野菜を【22】、小さく切りました。",
+            "先週、友達と「おかずの時間」【21】料理教室に参加しました。野菜のスープを作るために、畑から届いた野菜を使いました。土がついていたので、よく【22】、小さく切りました。",
             "私はにんじんをうまく切れなかったので、先生に切り方を教えて【23】。最初は難しかったですが、少しずつ上手になりました。できたスープはとてもおいしかったです。",
             "またこの教室に行きたいです。【24】、次の教室は私が働いている土曜日にあります。しばらくは行けないので、まず家で同じスープを【25】と思っています。"
         ]}},
@@ -54,16 +54,16 @@
             form("b1","Event location","来週、公園（　）町のお祭りがあります。",["で","に","を","へ"],"で","で marks the site of an event, even with あります. に would locate an object that exists there."),
             form("b2","Limited quantity","財布には百円（　）ありません。これでは切符が買えません。",["しか","だけ","でも","まで"],"しか","しか with a negative predicate means only that amount is available. だけありません would deny that particular amount rather than state the intended limit."),
             form("b3","Action stage","A：もう昼ご飯を食べましたか。\nB：いいえ、これから（　）ところです。",["食べる","食べた","食べている","食べていた"],"食べる","Dictionary form + ところです means about to do something. これから establishes that eating has not begun."),
-            form("b4","Hearsay","天気予報によると、明日は雪が（　）そうです。",["降る","降ったら","降って","降れば"],"降る","Reported そうです attaches to a plain-form statement: 降るそうです. A te-form or conditional does not provide the complete statement being reported."),
+            form("b4","Hearsay","田中さんから「試験に合格しました」とメールが来ました。田中さんは試験に（　）そうです。",["合格した","合格する","合格しなかった","合格したい"],"合格した","The message reports a completed event. Hearsay そうです retains the plain past form 合格した; it is not a prediction, a negative report or a wish."),
             form("b5","Permission","A：この席は空いていますか。座って（　）。\nB：はい、どうぞ。",["もいいですか","はいけません","もかまいません","もよかったです"],"もいいですか","てもいいですか asks permission to sit and matches the reply granting permission. The other choices make statements rather than ask to use the seat."),
             form("b6","Condition and discovery","家に（　）、机の上に母からの手紙がありました。",["帰ったら","帰るなら","帰っても","帰りながら"],"帰ったら","たら links arriving home to the discovery of the letter. なら would set up a hypothetical topic, not narrate this discovery."),
             form("b7","Obligation","医者に「必ず食事の後に飲んでください」と言われました。この薬は食事の後に飲ま（　）。",["なければなりません","なくてもいいです","ないほうがいいです","ないつもりです"],"なければなりません","なければなりません expresses the doctor's explicit requirement. The alternatives remove the obligation or advise/intend not to take it."),
             form("b8","Passive viewpoint","私は弟に大切なカップを（　）。",["壊されました","壊しました","壊れました","壊れさせました"],"壊されました","The speaker is affected by the brother breaking the cup: 弟に marks the agent in the passive construction 壊されました."),
             form("b9","Arranged decision","会社の決定で、来月から大阪で働く（　）。",["ことになりました","ことがありました","のを見ました","ためになりました"],"ことになりました","ことになる expresses an arrangement decided externally. The company's decision supplies that context; this is not a past experience or an observed event."),
-            form("b10","Trying an action","まだ食べたことがありません。どんな味か知りたいので、今からこのお菓子を一つ食べて（　）。",["みます","あります","いました","きました"],"みます","てみる means trying an action to find out its result. まだ and 今から establish a first trial that has not happened yet, ruling out past eating."),
+            form("b10","Trying an action","このお菓子はどんな味でしょう。一つ食べて（　）。",["みます","おきます","あげます","もらいます"],"みます","The speaker wants to find out the taste by trying the food. てみる expresses that trial; ておく would make eating preparation for something later, and the benefit auxiliaries introduce a different participant relationship."),
             form("b11","Expectation","田中さんは昨日東京に着いたと言っていました。今は東京にいる（　）です。",["はず","つもり","ため","ところ"],"はず","はず expresses an evidence-based expectation. The speaker reasons from Tanaka's report of arriving yesterday."),
             form("b12","Advice","熱があるんですか。それなら、今日は早く（　）ほうがいいですよ。",["寝た","寝るの","寝て","寝よう"],"寝た","Affirmative advice uses Vたほうがいい. It recommends going to bed; this た does not describe a completed past action."),
-            form("b13","Negative accompanying action","昨日は朝ご飯を（　）、学校に行きました。",["食べないで","食べませんで","食べないと","食べないなら"],"食べないで","ないで expresses going to school without eating breakfast. The conditional choices would describe a different relationship, not the narrated omitted action."),
+            form("b13","Negative accompanying action","昨日は寝坊したので、朝ご飯を（　）学校に行きました。",["食べないで","食べないと","食べないなら","食べないために"],"食べないで","ないで links an omitted action with the action actually performed: going to school without breakfast. Not eating was not the purpose of going to school or a condition for going."),
             form("b14","Purpose","日本の大学で勉強する（　）、日本語を習っています。",["ために","ことに","ところに","ばかりに"],"ために","An intentional goal can use dictionary form + ために. Studying at a Japanese university is the reason for learning Japanese."),
             form("b15","Concession","この店は高い（　）、いつもたくさんのお客さんがいます。",["のに","ので","ために","ように"],"のに","のに presents a result contrary to expectation: despite the high prices, the shop is crowded."),
             order("b16","Giving and receiving","駅で、",["知らない人に","道を","教えて","もらいました"],"。","The recipient is the understood subject. The helper takes に, 道を is the object, and 教えてもらいました expresses receiving help."),
@@ -71,20 +71,20 @@
             order("b18","Concession and experience","今日は",["一度も","会ったことが","ないのに","名前を呼ばれました"],"。","一度も会ったことがない means never having met. のに contrasts that with unexpectedly being addressed by name."),
             order("b19","Explanatory focus","この町へ",["引っ越して","きた","のは","去年の春"],"です。","引っ越してきた is the completed move toward the present location. のは...です identifies when it happened."),
             order("b20","Nominalized preference","私の趣味は",["町の","写真を","撮る","こと"],"です。","町の modifies 写真; 写真を撮る is the activity; こと nominalizes it as the definition of the hobby."),
-            text("b21","Relative time",["来たとき","来るつもり","来てほしい","来るために"],"来たとき","来たとき anchors the unfamiliarity to when the speaker arrived in the town. The lack of acquaintances is a situation at that time, not a purpose for coming."),
-            text("b22","No obligation",["なくてもいい","なければならない","ないほうがいい","てはいけない"],"なくてもいい","お金を払わなくてもいい means no payment is required. The notice explicitly describes a free event."),
-            text("b23","Sequence",["決めてから","決める前に","決めないで","決めるために"],"決めてから","The guide says to choose a route first and then depart, so 決めてから preserves the stated order."),
-            text("b24","Result",["おかげで","せいで","のに","まま"],"おかげで","おかげで credits the walk for a welcome result: making friends. せいで blames a cause for an unwanted result, while のに would frame the outcome as contrary to expectation."),
-            text("b25","Change in ability",["話せるように","話すことに","話したことに","話せるために"],"話せるように","Potential form + ようになる describes now being able to speak with ease, contrasting with initial nervousness.")
-        ],passage:{title:"町の散歩会",paragraphs:[
-            "私はこの町に【21】、知っている人が一人もいませんでした。ある日、図書館で散歩会のお知らせを見ました。「参加は無料です。お金を払わ【22】です」と書いてありました。そこで、参加することにしました。",
-            "当日は、図書館の前に十人が集まりました。案内の人は「先に歩く道を決めましょう。それから出発します」と言いました。みんなで道を【23】、川に向かって歩き始めました。",
-            "最初は緊張していましたが、同じ道を一緒に歩いた【24】、友達ができました。今では、町で会ったときにも気軽に【25】なりました。来月の散歩会も楽しみです。"
+            text("b21","Reception period",["まで","までに","から","だけ"],"まで","The notice states the interval during which reception is open, from 9:30 until departure. まで marks the end of that interval, not a deadline for a completed action."),
+            text("b22","No obligation",["払わなくてもかまいません","払わなければなりません","払ってはいけません","払わないと参加できません"],"払わなくてもかまいません","The city covers the cost, so participants are not required to pay. This is an absence of obligation, not a ban on paying or a payment requirement."),
+            text("b23","Concession",["降っても","降らないと","降ったのに","降るために"],"降っても","The notice gives an indoor alternative even if it rains. 降っても leaves participation possible under that unfavorable condition."),
+            text("b24","Embedded yes-no question",["かどうか","かもしれません","つもりで","ために"],"かどうか","持っているかどうか is the open question 'whether you have it.' This entire question becomes the object of 確認する; a conjecture, intention or purpose cannot fill that role."),
+            text("b25","Reference to a situation",["その場合は","それなのに","それまでは","それとは反対に"],"その場合は","その場合は refers to the situation just introduced: participating with a friend. The next sentence gives an instruction for that case, not a contrast or an earlier time interval.")
+        ],passage:{title:"散歩会のお知らせ",paragraphs:[
+            "来月から、毎月第一土曜日に町の散歩会を{開き|ひらき}ます。初回は六月六日、午前十時に図書館の前から出発します。受付は九時半から出発の時間【21】です。",
+            "参加費は市が出すので、参加する人はお金を【22】。歩く道はその日の朝に決めます。雨が【23】、屋根のある市場の中を歩きます。",
+            "飲み物は用意しませんので、各自で持ってきてください。途中では買えません。出発する前に、飲み物を持っている【24】確認してください。友達との参加もできます。【25】、友達にもこのお知らせを見せてください。"
         ]}},
         {id:"c",title:"Paper C",questions:[
             form("c1","Recipient particle","この写真を先生（　）見せたいです。",["に","で","を","から"],"に","に marks the person to whom the picture is shown. The picture itself already takes を."),
             form("c2","Topic and contrast","肉は食べますが、魚（　）食べません。",["は","が","に","と"],"は","は explicitly contrasts fish with meat. The predicate 食べる and the established contrast support は here."),
-            form("c3","Continuation endpoint","母が帰る（　）、家で弟と待っています。",["まで","までに","からに","だけに"],"まで","まで marks how long the waiting continues. までに would set a deadline for completing an event."),
+            form("c3","Continuation endpoint","母が帰る（　）、家で弟と待っています。帰ってきたら、すぐ出かけます。",["まで","までに","前から","ように"],"まで","Waiting continues until the mother returns, and departure follows. まで sets that endpoint; までに would make her return a deadline for completing something."),
             form("c4","Recent completion","A：もう宿題は終わりましたか。\nB：はい、今ちょうど（　）ところです。",["終わった","終わる","終わっている","終わり"],"終わった","Vたところです means just having finished. はい answers that the homework is complete."),
             form("c5","Third-person desire","弟はさっきから窓の外を見て、外で（　）います。",["遊びたがって","遊びたくて","遊びたかった","遊びたい"],"遊びたがって","たがっている describes observable signs of another person's desire. 遊びたがっています is formed from the masu-stem 遊び."),
             form("c6","Listing examples","日曜日は掃除をしたり、洗濯を（　）します。",["したり","しても","するなら","しながら"],"したり","たり...たりする lists representative activities. It does not specify that the actions happen simultaneously."),
@@ -92,29 +92,37 @@
             form("c8","Causative","母は弟を部屋で一時間（　）。",["勉強させました","勉強されました","勉強していました","勉強になりました"],"勉強させました","The mother makes the younger brother study. を marks the person caused to perform this intransitive activity; で marks its location."),
             form("c9","Personal decision","健康のために、これからは毎日階段を使う（　）。",["ことにしました","ことがありました","ことができました","ところでした"],"ことにしました","ことにする expresses one's own decision to adopt a practice. これからは points to the future routine, not a past experience, past ability or interrupted action."),
             form("c10","Regret and completion","大切な写真を間違えて消して（　）。もう元に戻せません。",["しまいました","おきました","みました","ありました"],"しまいました","てしまう can express regret about a completed action. 間違えて and the inability to restore the photo establish an unwanted result."),
-            form("c11","Conjecture","誰もいない部屋から音がします。もしかしたら、窓が開いている（　）。",["のかもしれません","つもりです","ことにします","ためにします"],"のかもしれません","もしかしたら signals an uncertain explanation, completed by かもしれません. This is a guess about the window, not an intention or decision."),
-            form("c12","Invitation","A：よかったら、今度一緒に映画を（　）。\nB：いいですね。行きましょう。",["見ませんか","見たことがあります","見てはいけません","見なくてもいいです"],"見ませんか","ませんか invites the listener to join the speaker. The response accepts that invitation."),
-            form("c13","Adverb formation","もう少し（　）話していただけませんか。",["ゆっくり","ゆっくりな","ゆっくりだ","ゆっくりの"],"ゆっくり","ゆっくり functions directly as an adverb modifying 話す. It does not need な, だ or の before the verb."),
+            form("c11","Conjecture","A：田中さんは休みですか。\nB：まだ連絡がないので分かりません。病気（　）。",["かもしれません","のはずがありません","ではありません","になりたいです"],"かもしれません","The speaker has no confirmation and offers illness as one possible explanation. かもしれません leaves that possibility open without asserting or ruling out illness."),
+            form("c12","Invitation","A：よかったら、今度一緒に映画を（　）。\nB：いいですね。行きましょう。",["見ませんか","見てください","見てもいいですか","見ましょうかと言いました"],"見ませんか","ませんか invites the listener to join the speaker. The reply accepts a shared activity, not an instruction, a request for permission or a report of someone else's offer."),
+            form("c13","Purpose and prevention","隣の部屋で赤ちゃんが寝ています。起こさない（　）、小さな声で話しましょう。",["ように","うちに","のに","まま"],"ように","起こさないように expresses the outcome to avoid: waking the baby. It connects that preventive aim to speaking quietly."),
             form("c14","Automatic consequence","このボタンを押す（　）、ドアが開きます。",["と","のに","ための","ながら"],"と","と expresses the regular result of pressing the button. のに would present an unexpected contrast; ための needs a following noun, and ながら does not attach to 押す."),
-            form("c15","Negative comparison","あの道は車が通らないので安全です。この道はあの道（　）安全ではありません。",["ほど","のほうが","だけを","にとって"],"ほど","ほど with a negative predicate means this road is not as safe as the other one. The opening sentence establishes the other road as safe; のほうが would incorrectly make that road the subject of the negative statement."),
+            form("c15","Negative comparison","この道はあの道ほど安全ではありません。つまり、（　）。",["あの道のほうが安全です","この道のほうが安全です","どちらの道も同じくらい安全です","どちらの道も安全ではありません"],"あの道のほうが安全です","Not as safe as the other road means the other road is safer. A relative comparison does not establish that both roads are unsafe."),
             order("c16","Nominalization and ability","この図書館では、",["外国の","新聞を","読むことが","できます"],"。","外国の modifies 新聞, 新聞を読む is the activity, and ことができます expresses that it is possible."),
             order("c17","Deadline and preparation","明日までに会議で",["使う","資料を","コピーして","おいて"],"ください。","会議で使う modifies 資料. 資料を is the object of コピーしておく, the preparation requested by the deadline."),
-            order("c18","Purpose","日本で",["働く","ために","日本語を","勉強しています"],"。","日本で働く is the intended goal. ために links that goal to the action taken, 日本語を勉強しています."),
+            order("c18","Action comparison","駅に行くなら、バスで行く",["より","歩く","ほうが","早い"],"です。","バスで行くより marks taking the bus as the standard. 歩くほうが marks walking as the faster action; 早い completes the comparison."),
             order("c19","Negative accompanying action","今日は",["傘を持たないで","外に","出て","しまいました"],"。","傘を持たないで means without taking an umbrella. 出てしまいました describes the completed, regretted departure. The first two phrases may move, but 出て must occupy ★."),
             order("c20","Hearsay","先生の話では、駅の前に",["新しい","図書館が","できる","そう"],"です。","新しい modifies 図書館. できるそうです reports what the teacher said about the library being built."),
-            text("c21","Reason",["ので","のに","なら","ても"],"ので","ので links the small room as the reason for finding a new way to arrange it. のに would present an unexpected contrast."),
-            text("c22","Conditional advice",["置くなら","置くと","置いても","置いたのに"],"置くなら","なら takes up the proposed placement as a topic for advice about what to do first. The advice is needed before placing the desk."),
-            text("c23","Action sequence",["測ってから","測る前に","測らないで","測っても"],"測ってから","The writer follows the instruction to measure first and buy afterward, so 測ってから preserves the order."),
-            text("c24","Resulting state",["置いてあります","置いていますか","置いてみます","置いておきませんか"],"置いてあります","置いてあります describes the desk now standing there as a result of deliberate placement. This is a statement of the resulting arrangement, not a question or a new plan."),
-            text("c25","Beneficial change",["ように","ために","ことに","そうに"],"ように","集中できるようになりました describes acquiring the ability to concentrate in the improved environment.")
-        ],passage:{title:"新しい机",paragraphs:[
-            "私の部屋は小さい【21】、家具の置き方を変えることにしました。今までは食事も勉強も同じテーブルでしていましたが、勉強用の机がほしくなりました。",
-            "窓のそばに机を置こうと思って、姉に相談しました。姉は「そこに【22】、買う前に窓の下の広さを測ったほうがいいよ」と言いました。私は姉のアドバイスに従って、広さを【23】、店に行きました。",
-            "ちょうどいい大きさの机が見つかりました。今は窓のそばに机が【24】。昼間は明るくて、前より勉強に集中できる【25】なりました。夜もここで本を読むのを楽しみにしています。"
+            text("c21","Unexpected change",["のに","ので","なら","ために"],"のに","The writer went out expecting fine weather, but it rained. のに connects that disappointed expectation to the actual outcome."),
+            text("c22","Receiving a favor",["くれて","あげて","もらって","くれると"],"くれて","The email thanks the reader for lending an umbrella to the writer: 貸してくれてありがとう. With もらう, the writer would instead say 貸してもらって助かりました."),
+            text("c23","Resulting state",["かけてあります","かけてみます","かけようと思います","かけてほしいです"],"かけてあります","The umbrella is already hanging there after the writer deliberately put it there. The next sentence says it is already dry, supporting a present result rather than a future trial, plan or wish."),
+            text("c24","Conditional topic",["行くなら","行ったのに","行っても","行くために"],"行くなら","なら takes up whether the reader plans to go as the condition for the writer's offer to return the umbrella there. It is not a purpose or a disappointed past expectation."),
+            text("c25","Alternative",["行かない場合は","行かないために","行かないのに","行かないように"],"行かない場合は","This sentence supplies the alternative if the reader is not going to the library. Their plans are not yet known, so this is a condition, not an asserted cause or a purpose.")
+        ],passage:{title:"借りた傘について",paragraphs:[
+            "山田さん、昨日はありがとう。晴れると思って出かけた【21】、途中で雨が降ってきて困りました。私に傘を貸して【22】ありがとう。本当に助かりました。",
+            "帰ってから傘を広げて、今は玄関に【23】。もう乾いています。",
+            "明日の午後、図書館に【24】、そこで傘を返せます。【25】、夕方、家まで届けます。予定が決まったら教えてください。"
         ]}}
     ];
     // Authored display readings supplement shared vocabulary, independently of answer keys.
     const readings = [
+        ["作る","つくる"],["畑","はたけ"],["土","つち"],["暖かい","あたたかい"],["寒","さむ"],
+        ["第一","だいいち"],["開く","ひらく"],["初回","しょかい"],["六月","ろくがつ"],["六日","むいか"],["午前","ごぜん"],["集","あつ"],
+        ["参加費","さんかひ"],["市","し"],["出す","だす"],["屋根","やね"],["市場","いちば"],["中","なか"],
+        ["飲み物","のみもの"],["各自","かくじ"],["確認","かくにん"],["試験","しけん"],["合格","ごうかく"],["寝坊","ねぼう"],
+        ["降ら","ふら"],["晴れる","はれる"],["出かけ","でかけ"],["貸し","かし"],["広げ","ひろげ"],["乾い","かわい"],["返せ","かえせ"],
+        ["休み","やすみ"],["連絡","れんらく"],["隣","となり"],["赤ちゃん","あかちゃん"],["起こ","おこ"],["小さな","ちいさな"],
+        ["行って","いって"],["行った","いった"],["行か","いか"],["場合","ばあい"],["乗っ","のっ"],["売れ","うれ"],["押し","おし"],["会い","あい"],
+        ["受付","うけつけ"],["九時半","くじはん"],["予定","よてい"],["決まっ","きまっ"],["早い","はやい"],["反対","はんたい"],
         ["先週","せんしゅう"],["野菜","やさい"],["作り","つくり"],["作ろう","つくろう"],["作って","つくって"],["作れば","つくれば"],["作られ","つくられ"],
         ["洗い","あらい"],["洗う","あらう"],["洗わ","あらわ"],["後","あと"],["私たち","わたしたち"],["小さく","ちいさく"],["小さい","ちいさい"],
         ["切り","きり"],["切れ","きれ"],["切り方","きりかた"],["教え","おしえ"],["最初","さいしょ"],["難しかった","むずかしかった"],["上手","じょうず"],
@@ -141,15 +149,17 @@
         ["間違え","まちがえ"],["元","もと"],["戻せ","もどせ"],["音","おと"],["窓","まど"],["開い","あい"],["開き","あき"],["押す","おす"],["近い","ちかい"],
         ["外国","がいこく"],["新聞","しんぶん"],["食べ","たべ"],["降りそう","ふりそう"],["思っ","おもっ"],["願い","ねがい"],["読み方","よみかた"],["通ら","とおら"],["降った","ふった"],["車","くるま"],["人","ひと"]
     ];
-    function createPaper(id, seed = Date.now()) {
+    function createPaper(id, seed = Date.now(), contentVersion = version) {
+        if (contentVersion === legacy.version) return {...legacy.createPaper(id, seed), version:legacy.version};
+        if (contentVersion !== version) throw new Error("Unknown N4 content version");
         const paper = papers.find(p=>p.id===id);
         if (!paper) throw new Error("Unknown N4 paper");
         const rng=core.random(seed);
         const positions=core.shuffle(Array.from({length:25},(_,i)=>i%4),rng);
-        return {...paper,seed,questions:paper.questions.map((q,i)=>{
+        return {...paper,version,seed,questions:paper.questions.map((q,i)=>{
             const options=core.shuffle(q.options.filter(v=>v!==q.answer),rng);
             options.splice(positions[i],0,q.answer);
-            return {...q,number:i+1,options};
+            return {...q,number:i+1,options,review:review.items[q.id]};
         })};
     }
     function score(paper, answers = {}) {
@@ -157,20 +167,56 @@
         const correct=items.filter(q=>q.correct).length;
         return {items,correct,total:items.length,percent:Math.round(correct/items.length*100),
             unanswered:items.filter(q=>!q.selected).length,
-            sections:sections.map(s=>({...s,correct:items.filter(q=>q.section===s.id && q.correct).length}))};
+            sections:sections.map(s=>({...s,correct:items.filter(q=>q.section===s.id && q.correct).length})),
+            domains:Object.entries(review.domains).map(([id,title])=>{
+                const tested=items.filter(q=>q.review?.domain===id);
+                return {id,title,total:tested.length,correct:tested.filter(q=>q.correct).length};
+            }).filter(d=>d.total)};
     }
     function restore(value) {
         try {
             const saved=JSON.parse(value);
-            if(saved?.version!==version || !papers.some(p=>p.id===saved.paperId) || !Number.isSafeInteger(saved.seed))return null;
-            const paper=createPaper(saved.paperId,saved.seed);
+            if(![version,legacy.version].includes(saved?.version) || !papers.some(p=>p.id===saved.paperId) || !Number.isSafeInteger(saved.seed))return null;
+            const paper=createPaper(saved.paperId,saved.seed,saved.version);
             const answers=Object.fromEntries(paper.questions.filter(q=>q.options.includes(saved.answers?.[q.id])).map(q=>[q.id,saved.answers[q.id]]));
-            return {version,paperId:saved.paperId,seed:saved.seed,answers,
+            const timestamp=value=>Number.isSafeInteger(value)&&value>=0&&value<=8640000000000000?value:0;
+            return {version:saved.version,paperId:saved.paperId,seed:saved.seed,answers,
+                id:typeof saved.id==="string"&&/^[a-zA-Z0-9_-]{1,100}$/.test(saved.id)?saved.id:`${saved.version}-${saved.paperId}-${saved.seed}`,
+                startedAt:timestamp(saved.startedAt),completedAt:saved.submitted===true?timestamp(saved.completedAt):0,
                 flags:paper.questions.filter(q=>Array.isArray(saved.flags)&&saved.flags.includes(q.id)).map(q=>q.id),
                 index:Number.isInteger(saved.index)?Math.max(0,Math.min(24,saved.index)):0,
                 elapsed:typeof saved.elapsed==="number"&&Number.isFinite(saved.elapsed)?Math.max(0,saved.elapsed):0,
                 submitted:saved.submitted===true};
         }catch{return null;}
     }
-    return {version,sections,papers,readings,createPaper,score,restore};
+    const historyLimit=100;
+    function createAttempt(paperId, seed=Date.now(), now=Date.now()) {
+        return restore(JSON.stringify({version,paperId,seed,id:`${version}-${paperId}-${seed}-${now}`,
+            startedAt:now,completedAt:0,answers:{},flags:[],index:0,elapsed:0,submitted:false}));
+    }
+    function remember(library, attempt) {
+        if(!attempt?.submitted)return library;
+        const clean=restore(JSON.stringify(attempt));
+        if(!clean)return library;
+        return {...library,history:[...library.history.filter(a=>a.id!==clean.id),clean].slice(-historyLimit)};
+    }
+    function restoreLibrary(value, oldValue=null) {
+        let library;
+        try {
+            const saved=JSON.parse(value);
+            if(saved?.schema===2 && Array.isArray(saved.history)){
+                const history=saved.history.map(a=>restore(JSON.stringify(a))).filter(a=>a?.submitted);
+                library={schema:2,active:restore(JSON.stringify(saved.active)),history:[]};
+                for(const attempt of history)library=remember(library,attempt);
+                return remember(library,library.active);
+            }
+        }catch{ /* Fall back to the previous single-attempt format without regrading it. */ }
+        const active=restore(oldValue);
+        return remember({schema:2,active,history:[]},active);
+    }
+    function answerFeedback(question, selected) {
+        return question.review ? review.feedback(question,selected) : null;
+    }
+    return {version,sections,papers,readings:[...legacy.readings,...readings],createPaper,score,restore,
+        review,answerFeedback,createAttempt,restoreLibrary,remember,historyLimit};
 });
