@@ -27,6 +27,8 @@
 .n4-toolbar span { color: #536258; font-size: 13px; }
 .n4-toolbar time { font-variant-numeric: tabular-nums; color: var(--ink); }
 .n4-toolbar-actions { display: flex; align-items: center; gap: 20px; }
+.n4-export-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin: 14px 0; }
+#n4-export-status { padding: 12px; color: #803d17; background: #fff0df; line-height: 1.6; }
 .n4-workspace { display: grid; grid-template-columns: minmax(0,1fr) 220px; gap: 36px; padding-top: 26px; }
 .n4-main, .n4-nav { min-width: 0; }
 .n4-question-heading { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }

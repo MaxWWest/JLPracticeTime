@@ -4,6 +4,7 @@
     const panel=document.querySelector("#n4-mock-panel");
     const root=document.querySelector("#n4-mock-root");
     const dialog=document.querySelector("#n4-mock-confirm");
+    const keyDialog=document.querySelector("#n4-key-confirm");
     const storageKey="kotoba-n4-mock-v3";
     const ruby=Furigana.create([...ParticlePractice.readings,...model.readings]);
     const jp=value=>ruby.render(value);
@@ -49,12 +50,39 @@
         root.querySelector("#n4-question-title, #n4-result-title")?.focus({preventScroll:true});
         root.scrollIntoView({block:"start"});
     }
+    function exportButtons() {
+        return `<div class="n4-export-actions" role="group" aria-label="Print or save this test as PDF"><button data-mock-export="test">Test PDF</button><button data-mock-export="key">Answer key PDF</button></div>`;
+    }
+    function exportPaper(kind) {
+        if(!paper)return;
+        tick();save();
+        const status=document.querySelector("#n4-export-status");
+        status.hidden=true;
+        let preview;
+        try {
+            const html=N4MockPrint.document(paper,{
+                kind,jp,furigana:document.querySelector("#furigana-toggle").getAttribute("aria-pressed")!=="false",
+                cssHref:new URL("n4-mock-print.css?v=20261029-n4-pdf",location.href).href,
+                scriptHref:new URL("n4-mock-print-page.js?v=20261029-n4-pdf",location.href).href
+            });
+            preview=window.open("","_blank");
+            if(!preview)throw new Error("Popup blocked");
+            preview.opener=null;
+            preview.document.open();preview.document.write(html);preview.document.close();
+            preview.focus();
+        }catch{
+            if(preview)preview.close();
+            status.textContent="The PDF preview could not open. Allow pop-ups for this site, then try again. Your test is unchanged.";
+            status.hidden=false;
+            status.scrollIntoView({block:"nearest"});
+        }
+    }
     function renderSetup() {
         selectAttempt(library.active);
         root.innerHTML=`<header class="n4-heading"><div><p class="eyebrow section-eyebrow">GRAMMAR</p><h2>N4 Mock Test</h2>
             <p>25 questions · 3 parts</p></div><span class="n4-unofficial">Unofficial practice · Grammar only</span></header>
             ${state ? `<div class="n4-resume"><div><strong>${esc(paper.title)} · ${edition(state)}</strong><p>${state.submitted ? `${model.score(paper,state.answers).correct}/25 · Completed` : `${Object.keys(state.answers).length}/25 answered · ${time(state.elapsed)} elapsed`}</p></div>
-                <button data-mock="resume" class="n4-primary">${state.submitted ? "View results" : "Resume test"}</button></div>` : ""}
+                <button data-mock="resume" class="n4-primary">${state.submitted ? "View results" : "Resume test"}</button>${exportButtons()}</div>` : ""}
             <table class="n4-outline"><caption>Test sections</caption><tbody>${model.sections.map((s,i)=>`<tr><th scope="row"><span>0${i+1}</span> ${esc(s.title)}</th><td>${s.count} questions</td></tr>`).join("")}</tbody></table>
             <div class="n4-start">${state&&!state.submitted ? `<span>Finish your current attempt before starting another test.</span>` : `<button data-mock="start" class="n4-primary">Generate a new test <span aria-hidden="true">→</span></button>`}</div>
             <p class="n4-disclaimer">${model.bank.forms.length} grammar questions · ${model.bank.orders.length} sentence-order questions · ${model.bank.passages.length} passages. Finite question bank; repeats are possible.</p>
@@ -92,7 +120,7 @@
         root.innerHTML=`<header class="n4-toolbar"><div><strong>N4 Mock Test · ${edition(state)}</strong>
             <span id="n4-answer-count" role="status">${Object.keys(state.answers).length}/25 answered</span></div>
             <div class="n4-toolbar-actions"><span>Elapsed <time id="n4-clock">${time(state.elapsed)}</time></span><button data-mock="exit">Save & exit</button></div></header>
-            <div class="n4-workspace"><div class="n4-main"><div class="n4-question-heading"><h2 id="n4-question-title" tabindex="-1">Question ${q.number} <small>/ 25</small></h2>
+            ${exportButtons()}<div class="n4-workspace"><div class="n4-main"><div class="n4-question-heading"><h2 id="n4-question-title" tabindex="-1">Question ${q.number} <small>/ 25</small></h2>
                 <label class="n4-flag"><input id="n4-flag" type="checkbox" ${state.flags.includes(q.id)?"checked":""}> Review later</label></div>
                 <p class="n4-instruction"><strong>${esc(section.instruction)}</strong></p>
                 ${sentence(q)}
@@ -104,7 +132,7 @@
         const result=model.score(paper,state.answers);
         const prior=library.history.filter(a=>a.paperId===state.paperId && a.id!==state.id && library.history.indexOf(a)<library.history.findIndex(a=>a.id===state.id)).length;
         root.innerHTML=`<header class="n4-heading"><div><p class="eyebrow section-eyebrow">${esc(paper.title)} · COMPLETE</p><h2 id="n4-result-title" tabindex="-1">Mock test results</h2></div><button data-mock="exit">All tests</button></header>
-            <dl class="n4-scores"><div><dt>Correct</dt><dd id="n4-score">${result.correct} / ${result.total}</dd></div><div><dt>Accuracy</dt><dd>${result.percent}%</dd></div><div><dt>Unanswered</dt><dd>${result.unanswered}</dd></div><div><dt>Elapsed</dt><dd>${time(state.elapsed)}</dd></div></dl>
+            ${exportButtons()}<dl class="n4-scores"><div><dt>Correct</dt><dd id="n4-score">${result.correct} / ${result.total}</dd></div><div><dt>Accuracy</dt><dd>${result.percent}%</dd></div><div><dt>Unanswered</dt><dd>${result.unanswered}</dd></div><div><dt>Elapsed</dt><dd>${time(state.elapsed)}</dd></div></dl>
             <p class="n4-disclaimer">Raw practice score, not a JLPT scaled score or pass prediction.</p>
             <p class="n4-disclaimer">${edition(state)} · ${state.version===model.version?`${paper.exposure.previouslySeen} / 25 questions appeared in previously saved attempts when this test was created. ${paper.exposure.passageSeen?"The passage has appeared before.":"This passage had not appeared in saved attempts."}`:prior?"Repeat attempt; familiarity may affect the score.":"First recorded attempt of this fixed paper."}</p>
             <table class="n4-outline"><caption>Section results</caption><tbody>${result.sections.map(s=>`<tr><th scope="row">${esc(s.title)}</th><td>${s.correct} / ${s.count}</td></tr>`).join("")}</tbody></table>
@@ -152,6 +180,11 @@
         const button=event.target.closest("button");
         if(!button)return;
         tick();
+        if(button.dataset.mockExport && paper){
+            if(button.dataset.mockExport==="key"&&!state.submitted){keyDialog.returnValue="";keyDialog.showModal();}
+            else exportPaper(button.dataset.mockExport);
+            return;
+        }
         if(button.dataset.history){
             const attempt=library.history.find(a=>a.id===button.dataset.history);
             if(attempt){selectAttempt(attempt);view="results";render();focusQuestion();}
@@ -181,6 +214,10 @@
     dialog.addEventListener("close",()=>{
         if(dialog.returnValue!=="submit" || !state || state.submitted)return;
         tick();state.submitted=true;state.completedAt=Date.now();library=model.remember(library,state);view="results";save();render();focusQuestion();
+    });
+    keyDialog.querySelector("form").addEventListener("submit",event=>{
+        // Open synchronously from the confirm gesture so mobile popup blockers allow it.
+        if(event.submitter?.value==="key")exportPaper("key");
     });
     window.addEventListener("pagehide",()=>{tick();if(state)save();});
     document.addEventListener("visibilitychange",()=>{tick();if(state)save();});
