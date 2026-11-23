@@ -232,7 +232,8 @@ const sectionTabs = [
 	{ name: "vocabulary", tab: vocabularyTab, panels: [vocabularyPanel, practicePanel], defaultPanel: "vocabulary-panel" },
 	{ name: "grammar", tab: grammarTab, panels: [grammarPanel, grammarPracticePanel, particlePracticePanel, conjugationPanel, nominalConjugationPanel, n4MockPanel], defaultPanel: "grammar-panel" },
 	{ name: "reading", tab: readingTab, panels: [readingPanel], defaultPanel: "reading-panel" },
-	{ name: "speaking", tab: speakingTab, panels: [pitchPanel], defaultPanel: "pitch-panel" }
+	{ name: "speaking", tab: speakingTab, panels: [pitchPanel], defaultPanel: "pitch-panel" },
+	{ name: "diary", tab: document.querySelector("#diary-tab"), panels: [document.querySelector("#diary-panel")], defaultPanel: "diary-panel" }
 ];
 const activeSubtabs = Object.fromEntries(sectionTabs.map(({ name, defaultPanel }) => [name, defaultPanel]));
 const allSectionPanels = sectionTabs.flatMap(({ panels }) => panels);
@@ -8972,6 +8973,7 @@ vocabularyTab.addEventListener("click", () => activateTab("vocabulary"));
 grammarTab.addEventListener("click", () => activateTab("grammar"));
 readingTab.addEventListener("click", () => activateTab("reading"));
 speakingTab.addEventListener("click", () => activateTab("speaking"));
+document.querySelector("#diary-tab").addEventListener("click", () => activateTab("diary"));
 document.querySelector(".content-tabs").addEventListener("keydown", (event) => {
 	const tabs = sectionTabs.map(({ tab, name }) => ({ tab, name }));
 	if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;

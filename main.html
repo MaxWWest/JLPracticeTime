@@ -47,7 +47,7 @@
     <script src="final-grammar-practice.js?v=20261022-roles-v1" defer></script>
     <script src="boss-twentyone-twentyfive.js?v=20261022-roles-v1" defer></script>
     <script src="furigana.js?v=20261022-roles-v1" defer></script>
-    <script src="script.js?v=20261028-n4-v1" defer></script>
+    <script src="script.js?v=20261123-diary-v1" defer></script>
     <script src="n4-mock-v1.js?v=20261028-n4-v1" defer></script>
     <script src="n4-mock-review.js?v=20261029-n4-v2" defer></script>
     <script src="n4-mock-test.js?v=20261029-n4-v2" defer></script>
@@ -59,6 +59,8 @@
     <script src="reading-skills.js?v=20261020-reading-v2" defer></script>
     <script src="reading-quality.js?v=20261020-reading-v2" defer></script>
     <script src="reading.js?v=20261020-reading-v2" defer></script>
+    <link rel="stylesheet" href="daily-diary.css?v=20261123-1">
+    <script src="daily-diary.js?v=20261123-1" defer></script>
 </head>
 <body>
     <div class="page-shell">
@@ -93,6 +95,7 @@
                 <button class="content-tab" id="grammar-tab" data-section="grammar" type="button" role="tab" aria-selected="false" aria-controls="grammar-panel" tabindex="-1">Grammar</button>
                 <button class="content-tab" id="reading-tab" data-section="reading" type="button" role="tab" aria-selected="false" aria-controls="reading-panel" tabindex="-1">Reading</button>
                 <button class="content-tab" id="speaking-tab" data-section="speaking" type="button" role="tab" aria-selected="false" aria-controls="pitch-panel" tabindex="-1">Speaking</button>
+                <button class="content-tab" id="diary-tab" data-section="diary" type="button" role="tab" aria-selected="false" aria-controls="diary-panel" tabindex="-1">Daily diary</button>
             </div>
             <div class="sub-tabs" id="sub-tabs" aria-label="Tools in this section">
                 <div class="sub-tab-group" data-subtab-group="vocabulary" role="tablist" aria-label="Vocabulary tools">
@@ -1422,6 +1425,37 @@
                         </div>
                     </div>
                 </section>
+            <section class="tab-panel diary-panel" id="diary-panel" role="tabpanel" aria-labelledby="diary-tab" hidden>
+                <div class="diary-heading">
+                    <div><p class="diary-eyebrow">毎日の日記 · DAILY WRITING</p><h2>A little of your day, in Japanese.</h2>
+                    <p>Write about five sentences using <strong>all 5 grammar points</strong>, <strong>3 of the 10 verbs</strong>, and <strong>3 of the 10 vocab words</strong>.</p></div>
+                    <span class="diary-seal" aria-hidden="true">日記</span>
+                </div>
+                <div class="diary-toolbar">
+                    <div class="diary-date-controls"><button id="diary-previous" type="button" aria-label="Previous day">Previous</button><label for="diary-date">Entry date <input id="diary-date" type="date" required></label><button id="diary-next" type="button" aria-label="Next day">Next</button><button id="diary-today" type="button">Today</button></div>
+                    <span class="diary-note">New prompts each day · Japan time</span>
+                </div>
+                <p class="diary-note">Everyday N5–N4 practice. Your prompts stay the same for each date. Tick an item after you use it; this is a self-check, not automatic grading.</p>
+                <div class="diary-layout">
+                    <div class="diary-prompts">
+                        <section class="diary-card"><div class="diary-card-heading"><h3>Grammar points</h3><span>Use all 5</span></div><div id="diary-grammar"></div></section>
+                        <section class="diary-card"><div class="diary-card-heading"><h3>Verbs</h3><span>Choose at least 3</span></div><div class="diary-word-list" id="diary-verbs"></div></section>
+                        <section class="diary-card"><div class="diary-card-heading"><h3>Vocabulary</h3><span>Choose at least 3</span></div><div class="diary-word-list" id="diary-vocab"></div></section>
+                    </div>
+                    <div class="diary-writing">
+                        <section class="diary-card diary-notebook">
+                            <p class="diary-eyebrow" id="diary-date-title"></p><h3>Your five-sentence journal</h3>
+                            <p class="diary-note">Start with something you did, noticed, or felt. Try one grammar point per sentence, and conjugate the verbs to fit.</p>
+                            <label class="diary-editor-label" for="diary-entry">Write in Japanese</label>
+                            <textarea id="diary-entry" lang="ja" rows="12" placeholder="今日はどんな一日でしたか。" aria-describedby="diary-storage-note"></textarea>
+                            <div class="diary-progress" id="diary-progress" aria-live="polite"></div>
+                            <p id="diary-save-status" class="diary-note" role="status"></p>
+                            <p id="diary-storage-note" class="diary-note">Entries save automatically in this browser on this device. Download a copy to keep a backup.</p>
+                            <button id="diary-download" type="button">Download entry</button>
+                        </section>
+                    </div>
+                </div>
+            </section>
         </main>
 
         <footer class="page-footer"><span>kotoba<span class="brand-period">.</span></span><span>Made for curious minds <span aria-hidden="true">✿</span></span></footer>

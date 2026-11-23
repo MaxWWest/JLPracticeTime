@@ -1,0 +1,44 @@
+body[data-active-section="diary"] { --section-color: #6e528b; --section-color-dark: #513868; --section-color-pale: #eee8f4; }
+.content-tab[data-section="diary"] { --tab-color: #6e528b; --tab-soft: #eee8f4; }
+body[data-active-section="diary"] #sub-tabs { display: none; }
+.diary-panel { padding: 32px 0 48px; }
+.diary-heading { display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+.diary-heading h2 { margin: 0 0 14px; font-size: clamp(26px, 3vw, 36px); font-weight: 500; letter-spacing: -1px; }
+.diary-heading p:not(.diary-eyebrow) { max-width: 740px; margin: 0; line-height: 1.8; font-size: 16px; }
+.diary-eyebrow { margin: 0 0 12px; color: #6e528b; font-size: 13px; font-weight: 700; letter-spacing: 1px; }
+.diary-seal { flex-shrink: 0; padding: 18px; border: 1px solid #d0bfdc; border-radius: 18px; color: #6e528b; font-size: 28px; }
+.diary-toolbar, .diary-date-controls { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; }
+.diary-toolbar { margin: 28px 0 14px; justify-content: space-between; }
+.diary-date-controls label { display: flex; align-items: center; gap: 10px; font-size: 14px; }
+.diary-panel button, .diary-panel input[type="date"] { min-height: 42px; border: 1px solid #d7d1dc; border-radius: 8px; padding: 9px 12px; background: var(--white); font: inherit; font-size: 14px; color: var(--ink); }
+.diary-panel button { cursor: pointer; }
+.diary-panel button:hover { background: #eee8f4; border-color: #6e528b; }
+.diary-note { color: #61685f; font-size: 14px; line-height: 1.65; }
+.diary-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px; margin-top: 24px; align-items: start; }
+.diary-prompts { display: grid; gap: 18px; }
+.diary-card { padding: 24px; border: 1px solid var(--line); border-radius: 14px; background: var(--white); }
+.diary-card h3 { margin: 0; font-size: 20px; font-weight: 600; }
+.diary-card-heading { display: flex; align-items: baseline; flex-wrap: wrap; gap: 8px; justify-content: space-between; margin-bottom: 14px; }
+.diary-card-heading > span { color: #6e528b; font-size: 14px; }
+.diary-prompt { border-top: 1px solid var(--line); padding: 14px 0; min-width: 0; }
+.diary-prompt label { display: flex; align-items: start; gap: 10px; cursor: pointer; line-height: 1.6; }
+.diary-prompt label > span { min-width: 0; overflow-wrap: anywhere; }
+.diary-prompt input { margin: 5px 0 0; width: 18px; height: 18px; flex-shrink: 0; accent-color: #6e528b; }
+.diary-prompt strong { font-size: 18px; font-weight: 500; }
+.diary-prompt:has(input:checked) strong { color: #6e528b; }
+.diary-reading, .diary-meaning { display: block; font-size: 14px; color: #61685f; }
+.diary-prompt details { margin: 9px 0 0 28px; font-size: 14px; line-height: 1.7; }
+.diary-prompt summary { color: #6e528b; cursor: pointer; }
+.diary-prompt details p { margin: 8px 0; overflow-wrap: anywhere; }
+.diary-word-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 16px; }
+.diary-writing { position: sticky; top: 20px; }
+.diary-editor-label { display: block; font-size: 14px; font-weight: 600; margin: 20px 0 8px; }
+#diary-entry { display: block; width: 100%; min-height: 330px; resize: vertical; padding: 16px; border: 1px solid #d7d1dc; border-radius: 8px; font: 17px/2 "Noto Sans JP", sans-serif; color: var(--ink); background: #fff; }
+#diary-entry::placeholder { color: #848078; font-size: 15px; }
+.diary-progress { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; font-size: 14px; }
+.diary-progress span { background: #eee8f4; color: #513868; padding: 6px 10px; border-radius: 6px; }
+.diary-progress strong { flex-basis: 100%; color: #315e4b; font-weight: 500; }
+#diary-download { background: #6e528b; color: white; border-color: #6e528b; }
+.diary-panel :is(button, input, textarea, summary):focus-visible { outline: 2px solid #6e528b; outline-offset: 3px; }
+@media (max-width: 800px) { .diary-layout { grid-template-columns: minmax(0, 1fr); } .diary-writing { position: static; } .diary-seal { display: none; } }
+@media (max-width: 420px) { .diary-card { padding: 18px; } .diary-date-controls { gap: 8px; } .diary-date-controls label { order: -1; width: 100%; } .diary-toolbar { align-items: start; } }

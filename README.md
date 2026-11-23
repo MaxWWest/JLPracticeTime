@@ -174,3 +174,22 @@ context-sensitive mood counterexamples, and reviewed stacking combinations.
 See `READING_QUALITY.md` for the audit scope, safeguards, and verification.
 Run `node --test reading-content.test.js reading-quality.test.js` and, with
 Playwright available, `PLAYWRIGHT_CHANNEL=chrome node reading-quality-browser-test.js`.
+
+## Daily diary
+
+Open the **Daily diary** tab or `main.html?tab=diary`. Each Japan-calendar date
+gets five grammar points, ten verbs and ten non-verb vocabulary words from an
+authored offline N5–N4 practice bank (30 patterns, 40 verbs, 52 vocabulary items).
+Date-seeded selection is stable across refreshes; repeats across days are possible.
+Assignments are saved as snapshots so later content updates do not alter saved days.
+
+Aim for about five sentences using every grammar point, at least three distinct
+verbs and three distinct vocabulary words. Checkboxes are manual self-assessment,
+not automatic Japanese grading. The sentence estimate splits punctuation and lines.
+Expand grammar hints for formation notes and translated examples.
+
+Writing and checklists autosave per date in browser local storage. Previous, Next,
+the date picker, and Today revisit entries. There is no account or cross-device
+sync. Download entry exports the writing, prompts and checklist as UTF-8 text.
+Storage failures are shown explicitly; unreadable existing saves are not overwritten.
+Run `node --test daily-diary.test.js` for date, selection and persistence checks.
