@@ -178,9 +178,11 @@ Playwright available, `PLAYWRIGHT_CHANNEL=chrome node reading-quality-browser-te
 ## Daily diary
 
 Open the **Daily diary** tab or `main.html?tab=diary`. Each Japan-calendar date
-gets five grammar points, ten verbs and ten non-verb vocabulary words from an
-authored offline N5–N4 practice bank (30 patterns, 40 verbs, 52 vocabulary items).
-Date-seeded selection is stable across refreshes; repeats across days are possible.
+gets five grammar points, ten verbs and ten non-verb vocabulary words for the
+selected **N5** or **N4** level. N5 uses basic sentence patterns and everyday words;
+N4 uses more complex patterns and broader vocabulary. These are authored teaching
+bands, not official JLPT lists. The selected level is remembered in this browser.
+Date-and-level-seeded selection is stable across refreshes; repeats across days are possible.
 Assignments are saved as snapshots so later content updates do not alter saved days.
 
 Aim for about five sentences using every grammar point, at least three distinct
@@ -188,7 +190,10 @@ verbs and three distinct vocabulary words. Checkboxes are manual self-assessment
 not automatic Japanese grading. The sentence estimate splits punctuation and lines.
 Expand grammar hints for formation notes and translated examples.
 
-Writing and checklists autosave per date in browser local storage. Previous, Next,
+Writing and checklists autosave separately per date and level in browser local storage.
+Earlier mixed-level entries appear under N4, clearly labeled, with their writing,
+checklists and prompt snapshots preserved; their original storage records are retained.
+Downloads include the level in the heading and filename. Previous, Next,
 the date picker, and Today revisit entries. There is no account or cross-device
 sync. Download entry exports the writing, prompts and checklist as UTF-8 text.
 Storage failures are shown explicitly; unreadable existing saves are not overwritten.

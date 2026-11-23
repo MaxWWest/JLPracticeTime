@@ -9,8 +9,8 @@ body[data-active-section="diary"] #sub-tabs { display: none; }
 .diary-seal { flex-shrink: 0; padding: 18px; border: 1px solid #d0bfdc; border-radius: 18px; color: #6e528b; font-size: 28px; }
 .diary-toolbar, .diary-date-controls { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; }
 .diary-toolbar { margin: 28px 0 14px; justify-content: space-between; }
-.diary-date-controls label { display: flex; align-items: center; gap: 10px; font-size: 14px; }
-.diary-panel button, .diary-panel input[type="date"] { min-height: 42px; border: 1px solid #d7d1dc; border-radius: 8px; padding: 9px 12px; background: var(--white); font: inherit; font-size: 14px; color: var(--ink); }
+.diary-date-controls label, .diary-level-control { display: flex; align-items: center; gap: 10px; font-size: 14px; }
+.diary-panel button, .diary-panel input[type="date"], .diary-panel select { min-height: 42px; border: 1px solid #d7d1dc; border-radius: 8px; padding: 9px 12px; background: var(--white); font: inherit; font-size: 14px; color: var(--ink); }
 .diary-panel button { cursor: pointer; }
 .diary-panel button:hover { background: #eee8f4; border-color: #6e528b; }
 .diary-note { color: #61685f; font-size: 14px; line-height: 1.65; }
@@ -39,6 +39,8 @@ body[data-active-section="diary"] #sub-tabs { display: none; }
 .diary-progress span { background: #eee8f4; color: #513868; padding: 6px 10px; border-radius: 6px; }
 .diary-progress strong { flex-basis: 100%; color: #315e4b; font-weight: 500; }
 #diary-download { background: #6e528b; color: white; border-color: #6e528b; }
-.diary-panel :is(button, input, textarea, summary):focus-visible { outline: 2px solid #6e528b; outline-offset: 3px; }
+.diary-panel :is(button, input, textarea, select, summary):focus-visible { outline: 2px solid #6e528b; outline-offset: 3px; }
 @media (max-width: 800px) { .diary-layout { grid-template-columns: minmax(0, 1fr); } .diary-writing { position: static; } .diary-seal { display: none; } }
-@media (max-width: 420px) { .diary-card { padding: 18px; } .diary-date-controls { gap: 8px; } .diary-date-controls label { order: -1; width: 100%; } .diary-toolbar { align-items: start; } }
+@media (max-width: 420px) { .diary-card { padding: 18px; } .diary-date-controls { gap: 8px; } .diary-date-controls label, .diary-level-control { order: -1; width: 100%; } .diary-toolbar { align-items: start; } }
+
+.diary-panel select { appearance: none; padding-right: 34px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%236e528b' stroke-width='2'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; }

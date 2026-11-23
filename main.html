@@ -59,8 +59,8 @@
     <script src="reading-skills.js?v=20261020-reading-v2" defer></script>
     <script src="reading-quality.js?v=20261020-reading-v2" defer></script>
     <script src="reading.js?v=20261020-reading-v2" defer></script>
-    <link rel="stylesheet" href="daily-diary.css?v=20261123-1">
-    <script src="daily-diary.js?v=20261123-1" defer></script>
+    <link rel="stylesheet" href="daily-diary.css?v=20261123-levels-2">
+    <script src="daily-diary.js?v=20261123-levels-2" defer></script>
 </head>
 <body>
     <div class="page-shell">
@@ -1433,9 +1433,10 @@
                 </div>
                 <div class="diary-toolbar">
                     <div class="diary-date-controls"><button id="diary-previous" type="button" aria-label="Previous day">Previous</button><label for="diary-date">Entry date <input id="diary-date" type="date" required></label><button id="diary-next" type="button" aria-label="Next day">Next</button><button id="diary-today" type="button">Today</button></div>
-                    <span class="diary-note">New prompts each day · Japan time</span>
+                    <label class="diary-level-control" for="diary-level">Practice level <select id="diary-level" aria-describedby="diary-level-note"><option value="N5">N5 · Beginner</option><option value="N4">N4 · Elementary</option></select></label>
                 </div>
-                <p class="diary-note">Everyday N5–N4 practice. Your prompts stay the same for each date. Tick an item after you use it; this is a self-check, not automatic grading.</p>
+                <p class="diary-note" id="diary-level-note" aria-live="polite"></p>
+                <p class="diary-note">New prompts each day · Japan time. N5 and N4 keep separate writing and checklists for each date. Earlier mixed-level entries are available under N4. Tick an item after you use it; this is a self-check, not automatic grading.</p>
                 <div class="diary-layout">
                     <div class="diary-prompts">
                         <section class="diary-card"><div class="diary-card-heading"><h3>Grammar points</h3><span>Use all 5</span></div><div id="diary-grammar"></div></section>

@@ -137,6 +137,72 @@
 一緒に|いっしょに|together
 たくさん|たくさん|a lot
 `, 'vocab');
+    // Teaching bands for this authored practice bank, not official JLPT lists.
+    const n5Ids = new Set(['tai', 'maeni', 'kara', 'teiru', 'teii']);
+    const n5Grammar = grammar.filter(item => n5Ids.has(item.id)).map(item => item.id === 'teii'
+        ? { ...item, example: 'ここで写真を撮ってもいいです。', translation: 'It is okay to take photos here.' } : item).concat([
+        ['past', '〜ました', 'Say what you did', 'Verb ます-form: replace ます with ました', '朝、パンを食べました。', 'I ate bread in the morning.'],
+        ['negativepast', '〜ませんでした', 'Say what you did not do', 'Verb ます-form: replace ます with ませんでした', '今日はテレビを見ませんでした。', 'I did not watch TV today.'],
+        ['adjectivepast', '〜かったです', 'Describe how something was', 'い-adjective: replace final い with かったです; いい becomes よかったです', '今日は暑かったです。', 'It was hot today.'],
+        ['nounpast', '〜でした', 'Describe a past state', 'Noun or な-adjective stem + でした', '昨日は休みでした。', 'Yesterday was a day off.'],
+        ['placeaction', '〜で', 'Say where an action happened', 'Place + で + action', '図書館で本を読みました。', 'I read a book at the library.'],
+        ['destination', '〜に行く', 'Say where you went', 'Destination + に + 行く', '公園に行きました。', 'I went to the park.'],
+        ['with', '〜と', 'Say who you did something with', 'Person + と + action', '友達と話しました。', 'I talked with a friend.'],
+        ['also', '〜も', 'Add another person or thing', 'Use も instead of は or を to mean also or too', 'お茶も飲みました。', 'I also drank tea.'],
+        ['existence', '〜があります／います', 'Say what is there', 'Place + に + thing + がある; use いる for people and animals', '公園に猫がいました。', 'There was a cat in the park.'],
+        ['sequence', '〜て、〜', 'Connect actions in order', 'First verb in て-form, then the next action', '朝ご飯を食べて、学校に行きました。', 'I ate breakfast and went to school.'],
+        ['adjectives', '〜くて／〜で', 'Connect descriptions', 'い-adjective: replace final い with くて; な-adjective stem + で', 'この店は安くて、おいしいです。', 'This restaurant is cheap and the food is tasty.']
+    ].map(([id, ja, meaning, formation, example, translation]) => ({ id, ja, meaning, formation, example, translation })));
+    const n4Verbs = makeWords(`
+考える|かんがえる|to think
+選ぶ|えらぶ|to choose
+送る|おくる|to send
+手伝う|てつだう|to help
+始める|はじめる|to begin something
+続ける|つづける|to continue something
+決める|きめる|to decide
+準備する|じゅんびする|to prepare
+予約する|よやくする|to reserve
+相談する|そうだんする|to consult
+説明する|せつめいする|to explain
+連絡する|れんらくする|to contact
+間に合う|まにあう|to be on time
+遅れる|おくれる|to be late
+調べる|しらべる|to look up; to investigate
+比べる|くらべる|to compare
+片付ける|かたづける|to tidy up
+見つける|みつける|to find
+運ぶ|はこぶ|to carry; to transport
+直す|なおす|to fix
+`, 'verb');
+    const n4Vocab = makeWords(`
+予定|よてい|plan; schedule
+約束|やくそく|promise; appointment
+気持ち|きもち|feeling
+週末|しゅうまつ|weekend
+用事|ようじ|errand; something to do
+都合|つごう|convenience; circumstances
+理由|りゆう|reason
+経験|けいけん|experience
+習慣|しゅうかん|habit
+生活|せいかつ|daily life
+健康|けんこう|health
+近所|きんじょ|neighborhood
+途中|とちゅう|on the way
+久しぶり|ひさしぶり|after a long time
+最近|さいきん|recently
+将来|しょうらい|future
+必要|ひつよう|necessary (な-adjective)
+残念|ざんねん|disappointing (な-adjective)
+無理|むり|unreasonable; impossible (な-adjective)
+十分|じゅうぶん|enough; sufficient
+`, 'vocab');
+    const banks = {
+        N5: { grammar: n5Grammar, verbs: verbs.filter(item => !n4Verbs.some(word => word.id === item.id)), vocab: vocab.filter(item => !n4Vocab.some(word => word.id === item.id)) },
+        N4: { grammar: grammar.filter(item => !n5Ids.has(item.id)), verbs: n4Verbs, vocab: n4Vocab }
+    };
+    const levelFor = level => level === 'N4' ? 'N4' : 'N5';
+    const preferenceKey = 'kotoba-diary-level';
     function randomFor(seed) {
         let state = 2166136261;
         for (const ch of seed) state = Math.imul(state ^ ch.charCodeAt(0), 16777619);
@@ -155,8 +221,10 @@
         }
         return shuffled.slice(0, count).map(item => ({ ...item }));
     }
-    function assignment(date) {
-        return { grammar: pick(grammar, 5, `${date}:grammar:v1`), verbs: pick(verbs, 10, `${date}:verbs:v1`), vocab: pick(vocab, 10, `${date}:vocab:v1`) };
+    function assignment(date, level = 'N5') {
+        level = levelFor(level);
+        return Object.fromEntries(Object.entries({ grammar: 5, verbs: 10, vocab: 10 }).map(([group, count]) =>
+            [group, pick(banks[level][group], count, `${date}:${level}:${group}:v2`)]));
     }
     function today(now = new Date()) {
         const parts = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Tokyo', year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(now);
@@ -174,8 +242,9 @@
         return date.toISOString().slice(0, 10);
     }
     function sentences(text) { return text.split(/[。！？.!?]+(?:[」』”"]*)\s*|\n+/u).filter(part => part.trim()).length; }
-    const keyFor = date => `kotoba-diary-v1:${date}`;
-    function blank(date) { return { date, prompts: assignment(date), text: '', checked: [], updatedAt: null }; }
+    const legacyKeyFor = date => `kotoba-diary-v1:${date}`;
+    const keyFor = (date, level = 'N5') => `kotoba-diary-v2:${levelFor(level)}:${date}`;
+    function blank(date, level) { return { date, level, prompts: assignment(date, level), text: '', checked: [], updatedAt: null }; }
     function validEntry(entry, date) {
         return entry && entry.date === date && typeof entry.text === 'string' && Array.isArray(entry.checked) &&
             Object.entries({ grammar: 5, verbs: 10, vocab: 10 }).every(([group, count]) => {
@@ -184,14 +253,17 @@
                     items.every(item => item && ['id', 'ja', 'meaning', ...(group === 'grammar' ? ['formation', 'example', 'translation'] : ['reading'])].every(key => typeof item[key] === 'string'));
             });
     }
-    function load(storage, date) {
+    function load(storage, date, level = 'N5') {
+        level = levelFor(level);
         try {
-            const raw = storage.getItem(keyFor(date));
-            if (!raw) return { entry: blank(date), error: null };
+            const saved = storage.getItem(keyFor(date, level));
+            const legacy = saved === null && level === 'N4' ? storage.getItem(legacyKeyFor(date)) : null;
+            const raw = saved ?? legacy;
+            if (raw === null) return { entry: blank(date, level), error: null };
             const entry = JSON.parse(raw);
-            if (!validEntry(entry, date)) throw new Error('invalid entry');
-            return { entry, error: null };
-        } catch { return { entry: blank(date), error: 'This saved entry could not be read. Your existing save will not be overwritten. Download any new writing to keep it.' }; }
+            if (!validEntry(entry, date) || (legacy === null && entry.level !== level)) throw new Error('invalid entry');
+            return { entry: legacy !== null ? { ...entry, level, legacy: true } : entry, error: null };
+        } catch { return { entry: blank(date, level), error: 'This saved entry could not be read. Your existing save will not be overwritten. Download any new writing to keep it.' }; }
     }
     const escape = value => String(value).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     function mount() {
@@ -201,7 +273,11 @@
         let storage;
         try { storage = window.localStorage; } catch { storage = { getItem() { throw new Error('unavailable'); } }; }
         const session = new Map();
-        let currentDate = today(), entry, readError;
+        let currentDate = today(), currentLevel = 'N5', entry, readError;
+        try {
+            const preferred = storage.getItem(preferenceKey);
+            currentLevel = preferred ? levelFor(preferred) : (storage.getItem(legacyKeyFor(currentDate)) !== null ? 'N4' : 'N5');
+        } catch { /* The entry status reports unavailable storage. */ }
         const unsavedDates = new Set();
         function progress() {
             const counts = ['grammar', 'verbs', 'vocab'].map(group => entry.prompts[group].filter(item => entry.checked.includes(item.id)).length);
@@ -212,24 +288,29 @@
         function save() {
             entry.text = el('entry').value;
             entry.updatedAt = new Date().toISOString();
-            session.set(currentDate, { entry, error: readError });
-            unsavedDates.add(currentDate);
+            const key = keyFor(currentDate, currentLevel);
+            session.set(key, { entry, error: readError });
+            unsavedDates.add(key);
             if (readError) { el('save-status').textContent = readError; return; }
             try {
-                storage.setItem(keyFor(currentDate), JSON.stringify(entry));
-                unsavedDates.delete(currentDate);
+                storage.setItem(key, JSON.stringify(entry));
+                unsavedDates.delete(key);
                 el('save-status').textContent = 'Saved in this browser.';
             } catch {
                 el('save-status').textContent = 'Could not save in this browser. Download your entry before leaving.';
             }
         }
-        function render(date) {
+        function render(date, level = currentLevel) {
             if (!validDate(date)) { el('date').value = currentDate; return; }
-            currentDate = date;
-            const loaded = session.get(date) || load(storage, date);
+            currentDate = date; currentLevel = levelFor(level);
+            const loaded = session.get(keyFor(date, currentLevel)) || load(storage, date, currentLevel);
             entry = loaded.entry; readError = loaded.error;
             el('date').value = date;
-            el('date-title').textContent = new Intl.DateTimeFormat('en-US', { dateStyle: 'full', timeZone: 'UTC' }).format(new Date(`${date}T12:00:00Z`));
+            el('level').value = currentLevel;
+            el('level-note').textContent = entry.legacy
+                ? 'Original mixed N5–N4 prompts preserved for this earlier entry. New N4 dates use N4 prompts.'
+                : currentLevel === 'N5' ? 'N5 · Everyday words and basic sentence patterns.' : 'N4 · Broader vocabulary and more complex sentence patterns.';
+            el('date-title').textContent = `${currentLevel} · ` + new Intl.DateTimeFormat('en-US', { dateStyle: 'full', timeZone: 'UTC' }).format(new Date(`${date}T12:00:00Z`));
             el('entry').value = entry.text;
             for (const group of ['grammar', 'verbs', 'vocab']) {
                 el(group).innerHTML = entry.prompts[group].map(item => `<div class="diary-prompt"><label><input type="checkbox" value="${escape(item.id)}" ${entry.checked.includes(item.id) ? 'checked' : ''}><span><strong lang="ja">${escape(item.ja)}</strong>${item.reading ? `<span class="diary-reading" lang="ja">${escape(item.reading)}</span>` : ''}<span class="diary-meaning">${escape(item.meaning)}</span></span></label>${group === 'grammar' ? `<details><summary>How to use it</summary><p>${escape(item.formation)}</p><p lang="ja">${escape(item.example)}</p><p>${escape(item.translation)}</p></details>` : ''}</div>`).join('');
@@ -246,14 +327,21 @@
                 save(); progress();
             }
         });
+        el('level').addEventListener('change', () => {
+            const level = el('level').value;
+            save();
+            render(currentDate, level);
+            try { storage.setItem(preferenceKey, currentLevel); }
+            catch { el('save-status').textContent += ' Your level preference could not be saved.'; }
+        });
         el('date').addEventListener('change', () => render(el('date').value));
         el('previous').addEventListener('click', () => render(shiftDate(currentDate, -1)));
         el('next').addEventListener('click', () => render(shiftDate(currentDate, 1)));
         el('today').addEventListener('click', () => render(today()));
         el('download').addEventListener('click', () => {
-            const contents = [`Kotoba daily diary · ${currentDate}`, '', entry.text, '', ...['grammar', 'verbs', 'vocab'].flatMap(group => [group.toUpperCase(), ...entry.prompts[group].map(item => `${entry.checked.includes(item.id) ? '[x]' : '[ ]'} ${item.ja}${item.reading ? ` (${item.reading})` : ''} — ${item.meaning}`), ''])].join('\n');
+            const contents = [`Kotoba daily diary · ${currentDate} · ${currentLevel}${entry.legacy ? ' (original mixed-level prompts)' : ''}`, '', entry.text, '', ...['grammar', 'verbs', 'vocab'].flatMap(group => [group.toUpperCase(), ...entry.prompts[group].map(item => `${entry.checked.includes(item.id) ? '[x]' : '[ ]'} ${item.ja}${item.reading ? ` (${item.reading})` : ''} — ${item.meaning}`), ''])].join('\n');
             const url = URL.createObjectURL(new Blob([contents], { type: 'text/plain;charset=utf-8' }));
-            const link = document.createElement('a'); link.href = url; link.download = `kotoba-diary-${currentDate}.txt`; link.click();
+            const link = document.createElement('a'); link.href = url; link.download = `kotoba-diary-${currentDate}-${currentLevel}.txt`; link.click();
             setTimeout(() => URL.revokeObjectURL(url), 1000);
         });
         window.addEventListener('beforeunload', event => {
@@ -262,5 +350,5 @@
         render(currentDate);
         if (new URLSearchParams(window.location.search).get('tab') === 'diary') document.querySelector('#diary-tab').click();
     }
-    return { assignment, today, validDate, shiftDate, sentences, load, validEntry, keyFor, mount };
+    return { assignment, today, validDate, shiftDate, sentences, load, validEntry, keyFor, legacyKeyFor, banks, mount };
 });

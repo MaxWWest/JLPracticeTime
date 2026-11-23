@@ -3,17 +3,17 @@ const assert = require('node:assert/strict');
 const diary = require('./daily-diary.js');
 
 test('each date gets exactly 5 grammar points, 10 distinct verbs and 10 distinct vocab words', () => {
-    for (let i = 0; i < 370; i++) {
+    for (const level of ['N5', 'N4']) for (let i = 0; i < 370; i++) {
         const date = diary.shiftDate('2026-01-01', i);
-        const prompts = diary.assignment(date);
+        const prompts = diary.assignment(date, level);
         for (const [group, count] of Object.entries({ grammar: 5, verbs: 10, vocab: 10 })) {
             assert.equal(prompts[group].length, count);
             assert.equal(new Set(prompts[group].map(item => item.ja)).size, count);
             assert(prompts[group].every(item => item.meaning && item.ja));
         }
         assert(!prompts.verbs.some(verb => prompts.vocab.some(word => verb.ja === word.ja)));
-        assert.deepEqual(prompts, diary.assignment(date));
-        assert.notDeepEqual(prompts, diary.assignment(diary.shiftDate(date, 1)));
+        assert.deepEqual(prompts, diary.assignment(date, level));
+        assert.notDeepEqual(prompts, diary.assignment(diary.shiftDate(date, 1), level));
     }
 });
 
@@ -54,4 +54,62 @@ test('sentence estimate handles Japanese punctuation, English punctuation, and u
     assert.equal(diary.sentences('今日は晴れです。公園に行きました！楽しかったです。\nまた行きたいです。明日は雨です。'), 5);
     assert.equal(diary.sentences('First. Second! Third?'), 3);
     assert.equal(diary.sentences('   \nまだ書いています'), 1);
+});
+
+
+test('N5 stays foundational and N4 uses a separate, richer bank', () => {
+    const basic = new Set(diary.banks.N5.grammar.map(item => item.id));
+    for (const id of ['past', 'negativepast', 'placeaction', 'destination', 'tai']) assert(basic.has(id));
+    for (const id of ['noni', 'teoku', 'teshimau', 'youninaru', 'kamoshirenai']) {
+        assert(!basic.has(id));
+        assert(diary.banks.N4.grammar.some(item => item.id === id));
+    }
+    assert.notDeepEqual(diary.assignment('2026-11-23', 'N5'), diary.assignment('2026-11-23', 'N4'));
+    for (const bank of Object.values(diary.banks)) for (const items of Object.values(bank)) {
+        assert.equal(new Set(items.map(item => item.id)).size, items.length);
+        assert(items.every(item => item.ja && item.meaning));
+    }
+});
+
+test('levels keep independent writing, checklists and prompt snapshots on the same date', () => {
+    const records = new Map(), storage = { getItem: key => records.get(key) ?? null };
+    const date = '2026-11-23';
+    for (const level of ['N5', 'N4']) {
+        const { entry } = diary.load(storage, date, level);
+        entry.text = `${level} writing`;
+        entry.checked = [entry.prompts.grammar[0].id];
+        records.set(diary.keyFor(date, level), JSON.stringify(entry));
+    }
+    for (const level of ['N5', 'N4']) {
+        const { entry, error } = diary.load(storage, date, level);
+        assert.equal(error, null);
+        assert.equal(entry.text, `${level} writing`);
+        assert.equal(entry.level, level);
+        assert.deepEqual(entry.checked, [entry.prompts.grammar[0].id]);
+    }
+});
+
+test('legacy mixed entries load unchanged under N4, never replace N5, and remain untouched', () => {
+    const date = '2026-11-23', records = new Map();
+    const storage = { getItem: key => records.get(key) ?? null };
+    const original = { ...diary.load(storage, date).entry, text: '以前の日記です。', checked: ['tai'] };
+    delete original.level;
+    original.prompts.grammar[0].meaning = 'Original saved prompt';
+    const raw = JSON.stringify(original);
+    records.set(diary.legacyKeyFor(date), raw);
+    assert.equal(diary.load(storage, date, 'N5').entry.text, '');
+    const migrated = diary.load(storage, date, 'N4');
+    assert.equal(migrated.error, null);
+    assert.deepEqual(migrated.entry, { ...original, level: 'N4', legacy: true });
+    assert.equal(records.get(diary.legacyKeyFor(date)), raw);
+    records.set(diary.keyFor(date, 'N4'), JSON.stringify({ ...migrated.entry, text: 'Updated writing' }));
+    assert.equal(diary.load(storage, date, 'N4').entry.text, 'Updated writing');
+    records.set(diary.keyFor(date, 'N4'), 'broken');
+    assert(diary.load(storage, date, 'N4').error, 'a corrupt newer save must not silently revert to legacy');
+});
+
+test('corrupt legacy entries block N4 overwrites without affecting N5', () => {
+    const storage = { getItem: key => key.startsWith('kotoba-diary-v1:') ? 'broken' : null };
+    assert(diary.load(storage, '2026-11-23', 'N4').error);
+    assert.equal(diary.load(storage, '2026-11-23', 'N5').error, null);
 });
