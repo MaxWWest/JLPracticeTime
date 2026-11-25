@@ -2,11 +2,11 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const diary = require('./daily-diary.js');
 
-test('each date gets exactly 5 grammar points, 10 distinct verbs and 10 distinct vocab words', () => {
+test('each date gets exactly 10 grammar points, 10 distinct verbs and 10 distinct vocab words', () => {
     for (const level of ['N5', 'N4']) for (let i = 0; i < 370; i++) {
         const date = diary.shiftDate('2026-01-01', i);
         const prompts = diary.assignment(date, level);
-        for (const [group, count] of Object.entries({ grammar: 5, verbs: 10, vocab: 10 })) {
+        for (const [group, count] of Object.entries({ grammar: 10, verbs: 10, vocab: 10 })) {
             assert.equal(prompts[group].length, count);
             assert.equal(new Set(prompts[group].map(item => item.ja)).size, count);
             assert(prompts[group].every(item => item.meaning && item.ja));
@@ -44,7 +44,7 @@ test('corrupt or blocked storage is reported without destroying the existing rec
         const storage = { getItem: () => raw, setItem: () => assert.fail('must not overwrite') };
         const result = diary.load(storage, '2026-11-23');
         assert(result.error);
-        assert.equal(result.entry.prompts.grammar.length, 5);
+        assert.equal(result.entry.prompts.grammar.length, 10);
     }
     assert(diary.load({ getItem() { throw Error('blocked'); } }, '2026-11-23').error);
 });
@@ -112,4 +112,34 @@ test('corrupt legacy entries block N4 overwrites without affecting N5', () => {
     const storage = { getItem: key => key.startsWith('kotoba-diary-v1:') ? 'broken' : null };
     assert(diary.load(storage, '2026-11-23', 'N4').error);
     assert.equal(diary.load(storage, '2026-11-23', 'N5').error, null);
+});
+
+
+test('five-point saves gain five unique prompts without losing writing, checks or original prompts', () => {
+    for (const level of ['N5', 'N4']) for (const legacy of [false, true]) {
+        if (legacy && level !== 'N4') continue;
+        const date = '2026-11-25';
+        const original = diary.load({ getItem: () => null }, date, level).entry;
+        original.prompts.grammar = original.prompts.grammar.slice(0, 5);
+        original.text = '大切な日記です。';
+        original.checked = [original.prompts.grammar[0].id];
+        original.prompts.grammar[0].meaning = 'Preserve this saved explanation';
+        if (legacy) delete original.level;
+        const key = legacy ? diary.legacyKeyFor(date) : diary.keyFor(date, level);
+        const raw = JSON.stringify(original);
+        const storage = { getItem: candidate => candidate === key ? raw : null };
+        const { entry, error } = diary.load(storage, date, level);
+        assert.equal(error, null);
+        assert.equal(entry.text, original.text);
+        assert.deepEqual(entry.checked, original.checked);
+        assert.deepEqual(entry.prompts.grammar.slice(0, 5), original.prompts.grammar);
+        assert.equal(entry.prompts.grammar.length, 10);
+        assert.equal(new Set(entry.prompts.grammar.map(item => item.id)).size, 10);
+        assert.deepEqual(entry.prompts.verbs, original.prompts.verbs);
+        assert.deepEqual(entry.prompts.vocab, original.prompts.vocab);
+        assert.deepEqual(diary.load(storage, date, level).entry, entry);
+        assert.equal(storage.getItem(key), raw);
+        const persisted = JSON.stringify(entry);
+        assert.deepEqual(diary.load({ getItem: candidate => candidate === diary.keyFor(date, level) ? persisted : null }, date, level).entry, entry);
+    }
 });

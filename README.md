@@ -178,12 +178,13 @@ Playwright available, `PLAYWRIGHT_CHANNEL=chrome node reading-quality-browser-te
 ## Daily diary
 
 Open the **Daily diary** tab or `main.html?tab=diary`. Each Japan-calendar date
-gets five grammar points, ten verbs and ten non-verb vocabulary words for the
+gets ten grammar points, ten verbs and ten non-verb vocabulary words for the
 selected **N5** or **N4** level. N5 uses basic sentence patterns and everyday words;
 N4 uses more complex patterns and broader vocabulary. These are authored teaching
 bands, not official JLPT lists. The selected level is remembered in this browser.
 Date-and-level-seeded selection is stable across refreshes; repeats across days are possible.
-Assignments are saved as snapshots so later content updates do not alter saved days.
+Assignments are saved as snapshots. Earlier five-point entries keep their original
+grammar prompts, writing and checklists, with five additional grammar points appended.
 
 Aim for about five sentences using every grammar point, at least three distinct
 verbs and three distinct vocabulary words. Checkboxes are manual self-assessment,

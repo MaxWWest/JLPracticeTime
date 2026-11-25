@@ -223,7 +223,7 @@
     }
     function assignment(date, level = 'N5') {
         level = levelFor(level);
-        return Object.fromEntries(Object.entries({ grammar: 5, verbs: 10, vocab: 10 }).map(([group, count]) =>
+        return Object.fromEntries(Object.entries({ grammar: 10, verbs: 10, vocab: 10 }).map(([group, count]) =>
             [group, pick(banks[level][group], count, `${date}:${level}:${group}:v2`)]));
     }
     function today(now = new Date()) {
@@ -247,9 +247,9 @@
     function blank(date, level) { return { date, level, prompts: assignment(date, level), text: '', checked: [], updatedAt: null }; }
     function validEntry(entry, date) {
         return entry && entry.date === date && typeof entry.text === 'string' && Array.isArray(entry.checked) &&
-            Object.entries({ grammar: 5, verbs: 10, vocab: 10 }).every(([group, count]) => {
+            Object.entries({ grammar: 10, verbs: 10, vocab: 10 }).every(([group, count]) => {
                 const items = entry.prompts?.[group];
-                return Array.isArray(items) && items.length === count && new Set(items.map(item => item?.id)).size === count &&
+                return Array.isArray(items) && (items.length === count || (group === 'grammar' && items.length === 5)) && new Set(items.map(item => item?.id)).size === items.length &&
                     items.every(item => item && ['id', 'ja', 'meaning', ...(group === 'grammar' ? ['formation', 'example', 'translation'] : ['reading'])].every(key => typeof item[key] === 'string'));
             });
     }
@@ -262,6 +262,11 @@
             if (raw === null) return { entry: blank(date, level), error: null };
             const entry = JSON.parse(raw);
             if (!validEntry(entry, date) || (legacy === null && entry.level !== level)) throw new Error('invalid entry');
+            if (entry.prompts.grammar.length === 5) {
+                const existing = new Set(entry.prompts.grammar.map(item => item.id));
+                const additions = assignment(date, level).grammar.filter(item => !existing.has(item.id));
+                entry.prompts.grammar = entry.prompts.grammar.concat(additions.slice(0, 5));
+            }
             return { entry: legacy !== null ? { ...entry, level, legacy: true } : entry, error: null };
         } catch { return { entry: blank(date, level), error: 'This saved entry could not be read. Your existing save will not be overwritten. Download any new writing to keep it.' }; }
     }
@@ -282,8 +287,8 @@
         function progress() {
             const counts = ['grammar', 'verbs', 'vocab'].map(group => entry.prompts[group].filter(item => entry.checked.includes(item.id)).length);
             const count = sentences(entry.text);
-            el('progress').innerHTML = [`${count} sentence${count === 1 ? '' : 's'} · aim for 5`, `Grammar ${counts[0]}/5`, `Verbs ${counts[1]}/3`, `Vocab ${counts[2]}/3`].map(label => `<span>${label}</span>`).join('');
-            if (entry.text.trim() && counts[0] === 5 && counts[1] >= 3 && counts[2] >= 3) el('progress').insertAdjacentHTML('beforeend', '<strong>All usage goals checked!</strong>');
+            el('progress').innerHTML = [`${count} sentence${count === 1 ? '' : 's'} · aim for 5`, `Grammar ${counts[0]}/10`, `Verbs ${counts[1]}/3`, `Vocab ${counts[2]}/3`].map(label => `<span>${label}</span>`).join('');
+            if (entry.text.trim() && counts[0] === 10 && counts[1] >= 3 && counts[2] >= 3) el('progress').insertAdjacentHTML('beforeend', '<strong>All usage goals checked!</strong>');
         }
         function save() {
             entry.text = el('entry').value;
