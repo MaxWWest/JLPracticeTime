@@ -59,8 +59,9 @@
     <script src="reading-skills.js?v=20261020-reading-v2" defer></script>
     <script src="reading-quality.js?v=20261020-reading-v2" defer></script>
     <script src="reading.js?v=20261020-reading-v2" defer></script>
-    <link rel="stylesheet" href="daily-diary.css?v=20261123-levels-2">
-    <script src="daily-diary.js?v=20261125-grammar-10" defer></script>
+    <link rel="stylesheet" href="daily-diary.css?v=20261127-packets-1">
+    <script src="daily-diary-packets.js?v=20261127-packets-1" defer></script>
+    <script src="daily-diary.js?v=20261127-packets-1" defer></script>
 </head>
 <body>
     <div class="page-shell">
@@ -1428,7 +1429,7 @@
             <section class="tab-panel diary-panel" id="diary-panel" role="tabpanel" aria-labelledby="diary-tab" hidden>
                 <div class="diary-heading">
                     <div><p class="diary-eyebrow">毎日の日記 · DAILY WRITING</p><h2>A little of your day, in Japanese.</h2>
-                    <p>Write about five sentences using <strong>all 10 grammar points</strong>, <strong>3 of the 10 verbs</strong>, and <strong>3 of the 10 vocab words</strong>.</p></div>
+                    <p>Write about five sentences with <strong>two themed packets of four grammar points</strong> and <strong>two optional stretch points</strong>. Choose what fits; you do not need to use every pattern. Aim to include 3 verbs and 3 vocab words.</p></div>
                     <span class="diary-seal" aria-hidden="true">日記</span>
                 </div>
                 <div class="diary-toolbar">
@@ -1436,21 +1437,27 @@
                     <label class="diary-level-control" for="diary-level">Practice level <select id="diary-level" aria-describedby="diary-level-note"><option value="N5">N5 · Beginner</option><option value="N4">N4 · Elementary</option></select></label>
                 </div>
                 <p class="diary-note" id="diary-level-note" aria-live="polite"></p>
-                <p class="diary-note">New prompts each day · Japan time. N5 and N4 keep separate writing and checklists for each date. Earlier mixed-level entries are available under N4. Tick an item after you use it; this is a self-check, not automatic grading.</p>
+                <p class="diary-note">Daily themed packets · Japan time. Each packet offers a flavor for your writing, with no fixed sentence order. Tick the patterns you use; this is a self-check, not automatic grading.</p>
+                <details class="diary-coverage diary-note"><summary>N4 library coverage · 98 of 98 study-list entries</summary>
+                    <p>22 themed packets and 14 stretch patterns cover every entry in Kotoba’s OpenJLPT N4 snapshot. A shuffled 11-day cycle serves every packet once; a separate 7-day cycle serves every stretch point once. The two packets in a day have no repeated patterns.</p>
+                    <p>This is study-list coverage, not a guarantee of exam content or mastery. JLPT does not publish an exhaustive grammar checklist. Keep reviewing N5 foundations too. N5 mode uses four beginner packets and the same optional N4 stretch pool.</p>
+                    <p>N4 explanations and examples adapted from <a href="https://github.com/evanclan/OpenJLPT">OpenJLPT</a> under <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a> (snapshot: November 27, 2026). Grouping and presentation adapted for Kotoba. <a href="https://www.jlpt.jp/e/faq/index.html">JLPT FAQ</a>.</p>
+                </details>
                 <div class="diary-layout">
                     <div class="diary-prompts">
-                        <section class="diary-card"><div class="diary-card-heading"><h3>Grammar points</h3><span>Use all 10</span></div><div class="diary-word-list" id="diary-grammar"></div></section>
+                        <div class="diary-grammar-groups" id="diary-grammar"></div>
                         <section class="diary-card"><div class="diary-card-heading"><h3>Verbs</h3><span>Choose at least 3</span></div><div class="diary-word-list" id="diary-verbs"></div></section>
                         <section class="diary-card"><div class="diary-card-heading"><h3>Vocabulary</h3><span>Choose at least 3</span></div><div class="diary-word-list" id="diary-vocab"></div></section>
                     </div>
                     <div class="diary-writing">
                         <section class="diary-card diary-notebook">
                             <p class="diary-eyebrow" id="diary-date-title"></p><h3>Your five-sentence journal</h3>
-                            <p class="diary-note">Start with something you did, noticed, or felt. Combine grammar points across about five sentences, and conjugate the verbs to fit.</p>
+                            <p class="diary-note">Borrow ideas from either packet, or blend the two. Use only the patterns that fit naturally; the stretch points are a bonus.</p>
                             <label class="diary-editor-label" for="diary-entry">Write in Japanese</label>
                             <textarea id="diary-entry" lang="ja" rows="12" placeholder="今日はどんな一日でしたか。" aria-describedby="diary-storage-note"></textarea>
                             <div class="diary-progress" id="diary-progress" aria-live="polite"></div>
                             <p id="diary-save-status" class="diary-note" role="status"></p>
+                            <details id="diary-archive" class="diary-note" hidden><summary>Your earlier grammar assignment</summary><p>Your previous prompts and ticks are preserved below. Your writing and word selections have been carried into the new format.</p><ul id="diary-archive-items"></ul></details>
                             <p id="diary-storage-note" class="diary-note">Entries save automatically in this browser on this device. Download a copy to keep a backup.</p>
                             <button id="diary-download" type="button">Download entry</button>
                         </section>

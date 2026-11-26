@@ -1,8 +1,8 @@
 (function (root, factory) {
-    const api = factory();
+    const api = factory(typeof module === 'object' && module.exports ? require('./daily-diary-packets.js') : root.DiaryPackets);
     if (typeof module === 'object' && module.exports) module.exports = api;
     else { root.DailyDiary = api; api.mount(); }
-})(typeof globalThis === 'object' ? globalThis : this, function () {
+})(typeof globalThis === 'object' ? globalThis : this, function (packetLibrary) {
     'use strict';
     // Authored, offline bank. Stable IDs and saved snapshots preserve older assignments.
     const grammar = [
@@ -223,8 +223,11 @@
     }
     function assignment(date, level = 'N5') {
         level = levelFor(level);
-        return Object.fromEntries(Object.entries({ grammar: 10, verbs: 10, vocab: 10 }).map(([group, count]) =>
-            [group, pick(banks[level][group], count, `${date}:${level}:${group}:v2`)]));
+        return {
+            ...packetLibrary.build(date, level, n5Grammar),
+            verbs: pick(banks[level].verbs, 10, `${date}:${level}:verbs:v2`),
+            vocab: pick(banks[level].vocab, 10, `${date}:${level}:vocab:v2`)
+        };
     }
     function today(now = new Date()) {
         const parts = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Tokyo', year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(now);
@@ -243,32 +246,74 @@
     }
     function sentences(text) { return text.split(/[。！？.!?]+(?:[」』”"]*)\s*|\n+/u).filter(part => part.trim()).length; }
     const legacyKeyFor = date => `kotoba-diary-v1:${date}`;
-    const keyFor = (date, level = 'N5') => `kotoba-diary-v2:${levelFor(level)}:${date}`;
+    const previousKeyFor = (date, level = 'N5') => `kotoba-diary-v2:${levelFor(level)}:${date}`;
+    const keyFor = (date, level = 'N5') => `kotoba-diary-v3:${levelFor(level)}:${date}`;
     function blank(date, level) { return { date, level, prompts: assignment(date, level), text: '', checked: [], updatedAt: null }; }
+    function validPoint(item, group) {
+        return item && ['id', 'ja', 'meaning', ...(group === 'grammar' ? ['formation', 'example', 'translation'] : ['reading'])].every(key => typeof item[key] === 'string');
+    }
     function validEntry(entry, date) {
-        return entry && entry.date === date && typeof entry.text === 'string' && Array.isArray(entry.checked) &&
+        if (!(entry && entry.date === date && typeof entry.text === 'string' && Array.isArray(entry.checked) && entry.checked.every(id => typeof id === 'string') &&
             Object.entries({ grammar: 10, verbs: 10, vocab: 10 }).every(([group, count]) => {
                 const items = entry.prompts?.[group];
-                return Array.isArray(items) && (items.length === count || (group === 'grammar' && items.length === 5)) && new Set(items.map(item => item?.id)).size === items.length &&
-                    items.every(item => item && ['id', 'ja', 'meaning', ...(group === 'grammar' ? ['formation', 'example', 'translation'] : ['reading'])].every(key => typeof item[key] === 'string'));
-            });
+                return Array.isArray(items) && (items.length === count || (group === 'grammar' && items.length === 5)) && new Set(items.map(item => item?.id)).size === items.length && items.every(item => validPoint(item, group));
+            }))) return false;
+        if (entry.prompts.format === undefined) return true; // v1/v2 saves, before packets.
+        const { packets, stretchIds, grammar } = entry.prompts;
+        if (entry.prompts.format !== 'packets-v1' || !Array.isArray(packets) || packets.length !== 2 ||
+            !packets.every(packet => packet && ['id', 'title', 'description'].every(key => typeof packet[key] === 'string') && Array.isArray(packet.ids) && packet.ids.length === 4) ||
+            !Array.isArray(stretchIds) || stretchIds.length !== 2) return false;
+        const ids = [...packets.flatMap(packet => packet.ids), ...stretchIds];
+        if (new Set(packets.map(packet => packet.id)).size !== 2 || new Set(ids).size !== 10 || ids.some((id, index) => id !== grammar[index]?.id)) return false;
+        if (entry.previousGrammar && (!Array.isArray(entry.previousGrammar.points) || !entry.previousGrammar.points.every(point => validPoint(point, 'grammar')) ||
+            !Array.isArray(entry.previousGrammar.checked) || !entry.previousGrammar.checked.every(id => typeof id === 'string'))) return false;
+        return true;
     }
     function load(storage, date, level = 'N5') {
         level = levelFor(level);
         try {
             const saved = storage.getItem(keyFor(date, level));
-            const legacy = saved === null && level === 'N4' ? storage.getItem(legacyKeyFor(date)) : null;
-            const raw = saved ?? legacy;
-            if (raw === null) return { entry: blank(date, level), error: null };
-            const entry = JSON.parse(raw);
-            if (!validEntry(entry, date) || (legacy === null && entry.level !== level)) throw new Error('invalid entry');
-            if (entry.prompts.grammar.length === 5) {
-                const existing = new Set(entry.prompts.grammar.map(item => item.id));
-                const additions = assignment(date, level).grammar.filter(item => !existing.has(item.id));
-                entry.prompts.grammar = entry.prompts.grammar.concat(additions.slice(0, 5));
+            if (saved !== null) {
+                const entry = JSON.parse(saved);
+                if (!validEntry(entry, date) || entry.level !== level || entry.prompts.format !== 'packets-v1') throw new Error('invalid entry');
+                return { entry, error: null };
             }
-            return { entry: legacy !== null ? { ...entry, level, legacy: true } : entry, error: null };
+            const previous = storage.getItem(previousKeyFor(date, level));
+            const legacy = previous === null && level === 'N4' ? storage.getItem(legacyKeyFor(date)) : null;
+            const raw = previous ?? legacy;
+            if (raw === null) return { entry: blank(date, level), error: null };
+            const old = JSON.parse(raw);
+            if (!validEntry(old, date) || (legacy === null && old.level !== level)) throw new Error('invalid entry');
+            const entry = blank(date, level);
+            entry.text = old.text;
+            entry.updatedAt = old.updatedAt || null;
+            entry.prompts.verbs = old.prompts.verbs;
+            entry.prompts.vocab = old.prompts.vocab;
+            const currentIds = new Set(['grammar', 'verbs', 'vocab'].flatMap(group => entry.prompts[group].map(point => point.id)));
+            entry.checked = old.checked.filter(id => currentIds.has(id));
+            entry.previousGrammar = { points: old.prompts.grammar, checked: old.checked.filter(id => old.prompts.grammar.some(point => point.id === id)) };
+            return { entry, error: null };
         } catch { return { entry: blank(date, level), error: 'This saved entry could not be read. Your existing save will not be overwritten. Download any new writing to keep it.' }; }
+    }
+    function usage(entry) {
+        const count = ids => ids.filter(id => entry.checked.includes(id)).length;
+        return {
+            sentences: sentences(entry.text),
+            packets: count(entry.prompts.packets.flatMap(packet => packet.ids)),
+            stretch: count(entry.prompts.stretchIds),
+            verbs: count(entry.prompts.verbs.map(item => item.id)),
+            vocab: count(entry.prompts.vocab.map(item => item.id))
+        };
+    }
+    function downloadText(entry) {
+        const line = (item, checked = entry.checked) => `${checked.includes(item.id) ? '[x]' : '[ ]'} ${item.ja}${item.reading ? ` (${item.reading})` : ''} — ${item.meaning}`;
+        const lookup = new Map(entry.prompts.grammar.map(item => [item.id, item]));
+        return [`Kotoba daily diary · ${entry.date} · ${entry.level}`, '', entry.text, '',
+            ...entry.prompts.packets.flatMap(packet => [packet.title.toUpperCase() + ' · choose freely', packet.description, ...packet.ids.map(id => line(lookup.get(id))), '']),
+            'OPTIONAL STRETCH POINTS', ...entry.prompts.stretchIds.map(id => line(lookup.get(id))), '',
+            ...['verbs', 'vocab'].flatMap(group => [group.toUpperCase(), ...entry.prompts[group].map(item => line(item)), '']),
+            ...(entry.previousGrammar ? ['PREVIOUS GRAMMAR ASSIGNMENT · preserved', ...entry.previousGrammar.points.map(item => line(item, entry.previousGrammar.checked))] : [])
+        ].join('\n');
     }
     const escape = value => String(value).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     function mount() {
@@ -278,17 +323,18 @@
         let storage;
         try { storage = window.localStorage; } catch { storage = { getItem() { throw new Error('unavailable'); } }; }
         const session = new Map();
-        let currentDate = today(), currentLevel = 'N5', entry, readError;
+        let currentDate = today(), currentLevel = 'N4', entry, readError;
         try {
             const preferred = storage.getItem(preferenceKey);
-            currentLevel = preferred ? levelFor(preferred) : (storage.getItem(legacyKeyFor(currentDate)) !== null ? 'N4' : 'N5');
+            currentLevel = preferred ? levelFor(preferred) : 'N4';
         } catch { /* The entry status reports unavailable storage. */ }
         const unsavedDates = new Set();
         function progress() {
-            const counts = ['grammar', 'verbs', 'vocab'].map(group => entry.prompts[group].filter(item => entry.checked.includes(item.id)).length);
-            const count = sentences(entry.text);
-            el('progress').innerHTML = [`${count} sentence${count === 1 ? '' : 's'} · aim for 5`, `Grammar ${counts[0]}/10`, `Verbs ${counts[1]}/3`, `Vocab ${counts[2]}/3`].map(label => `<span>${label}</span>`).join('');
-            if (entry.text.trim() && counts[0] === 10 && counts[1] >= 3 && counts[2] >= 3) el('progress').insertAdjacentHTML('beforeend', '<strong>All usage goals checked!</strong>');
+            const counts = usage(entry);
+            el('progress').innerHTML = [`${counts.sentences} sentence${counts.sentences === 1 ? '' : 's'} · aim for 5`, `Packet picks ${counts.packets}/8`, `Stretch ${counts.stretch}/2 · optional`, `Verbs ${counts.verbs}/3`, `Vocab ${counts.vocab}/3`].map(label => `<span>${label}</span>`).join('');
+        }
+        function promptMarkup(item, grammar = false) {
+            return `<div class="diary-prompt"><label><input type="checkbox" value="${escape(item.id)}" ${entry.checked.includes(item.id) ? 'checked' : ''}><span><strong lang="ja">${escape(item.ja)}</strong>${item.reading ? `<span class="diary-reading" lang="ja">${escape(item.reading)}</span>` : ''}<span class="diary-meaning">${escape(item.meaning)}</span></span></label>${grammar ? `<details><summary>How to use it</summary><p>${escape(item.formation)}</p><p lang="ja">${escape(item.example)}</p><p>${escape(item.translation)}</p>${item.notes ? `<p>${escape(item.notes)}</p>` : ''}</details>` : ''}</div>`;
         }
         function save() {
             entry.text = el('entry').value;
@@ -312,14 +358,18 @@
             entry = loaded.entry; readError = loaded.error;
             el('date').value = date;
             el('level').value = currentLevel;
-            el('level-note').textContent = entry.legacy
-                ? 'Original mixed N5–N4 prompts preserved for this earlier entry. New N4 dates use N4 prompts.'
-                : currentLevel === 'N5' ? 'N5 · Everyday words and basic sentence patterns.' : 'N4 · Broader vocabulary and more complex sentence patterns.';
+            el('level-note').textContent = currentLevel === 'N5'
+                ? 'N5 · Two beginner packets, with two optional N4 stretch points.'
+                : 'N4 · Two themed packets, with two optional stretch points. Pick what fits your story.';
             el('date-title').textContent = `${currentLevel} · ` + new Intl.DateTimeFormat('en-US', { dateStyle: 'full', timeZone: 'UTC' }).format(new Date(`${date}T12:00:00Z`));
             el('entry').value = entry.text;
-            for (const group of ['grammar', 'verbs', 'vocab']) {
-                el(group).innerHTML = entry.prompts[group].map(item => `<div class="diary-prompt"><label><input type="checkbox" value="${escape(item.id)}" ${entry.checked.includes(item.id) ? 'checked' : ''}><span><strong lang="ja">${escape(item.ja)}</strong>${item.reading ? `<span class="diary-reading" lang="ja">${escape(item.reading)}</span>` : ''}<span class="diary-meaning">${escape(item.meaning)}</span></span></label>${group === 'grammar' ? `<details><summary>How to use it</summary><p>${escape(item.formation)}</p><p lang="ja">${escape(item.example)}</p><p>${escape(item.translation)}</p></details>` : ''}</div>`).join('');
-            }
+            const lookup = new Map(entry.prompts.grammar.map(item => [item.id, item]));
+            el('grammar').innerHTML = entry.prompts.packets.map((packet, index) => `<section class="diary-card diary-packet"><p class="diary-eyebrow">PACKET ${index + 1} · FOUR IDEAS TO DRAW FROM</p><h3>${escape(packet.title)}</h3><p class="diary-note">${escape(packet.description)}</p><div class="diary-word-list">${packet.ids.map(id => promptMarkup(lookup.get(id), true)).join('')}</div></section>`).join('') +
+                `<section class="diary-card diary-stretch"><div class="diary-card-heading"><h3>Stretch a little</h3><span>2 optional challenges</span></div><p class="diary-note">Try one or both if they fit. These rotate separately from your packets; some are harder than typical N4 material.</p><div class="diary-word-list">${entry.prompts.stretchIds.map(id => promptMarkup(lookup.get(id), true)).join('')}</div></section>`;
+            for (const group of ['verbs', 'vocab']) el(group).innerHTML = entry.prompts[group].map(item => promptMarkup(item)).join('');
+            el('previous').disabled = currentDate === '0001-01-01';
+            el('archive').hidden = !entry.previousGrammar;
+            el('archive-items').innerHTML = entry.previousGrammar ? entry.previousGrammar.points.map(item => `<li>${entry.previousGrammar.checked.includes(item.id) ? '✓ ' : ''}<strong lang="ja">${escape(item.ja)}</strong> — ${escape(item.meaning)}</li>`).join('') : '';
             el('save-status').textContent = readError || (entry.updatedAt ? 'Saved entry loaded.' : 'Ready for today’s words. Your writing will save as you type.');
             // Persist the prompt snapshot even before writing starts.
             if (!readError) save();
@@ -344,7 +394,7 @@
         el('next').addEventListener('click', () => render(shiftDate(currentDate, 1)));
         el('today').addEventListener('click', () => render(today()));
         el('download').addEventListener('click', () => {
-            const contents = [`Kotoba daily diary · ${currentDate} · ${currentLevel}${entry.legacy ? ' (original mixed-level prompts)' : ''}`, '', entry.text, '', ...['grammar', 'verbs', 'vocab'].flatMap(group => [group.toUpperCase(), ...entry.prompts[group].map(item => `${entry.checked.includes(item.id) ? '[x]' : '[ ]'} ${item.ja}${item.reading ? ` (${item.reading})` : ''} — ${item.meaning}`), ''])].join('\n');
+            const contents = downloadText(entry);
             const url = URL.createObjectURL(new Blob([contents], { type: 'text/plain;charset=utf-8' }));
             const link = document.createElement('a'); link.href = url; link.download = `kotoba-diary-${currentDate}-${currentLevel}.txt`; link.click();
             setTimeout(() => URL.revokeObjectURL(url), 1000);
@@ -355,5 +405,5 @@
         render(currentDate);
         if (new URLSearchParams(window.location.search).get('tab') === 'diary') document.querySelector('#diary-tab').click();
     }
-    return { assignment, today, validDate, shiftDate, sentences, load, validEntry, keyFor, legacyKeyFor, banks, mount };
+    return { assignment, today, validDate, shiftDate, sentences, load, validEntry, keyFor, previousKeyFor, legacyKeyFor, banks, usage, downloadText, packetLibrary, mount };
 });

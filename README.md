@@ -177,25 +177,49 @@ Playwright available, `PLAYWRIGHT_CHANNEL=chrome node reading-quality-browser-te
 
 ## Daily diary
 
-Open the **Daily diary** tab or `main.html?tab=diary`. Each Japan-calendar date
-gets ten grammar points, ten verbs and ten non-verb vocabulary words for the
-selected **N5** or **N4** level. N5 uses basic sentence patterns and everyday words;
-N4 uses more complex patterns and broader vocabulary. These are authored teaching
-bands, not official JLPT lists. The selected level is remembered in this browser.
-Date-and-level-seeded selection is stable across refreshes; repeats across days are possible.
-Assignments are saved as snapshots. Earlier five-point entries keep their original
-grammar prompts, writing and checklists, with five additional grammar points appended.
+Open **Daily diary** or `main.html?tab=diary`. Each Japan-calendar date has two
+curated four-pattern packets plus two optional stretch patterns, ten verbs, and
+ten vocabulary words. Choose patterns that fit about five sentences; there is no
+required order or grammar quota. The two packets have distinct themes and no
+repeated patterns. Aim for three verbs and three vocabulary words.
 
-Aim for about five sentences using every grammar point, at least three distinct
-verbs and three distinct vocabulary words. Checkboxes are manual self-assessment,
-not automatic Japanese grading. The sentence estimate splits punctuation and lines.
-Expand grammar hints for formation notes and translated examples.
+N4 has 22 themed packets and 14 stretch patterns, including passive, causative,
+causative-passive, potential, benefactive honorifics, and polite/humble language.
+A shuffled 11-day cycle serves each packet once; an independent shuffled 7-day
+cycle serves each stretch point once. Cycles are anchored on 2026-11-27, not the
+user's visit history. Missing a day does not mark it studied. All 98 entries of the
+OpenJLPT N4 snapshot belong to a packet or the stretch pool. This is study-list
+coverage, not an official exhaustive exam syllabus or a guarantee of mastery.
+Some stretch items may be above typical N4 curricula. N5 foundations still matter.
 
-Writing and checklists autosave separately per date and level in browser local storage.
-Earlier mixed-level entries appear under N4, clearly labeled, with their writing,
-checklists and prompt snapshots preserved; their original storage records are retained.
-Downloads include the level in the heading and filename. Previous, Next,
-the date picker, and Today revisit entries. There is no account or cross-device
-sync. Download entry exports the writing, prompts and checklist as UTF-8 text.
-Storage failures are shown explicitly; unreadable existing saves are not overwritten.
-Run `node --test daily-diary.test.js` for date, selection and persistence checks.
+N5 retains its beginner vocabulary and uses four four-pattern starter packets,
+paired over two-day cycles, with the same optional N4 stretch pool clearly labeled.
+The default level for new users is N4; existing level preferences are respected.
+
+Packet content is stored as a snapshot per date and level. New saves use
+`kotoba-diary-v3`; v2 and v1 records are read without altering the originals.
+Earlier entries carry forward writing and vocabulary/verb snapshots. Earlier
+grammar prompts and ticks are preserved in a visible expandable archive and in
+text downloads. New-format snapshots are not regenerated after content updates.
+Unreadable records are not overwritten. Autosave is local to this browser/device,
+with no cross-device sync. Downloads include themes, optional stretch, checks, and
+any archived grammar assignment. Sentence counts are approximate; checkboxes are
+self-assessment, not Japanese grading.
+
+### Content attribution and coverage
+
+N4 pattern explanations, formation notes, examples, and translations in
+`daily-diary-packets.js` are adapted from
+[OpenJLPT](https://github.com/evanclan/OpenJLPT), retrieved 2026-11-27, under
+[CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/).
+The adapted N4 content is distributed under the same license. Changes: selected
+one example per entry, renamed display fields, and added themed packet grouping
+and a stretch classification. See the upstream
+[NOTICE](https://github.com/evanclan/OpenJLPT/blob/main/NOTICE.md) for source credits.
+`daily-diary-n4-coverage.json` records the exact source IDs and provenance.
+Tests audit those IDs independently against packet and stretch membership.
+The [JLPT FAQ](https://www.jlpt.jp/e/faq/index.html) explains why there is no
+published exhaustive grammar checklist.
+
+Run `node --test daily-diary.test.js` for coverage, complete shuffled cycles,
+non-overlapping daily selections, dates, saved snapshots, migration, and exports.

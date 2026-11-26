@@ -44,3 +44,12 @@ body[data-active-section="diary"] #sub-tabs { display: none; }
 @media (max-width: 420px) { .diary-card { padding: 18px; } .diary-date-controls { gap: 8px; } .diary-date-controls label, .diary-level-control { order: -1; width: 100%; } .diary-toolbar { align-items: start; } }
 
 .diary-panel select { appearance: none; padding-right: 34px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%236e528b' stroke-width='2'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; }
+
+.diary-grammar-groups { display: grid; gap: 18px; }
+.diary-packet { border-top: 3px solid #b5a0c8; }
+.diary-stretch { border-top: 3px solid #cfac65; }
+.diary-stretch .diary-card-heading > span { color: #806222; }
+.diary-coverage { padding: 14px 18px; border: 1px solid var(--line); border-radius: 10px; background: var(--white); }
+.diary-coverage summary, #diary-archive summary { cursor: pointer; color: #6e528b; }
+.diary-coverage a { color: #6e528b; }
+#diary-archive li { margin: 8px 0; }
