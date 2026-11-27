@@ -14,8 +14,8 @@ body[data-active-section="diary"] #sub-tabs { display: none; }
 .diary-panel button { cursor: pointer; }
 .diary-panel button:hover { background: #eee8f4; border-color: #6e528b; }
 .diary-note { color: #61685f; font-size: 14px; line-height: 1.65; }
-.diary-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px; margin-top: 24px; align-items: start; }
-.diary-prompts { display: grid; gap: 18px; }
+.diary-layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 24px; margin-top: 24px; align-items: start; }
+.diary-prompts { display: grid; grid-template-columns: minmax(0, 1.4fr) repeat(2, minmax(0, 1fr)); gap: 18px; align-items: start; }
 .diary-card { padding: 24px; border: 1px solid var(--line); border-radius: 14px; background: var(--white); }
 .diary-card h3 { margin: 0; font-size: 20px; font-weight: 600; }
 .diary-card-heading { display: flex; align-items: baseline; flex-wrap: wrap; gap: 8px; justify-content: space-between; margin-bottom: 14px; }
@@ -31,7 +31,7 @@ body[data-active-section="diary"] #sub-tabs { display: none; }
 .diary-prompt summary { color: #6e528b; cursor: pointer; }
 .diary-prompt details p { margin: 8px 0; overflow-wrap: anywhere; }
 .diary-word-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 16px; }
-.diary-writing { position: sticky; top: 20px; }
+.diary-writing { min-width: 0; }
 .diary-editor-label { display: block; font-size: 14px; font-weight: 600; margin: 20px 0 8px; }
 #diary-entry { display: block; width: 100%; min-height: 330px; resize: vertical; padding: 16px; border: 1px solid #d7d1dc; border-radius: 8px; font: 17px/2 "Noto Sans JP", sans-serif; color: var(--ink); background: #fff; }
 #diary-entry::placeholder { color: #848078; font-size: 15px; }
@@ -73,3 +73,21 @@ body[data-active-section="diary"] #sub-tabs { display: none; }
 #diary-nickname { font-size: 1.45rem; font-weight: 700; margin: 0; }
 #diary-nickname-ja { font-size: 1rem; margin: .4rem 0 0; }
 .diary-emotion small { overflow-wrap: anywhere; }
+
+/* Keep the reference lists together, above the full-width journal. */
+@media (min-width: 1001px) {
+    .diary-prompts .diary-card { padding: 16px; }
+    .diary-prompts > .diary-card { position: sticky; top: 20px; }
+    .diary-prompts .diary-prompt { padding: 9px 0; }
+    .diary-prompts .diary-prompt strong { font-size: 16px; }
+    .diary-prompts .diary-word-list { column-gap: 12px; }
+    .diary-prompts .diary-prompt label { gap: 7px; }
+    .diary-prompts .diary-eyebrow { font-size: 12px; letter-spacing: .5px; }
+}
+@media (max-width: 1000px) {
+    .diary-prompts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .diary-grammar-groups { grid-column: 1 / -1; }
+}
+@media (max-width: 600px) {
+    .diary-prompts { grid-template-columns: minmax(0, 1fr); }
+}
