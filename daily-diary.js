@@ -333,7 +333,7 @@
     function downloadText(entry) {
         const line = (item, checked = entry.checked) => `${checked.includes(item.id) ? '[x]' : '[ ]'} ${item.ja}${item.reading ? ` (${item.reading})` : ''} — ${item.meaning}`;
         const lookup = new Map(entry.prompts.grammar.map(item => [item.id, item]));
-        return [`Kotoba daily diary · ${entry.date} · ${entry.level}`, ...(entry.prompts.mood ? [`Day: ${entry.prompts.mood.rating} · Feeling: ${entry.prompts.mood.emotion}`] : []), '', entry.text, '',
+        return [`Kotoba daily diary · ${entry.date} · ${entry.level}`, ...(entry.prompts.mood ? [`Day: ${entry.prompts.mood.rating} · Feeling: ${entry.prompts.mood.emotion}`, ...Object.values(packetLibrary.nickname(entry.date, entry.prompts.mood, entry.prompts.packets[1].id))] : []), '', entry.text, '',
             ...entry.prompts.packets.flatMap(packet => [packet.title.toUpperCase() + ' · choose freely', packet.description, ...packet.ids.map(id => line(lookup.get(id))), '']),
             'OPTIONAL STRETCH POINTS', ...entry.prompts.stretchIds.map(id => line(lookup.get(id))), '',
             ...['verbs', 'vocab'].flatMap(group => [group.toUpperCase(), ...entry.prompts[group].map(item => line(item)), '']),
@@ -389,8 +389,11 @@
             el('moods').hidden = currentLevel !== 'N4';
             const mood = entry.prompts.mood || packetLibrary.normalizeMood();
             for (const [group, choices] of [['rating', packetLibrary.ratings], ['emotion', packetLibrary.emotions]]) {
-                el(group).innerHTML = choices.map(choice => `<button type="button" data-mood-group="${group}" data-mood="${choice.id}" aria-pressed="${mood[group] === choice.id}">${choice.face ? `<span aria-hidden="true" class="diary-face">${choice.face}</span>` : ''}<span>${choice.label}</span>${choice.english ? `<small>${choice.english}</small>` : ''}</button>`).join('');
+                el(group).innerHTML = choices.map(choice => `<button type="button" data-mood-group="${group}" data-mood="${choice.id}" aria-pressed="${mood[group] === choice.id}">${choice.face ? `<span aria-hidden="true" class="diary-face">${choice.face}</span>` : ''}<span>${choice.label}</span>${choice.english ? `<small>${choice.english}</small>` : ''}${choice.japanese ? `<small lang="ja">${choice.japanese}</small>` : ''}</button>`).join('');
             }
+            const nickname = packetLibrary.nickname(date, mood, entry.prompts.packets[1].id);
+            el('nickname').textContent = nickname.english;
+            el('nickname-ja').textContent = nickname.japanese;
             el('date-title').textContent = `${currentLevel} · ` + new Intl.DateTimeFormat('en-US', { dateStyle: 'full', timeZone: 'UTC' }).format(new Date(`${date}T12:00:00Z`));
             el('entry').value = entry.text;
             const lookup = new Map(entry.prompts.grammar.map(item => [item.id, item]));

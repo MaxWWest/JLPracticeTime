@@ -67,3 +67,9 @@ body[data-active-section="diary"] #sub-tabs { display: none; }
 .diary-moods small { font-size: .875rem; }
 .diary-face { font-size: 2rem; }
 @media (max-width: 600px) { .diary-emotion { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+
+.diary-nickname { margin-top: 1.25rem; padding: 1.1rem; text-align: center; border-radius: 12px; background: #f1ebf8; color: #51366d; }
+.diary-nickname .diary-eyebrow { margin: 0 0 .4rem; }
+#diary-nickname { font-size: 1.45rem; font-weight: 700; margin: 0; }
+#diary-nickname-ja { font-size: 1rem; margin: .4rem 0 0; }
+.diary-emotion small { overflow-wrap: anywhere; }

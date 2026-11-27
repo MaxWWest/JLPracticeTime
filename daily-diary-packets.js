@@ -2304,7 +2304,338 @@
 };
     const moodPools = Object.fromEntries(Object.entries(moodDefinitions).map(([key, packets]) => [key, packets.map(({keys, ...packet}) => ({...packet, ids: keys.map(key => typeof key === 'number' ? points[key].id : variantPoints[key].id)}))]));
     const ratings = [{id:'bad',label:'わるい',english:'Bad'}, {id:'okay',label:'まあまあ',english:'So-so'}, {id:'great',label:'すばらしい',english:'Wonderful'}];
-    const emotions = [{id:'nervous',face:'😬',label:'Nervous'}, {id:'tired',face:'😴',label:'Tired'}, {id:'happy',face:'😊',label:'Happy'}, {id:'relaxed',face:'😌',label:'Relaxed'}, {id:'fun',face:'😆',label:'Having fun'}, {id:'angry',face:'😠',label:'Angry'}];
+    const emotions = [{id:'nervous',face:'😬',label:'Nervous',japanese:'緊張（きんちょう）'}, {id:'tired',face:'😴',label:'Tired',japanese:'疲れた（つかれた）'}, {id:'happy',face:'😊',label:'Happy',japanese:'うれしい'}, {id:'relaxed',face:'😌',label:'Relaxed',japanese:'リラックス'}, {id:'fun',face:'😆',label:'Having fun',japanese:'楽しい（たのしい）'}, {id:'angry',face:'😠',label:'Angry',japanese:'怒り（いかり）'}];
+    // Playful names, with sense-based Japanese translations rather than literal slang.
+    const nicknameAdjectives = {
+  "bad": [
+    [
+      "Grumpy",
+      "ごきげんななめの"
+    ],
+    [
+      "Gloomy",
+      "どんよりした"
+    ],
+    [
+      "Cursed",
+      "呪われた"
+    ],
+    [
+      "Frazzled",
+      "へとへとの"
+    ],
+    [
+      "Stormy",
+      "嵐を呼ぶ"
+    ]
+  ],
+  "okay": [
+    [
+      "Mediocre",
+      "ぱっとしない"
+    ],
+    [
+      "Mildly dramatic",
+      "ちょっぴり大げさな"
+    ],
+    [
+      "Low-key",
+      "ひかえめな"
+    ],
+    [
+      "Everyday",
+      "いつもの"
+    ],
+    [
+      "Slightly confused",
+      "ちょっと戸惑う"
+    ]
+  ],
+  "great": [
+    [
+      "Legendary",
+      "伝説の"
+    ],
+    [
+      "Radiant",
+      "きらきら輝く"
+    ],
+    [
+      "Victorious",
+      "勝利をつかんだ"
+    ],
+    [
+      "Golden",
+      "黄金の"
+    ],
+    [
+      "Glorious",
+      "栄光に包まれた"
+    ]
+  ]
+};
+    // One phrase for each of the ten feeling packets, in catalog order.
+    const nicknamePhrases = {
+  "nervous": [
+    [
+      "What-if gremlin",
+      "もしもの世界のいたずらっ子"
+    ],
+    [
+      "Countdown jellybean",
+      "秒読み中のジェリービーンズ"
+    ],
+    [
+      "Mystery detective",
+      "謎を追う探偵"
+    ],
+    [
+      "Hopeful hedgehog",
+      "希望を抱くハリネズミ"
+    ],
+    [
+      "Practice ninja",
+      "練習忍者"
+    ],
+    [
+      "Reassurance seeker",
+      "安心を探す旅人"
+    ],
+    [
+      "Vibe detective",
+      "空気を読む探偵"
+    ],
+    [
+      "Waiting-room hamster",
+      "待合室のハムスター"
+    ],
+    [
+      "Tiny-step hero",
+      "小さな一歩の勇者"
+    ],
+    [
+      "Butterfly tamer",
+      "ドキドキをなだめる達人"
+    ]
+  ],
+  "tired": [
+    [
+      "Overtime potato",
+      "残業ポテト"
+    ],
+    [
+      "To-do zombie",
+      "やることだらけのゾンビ"
+    ],
+    [
+      "Low-battery sloth",
+      "電池切れ寸前のナマケモノ"
+    ],
+    [
+      "Slow-motion snail",
+      "スローモーションのカタツムリ"
+    ],
+    [
+      "Tomorrow enthusiast",
+      "明日に期待する人"
+    ],
+    [
+      "Help-me dumpling",
+      "助けを待つおだんご"
+    ],
+    [
+      "Nap champion",
+      "昼寝の王者"
+    ],
+    [
+      "Shortcut wizard",
+      "近道の魔法使い"
+    ],
+    [
+      "Tomorrow phoenix",
+      "明日よみがえる不死鳥"
+    ],
+    [
+      "Blanket burrito",
+      "毛布にくるまったブリトー"
+    ]
+  ],
+  "happy": [
+    [
+      "Good-news fairy",
+      "朗報の妖精"
+    ],
+    [
+      "Gratitude goblin",
+      "感謝の小鬼"
+    ],
+    [
+      "Tiny-win champion",
+      "小さな勝利の王者"
+    ],
+    [
+      "Surprise sunshine",
+      "思いがけない太陽"
+    ],
+    [
+      "Anticipation bunny",
+      "わくわくするウサギ"
+    ],
+    [
+      "Kindness courier",
+      "親切の配達人"
+    ],
+    [
+      "Little-joy collector",
+      "小さな幸せを集める人"
+    ],
+    [
+      "Moment treasure hunter",
+      "今この瞬間の宝探し人"
+    ],
+    [
+      "Glow-up sprout",
+      "成長中の新芽"
+    ],
+    [
+      "Encore sunshine",
+      "もう一度会いたい太陽"
+    ]
+  ],
+  "relaxed": [
+    [
+      "Unhurried cloud",
+      "急がない雲"
+    ],
+    [
+      "Routine capybara",
+      "いつものカピバラ"
+    ],
+    [
+      "Cloud watcher",
+      "雲を眺める人"
+    ],
+    [
+      "Afternoon jellyfish",
+      "午後のクラゲ"
+    ],
+    [
+      "Comfort connoisseur",
+      "くつろぎの達人"
+    ],
+    [
+      "Peace gardener",
+      "安らぎを育てる庭師"
+    ],
+    [
+      "Gentle wanderer",
+      "のんびり歩く旅人"
+    ],
+    [
+      "Daydream astronaut",
+      "空想の宇宙飛行士"
+    ],
+    [
+      "Off-duty panda",
+      "非番のパンダ"
+    ],
+    [
+      "Good-enough guru",
+      "ほどほどの達人"
+    ]
+  ],
+  "fun": [
+    [
+      "Giggle goblin",
+      "くすくす笑う小鬼"
+    ],
+    [
+      "Side-quest explorer",
+      "寄り道の冒険家"
+    ],
+    [
+      "Fun committee",
+      "お楽しみ委員会"
+    ],
+    [
+      "Chaos confetti",
+      "大騒ぎの紙吹雪"
+    ],
+    [
+      "Joke juggler",
+      "冗談のジャグラー"
+    ],
+    [
+      "Laugh tornado",
+      "笑いの竜巻"
+    ],
+    [
+      "Party penguin",
+      "パーティーのペンギン"
+    ],
+    [
+      "First-time adventurer",
+      "初挑戦の冒険家"
+    ],
+    [
+      "Plot-twist popcorn",
+      "どんでん返しのポップコーン"
+    ],
+    [
+      "Encore gremlin",
+      "おかわりをねだるいたずらっ子"
+    ]
+  ],
+  "angry": [
+    [
+      "Rage bait",
+      "怒りの火種"
+    ],
+    [
+      "Not-again dragon",
+      "「またか」のドラゴン"
+    ],
+    [
+      "Waiting volcano",
+      "待ちぼうけの火山"
+    ],
+    [
+      "Boundary bouncer",
+      "一線を守る門番"
+    ],
+    [
+      "Complaint poet",
+      "不満を語る詩人"
+    ],
+    [
+      "Spicy wordsmith",
+      "辛口の言葉職人"
+    ],
+    [
+      "Suspicion detective",
+      "疑いを追う探偵"
+    ],
+    [
+      "Pause-button warrior",
+      "一呼吸おく戦士"
+    ],
+    [
+      "Cooling ember",
+      "冷めかけの残り火"
+    ],
+    [
+      "Change-demanding dragon",
+      "変化を求めるドラゴン"
+    ]
+  ]
+};
+    function nickname(date, mood, packetId) {
+        const selection = normalizeMood(mood);
+        const index = moodPools[selection.emotion].findIndex(packet => packet.id === packetId);
+        const phrase = nicknamePhrases[selection.emotion][Math.max(0, index)];
+        const adjective = shuffled(nicknameAdjectives[selection.rating], `nickname:v1:${date}:${selection.rating}:${packetId}`)[0];
+        return {english: `${adjective[0]} ${phrase[0].toLowerCase()}`, japanese: adjective[1] + phrase[1]};
+    }
     function normalizeMood(mood = {}) { return {rating: ratings.some(x => x.id === mood.rating) ? mood.rating : 'okay', emotion: emotions.some(x => x.id === mood.emotion) ? mood.emotion : 'relaxed'}; }
     function matchMoods(left, right) {
         if (!left.length) return [];
@@ -2372,5 +2703,5 @@
         stretchCount: stretchIds.length,
         stretchCycleDays: stretchIds.length / 2
     };
-    return { build, moodPools, ratings, emotions, normalizeMood, variantPoints, coverage, n4Packets, n5Packets, points, stretchIds };
+    return { build, nickname, nicknameAdjectives, nicknamePhrases, moodPools, ratings, emotions, normalizeMood, variantPoints, coverage, n4Packets, n5Packets, points, stretchIds };
 });
