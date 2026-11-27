@@ -59,9 +59,9 @@
     <script src="reading-skills.js?v=20261020-reading-v2" defer></script>
     <script src="reading-quality.js?v=20261020-reading-v2" defer></script>
     <script src="reading.js?v=20261020-reading-v2" defer></script>
-    <link rel="stylesheet" href="daily-diary.css?v=20261127-packets-1">
-    <script src="daily-diary-packets.js?v=20261127-packets-1" defer></script>
-    <script src="daily-diary.js?v=20261127-packets-1" defer></script>
+    <link rel="stylesheet" href="daily-diary.css?v=20261127-moods-1">
+    <script src="daily-diary-packets.js?v=20261127-moods-1" defer></script>
+    <script src="daily-diary.js?v=20261127-moods-1" defer></script>
 </head>
 <body>
     <div class="page-shell">
@@ -1439,10 +1439,17 @@
                 <p class="diary-note" id="diary-level-note" aria-live="polite"></p>
                 <p class="diary-note">Daily themed packets · Japan time. Each packet offers a flavor for your writing, with no fixed sentence order. Tick the patterns you use; this is a self-check, not automatic grading.</p>
                 <details class="diary-coverage diary-note"><summary>N4 library coverage · 98 of 98 study-list entries</summary>
-                    <p>22 themed packets and 14 stretch patterns cover every entry in Kotoba’s OpenJLPT N4 snapshot. A shuffled 11-day cycle serves every packet once; a separate 7-day cycle serves every stretch point once. The two packets in a day have no repeated patterns.</p>
+                    <p>90 mood packets and 14 stretch patterns cover every entry in Kotoba’s OpenJLPT N4 snapshot. Each day rating and emotion has ten packets. For a fixed pair of choices, a shuffled 10-day cycle serves each packet once; a separate 7-day cycle serves every stretch point once. Your ten daily patterns have no repeats. Some bundled study-list entries are split into individual prompts. Changing moods affects which patterns you review, so vary your choices to explore the full library.</p>
                     <p>This is study-list coverage, not a guarantee of exam content or mastery. JLPT does not publish an exhaustive grammar checklist. Keep reviewing N5 foundations too. N5 mode uses four beginner packets and the same optional N4 stretch pool.</p>
                     <p>N4 explanations and examples adapted from <a href="https://github.com/evanclan/OpenJLPT">OpenJLPT</a> under <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a> (snapshot: November 27, 2026). Grouping and presentation adapted for Kotoba. <a href="https://www.jlpt.jp/e/faq/index.html">JLPT FAQ</a>.</p>
                 </details>
+                <section id="diary-moods" class="diary-card diary-moods" aria-label="Today’s mood">
+                    <h3>How is your day going?</h3>
+                    <p class="diary-note">Start with a day rating and a feeling. Each supplies one four-pattern packet. Change either anytime; your writing stays here.</p>
+                    <div id="diary-rating" class="diary-rating" role="group" aria-label="Day rating"></div>
+                    <h4>How do you feel?</h4>
+                    <div id="diary-emotion" class="diary-emotion" role="group" aria-label="Emotion"></div>
+                </section>
                 <div class="diary-layout">
                     <div class="diary-prompts">
                         <div class="diary-grammar-groups" id="diary-grammar"></div>

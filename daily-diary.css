@@ -53,3 +53,17 @@ body[data-active-section="diary"] #sub-tabs { display: none; }
 .diary-coverage summary, #diary-archive summary { cursor: pointer; color: #6e528b; }
 .diary-coverage a { color: #6e528b; }
 #diary-archive li { margin: 8px 0; }
+
+/* Day and feeling choices */
+.diary-moods { margin-bottom: 1.5rem; }
+.diary-moods[hidden] { display: none; }
+.diary-rating, .diary-emotion { display: grid; gap: .65rem; }
+.diary-rating { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.diary-emotion { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+.diary-moods h4 { margin: 1.3rem 0 .7rem; }
+.diary-moods button { display: flex; flex-direction: column; align-items: center; gap: .25rem; padding: .8rem .4rem; border: 2px solid #ddd5ec; border-radius: 12px; background: #fff; color: #413253; cursor: pointer; font: inherit; min-height: 64px; }
+.diary-moods button[aria-pressed="true"] { background: #eee5fa; border-color: #75519a; box-shadow: 0 0 0 1px #75519a; }
+.diary-moods button:focus-visible { outline: 3px solid #3e765e; outline-offset: 3px; }
+.diary-moods small { font-size: .875rem; }
+.diary-face { font-size: 2rem; }
+@media (max-width: 600px) { .diary-emotion { grid-template-columns: repeat(3, minmax(0, 1fr)); } }

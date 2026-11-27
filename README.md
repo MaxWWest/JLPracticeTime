@@ -183,14 +183,21 @@ ten vocabulary words. Choose patterns that fit about five sentences; there is no
 required order or grammar quota. The two packets have distinct themes and no
 repeated patterns. Aim for three verbs and three vocabulary words.
 
-N4 has 22 themed packets and 14 stretch patterns, including passive, causative,
-causative-passive, potential, benefactive honorifics, and polite/humble language.
-A shuffled 11-day cycle serves each packet once; an independent shuffled 7-day
-cycle serves each stretch point once. Cycles are anchored on 2026-11-27, not the
-user's visit history. Missing a day does not mark it studied. All 98 entries of the
-OpenJLPT N4 snapshot belong to a packet or the stretch pool. This is study-list
-coverage, not an official exhaustive exam syllabus or a guarantee of mastery.
-Some stretch items may be above typical N4 curricula. N5 foundations still matter.
+N4 has 90 mood packets: ten for each of three day ratings and six feelings.
+Choose わるい / まあまあ / すばらしい and nervous, tired, happy, relaxed,
+having fun, or angry. One four-pattern packet comes from each choice. For a
+fixed rating/feeling pair, a shuffled ten-day cycle serves each packet once;
+a deterministic matching step prevents overlap. Fourteen stretch patterns
+rotate separately in a seven-day cycle, two per day. All ten daily patterns
+are distinct. Defaults are まあまあ and relaxed; choices are saved per entry.
+Changing choices preserves writing and words, and returning to a previous
+combination restores its grammar snapshot and ticks. N5 keeps its existing flow.
+
+Across all mood pools and the stretch pool, every one of the 98 OpenJLPT N4
+study-list entries is represented. Bundled giving, ease/difficulty, and
+start/finish/continue entries have separate prompts with shared source IDs.
+This is study-list coverage, not an official exhaustive exam syllabus or a
+guarantee of mastery. Vary mood choices to explore the full catalog.
 
 N5 retains its beginner vocabulary and uses four four-pattern starter packets,
 paired over two-day cycles, with the same optional N4 stretch pool clearly labeled.

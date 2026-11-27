@@ -221,10 +221,10 @@
         }
         return shuffled.slice(0, count).map(item => ({ ...item }));
     }
-    function assignment(date, level = 'N5') {
+    function assignment(date, level = 'N5', mood) {
         level = levelFor(level);
         return {
-            ...packetLibrary.build(date, level, n5Grammar),
+            ...packetLibrary.build(date, level, n5Grammar, mood),
             verbs: pick(banks[level].verbs, 10, `${date}:${level}:verbs:v2`),
             vocab: pick(banks[level].vocab, 10, `${date}:${level}:vocab:v2`)
         };
@@ -267,6 +267,18 @@
         if (new Set(packets.map(packet => packet.id)).size !== 2 || new Set(ids).size !== 10 || ids.some((id, index) => id !== grammar[index]?.id)) return false;
         if (entry.previousGrammar && (!Array.isArray(entry.previousGrammar.points) || !entry.previousGrammar.points.every(point => validPoint(point, 'grammar')) ||
             !Array.isArray(entry.previousGrammar.checked) || !entry.previousGrammar.checked.every(id => typeof id === 'string'))) return false;
+        if (entry.prompts.mood) {
+            const mood = packetLibrary.normalizeMood(entry.prompts.mood);
+            if (mood.rating !== entry.prompts.mood.rating || mood.emotion !== entry.prompts.mood.emotion) return false;
+        }
+        if (entry.moodSnapshots) {
+            if (typeof entry.moodSnapshots !== 'object' || Array.isArray(entry.moodSnapshots)) return false;
+            for (const [key, snapshot] of Object.entries(entry.moodSnapshots)) {
+                if (!snapshot || !validEntry({date, text: '', checked: snapshot.checked, prompts: snapshot.prompts}, date)) return false;
+                const mood = snapshot.prompts.mood;
+                if (!mood || key !== `${mood.rating}:${mood.emotion}`) return false;
+            }
+        }
         return true;
     }
     function load(storage, date, level = 'N5') {
@@ -276,6 +288,7 @@
             if (saved !== null) {
                 const entry = JSON.parse(saved);
                 if (!validEntry(entry, date) || entry.level !== level || entry.prompts.format !== 'packets-v1') throw new Error('invalid entry');
+                if (level === 'N4' && !entry.prompts.mood) changeMood(entry, {});
                 return { entry, error: null };
             }
             const previous = storage.getItem(previousKeyFor(date, level));
@@ -295,6 +308,18 @@
             return { entry, error: null };
         } catch { return { entry: blank(date, level), error: 'This saved entry could not be read. Your existing save will not be overwritten. Download any new writing to keep it.' }; }
     }
+    function changeMood(entry, mood) {
+        if (entry.level !== 'N4') return;
+        const next = packetLibrary.normalizeMood(mood);
+        const current = entry.prompts.mood;
+        entry.moodSnapshots ||= {};
+        if (current) entry.moodSnapshots[`${current.rating}:${current.emotion}`] = {prompts: entry.prompts, checked: entry.checked.filter(id => entry.prompts.grammar.some(point => point.id === id))};
+        else if (!entry.previousGrammar) entry.previousGrammar = {points: entry.prompts.grammar, checked: entry.checked.filter(id => entry.prompts.grammar.some(point => point.id === id))};
+        const snapshot = entry.moodSnapshots[`${next.rating}:${next.emotion}`];
+        const words = entry.checked.filter(id => [...entry.prompts.verbs, ...entry.prompts.vocab].some(point => point.id === id));
+        entry.prompts = {...(snapshot?.prompts || assignment(entry.date, entry.level, next)), verbs: entry.prompts.verbs, vocab: entry.prompts.vocab};
+        entry.checked = [...words, ...(snapshot?.checked || [])];
+    }
     function usage(entry) {
         const count = ids => ids.filter(id => entry.checked.includes(id)).length;
         return {
@@ -308,7 +333,7 @@
     function downloadText(entry) {
         const line = (item, checked = entry.checked) => `${checked.includes(item.id) ? '[x]' : '[ ]'} ${item.ja}${item.reading ? ` (${item.reading})` : ''} — ${item.meaning}`;
         const lookup = new Map(entry.prompts.grammar.map(item => [item.id, item]));
-        return [`Kotoba daily diary · ${entry.date} · ${entry.level}`, '', entry.text, '',
+        return [`Kotoba daily diary · ${entry.date} · ${entry.level}`, ...(entry.prompts.mood ? [`Day: ${entry.prompts.mood.rating} · Feeling: ${entry.prompts.mood.emotion}`] : []), '', entry.text, '',
             ...entry.prompts.packets.flatMap(packet => [packet.title.toUpperCase() + ' · choose freely', packet.description, ...packet.ids.map(id => line(lookup.get(id))), '']),
             'OPTIONAL STRETCH POINTS', ...entry.prompts.stretchIds.map(id => line(lookup.get(id))), '',
             ...['verbs', 'vocab'].flatMap(group => [group.toUpperCase(), ...entry.prompts[group].map(item => line(item)), '']),
@@ -361,10 +386,15 @@
             el('level-note').textContent = currentLevel === 'N5'
                 ? 'N5 · Two beginner packets, with two optional N4 stretch points.'
                 : 'N4 · Two themed packets, with two optional stretch points. Pick what fits your story.';
+            el('moods').hidden = currentLevel !== 'N4';
+            const mood = entry.prompts.mood || packetLibrary.normalizeMood();
+            for (const [group, choices] of [['rating', packetLibrary.ratings], ['emotion', packetLibrary.emotions]]) {
+                el(group).innerHTML = choices.map(choice => `<button type="button" data-mood-group="${group}" data-mood="${choice.id}" aria-pressed="${mood[group] === choice.id}">${choice.face ? `<span aria-hidden="true" class="diary-face">${choice.face}</span>` : ''}<span>${choice.label}</span>${choice.english ? `<small>${choice.english}</small>` : ''}</button>`).join('');
+            }
             el('date-title').textContent = `${currentLevel} · ` + new Intl.DateTimeFormat('en-US', { dateStyle: 'full', timeZone: 'UTC' }).format(new Date(`${date}T12:00:00Z`));
             el('entry').value = entry.text;
             const lookup = new Map(entry.prompts.grammar.map(item => [item.id, item]));
-            el('grammar').innerHTML = entry.prompts.packets.map((packet, index) => `<section class="diary-card diary-packet"><p class="diary-eyebrow">PACKET ${index + 1} · FOUR IDEAS TO DRAW FROM</p><h3>${escape(packet.title)}</h3><p class="diary-note">${escape(packet.description)}</p><div class="diary-word-list">${packet.ids.map(id => promptMarkup(lookup.get(id), true)).join('')}</div></section>`).join('') +
+            el('grammar').innerHTML = entry.prompts.packets.map((packet, index) => `<section class="diary-card diary-packet"><p class="diary-eyebrow">${entry.prompts.mood ? (index === 0 ? 'YOUR DAY' : 'YOUR FEELING') : `PACKET ${index + 1}`} · FOUR IDEAS TO DRAW FROM</p><h3>${escape(packet.title)}</h3><p class="diary-note">${escape(packet.description)}</p><div class="diary-word-list">${packet.ids.map(id => promptMarkup(lookup.get(id), true)).join('')}</div></section>`).join('') +
                 `<section class="diary-card diary-stretch"><div class="diary-card-heading"><h3>Stretch a little</h3><span>2 optional challenges</span></div><p class="diary-note">Try one or both if they fit. These rotate separately from your packets; some are harder than typical N4 material.</p><div class="diary-word-list">${entry.prompts.stretchIds.map(id => promptMarkup(lookup.get(id), true)).join('')}</div></section>`;
             for (const group of ['verbs', 'vocab']) el(group).innerHTML = entry.prompts[group].map(item => promptMarkup(item)).join('');
             el('previous').disabled = currentDate === '0001-01-01';
@@ -375,6 +405,16 @@
             if (!readError) save();
             progress();
         }
+        el('moods').addEventListener('click', event => {
+            const button = event.target.closest('button[data-mood]');
+            if (!button) return;
+            const group = button.dataset.moodGroup, choice = button.dataset.mood;
+            save();
+            changeMood(entry, {...entry.prompts.mood, [group]: choice});
+            save();
+            render(currentDate);
+            el(group).querySelector(`[data-mood="${choice}"]`).focus();
+        });
         el('entry').addEventListener('input', () => { save(); progress(); });
         panel.addEventListener('change', event => {
             if (event.target.matches('input[type="checkbox"]')) {
@@ -405,5 +445,5 @@
         render(currentDate);
         if (new URLSearchParams(window.location.search).get('tab') === 'diary') document.querySelector('#diary-tab').click();
     }
-    return { assignment, today, validDate, shiftDate, sentences, load, validEntry, keyFor, previousKeyFor, legacyKeyFor, banks, usage, downloadText, packetLibrary, mount };
+    return { assignment, changeMood, today, validDate, shiftDate, sentences, load, validEntry, keyFor, previousKeyFor, legacyKeyFor, banks, usage, downloadText, packetLibrary, mount };
 });

@@ -1279,7 +1279,1043 @@
   }
 ];
     const stretchIds = ["n4:te-kudasaru-te-itadaku", "n4:te-aru", "n4:eru-rareru-potential", "n4:reru-rareru-passive", "n4:seru-saseru", "n4:serareru-saserareru", "n4:you-ni", "n4:sasete-kudasai", "n4:sonkeigo", "n4:kenjougo", "n4:o-ni-naru", "n4:o-suru", "n4:de-gozaimasu", "n4:te-kuremasen-ka-te-itadakemasen-ka"];
-    const byId = new Map(points.map(point => [point.id, point]));
+
+    // Split bundled study-list entries into individual writing prompts.
+    const variants = {
+        ageru: [0, 'あげる', 'give to someone', 'Person に + thing を + あげる', '妹に本をあげた。', 'I gave my sister a book.'],
+        kureru: [0, 'くれる', 'someone gives to me', 'Person が + thing を + くれる', '友達が本をくれた。', 'My friend gave me a book.'],
+        morau: [0, 'もらう', 'receive', 'Person に／から + thing を + もらう', '友達に本をもらった。', 'I received a book from my friend.'],
+        yasui: [66, '〜やすい', 'easy to do', 'Verb stem + やすい', 'この本は読みやすい。', 'This book is easy to read.'],
+        nikui: [66, '〜にくい', 'difficult to do', 'Verb stem + にくい', 'この字は読みにくい。', 'This character is difficult to read.'],
+        hajimeru: [67, '〜始める', 'start doing', 'Verb stem + 始める', '日記を書き始めた。', 'I started writing a diary.'],
+        owaru: [67, '〜終わる', 'finish doing', 'Verb stem + 終わる', '宿題をやり終わった。', 'I finished doing my homework.'],
+        tsuzukeru: [67, '〜続ける', 'continue doing', 'Verb stem + 続ける', '一時間歩き続けた。', 'I kept walking for an hour.']
+    };
+    const variantPoints = Object.fromEntries(Object.entries(variants).map(([key, [index, ja, meaning, formation, example, translation]]) => [key, { ...points[index], id: `n4:variant-${key}`, ja, meaning, formation, example, translation }]));
+    const moodDefinitions = {
+  "bad": [
+    {
+      "id": "bad-1",
+      "title": "Not what I expected",
+      "description": "Borrow these patterns to tell this part of your day.",
+      "keys": [
+        55,
+        40,
+        7,
+        45
+      ]
+    },
+    {
+      "id": "bad-2",
+      "title": "Plans fell apart",
+      "description": "Borrow these patterns to tell this part of your day.",
+      "keys": [
+        22,
+        21,
+        24,
+        42
+      ]
+    },
+    {
+      "id": "bad-3",
+      "title": "Too much today",
+      "description": "Borrow these patterns to tell this part of your day.",
+      "keys": [
+        18,
+        63,
+        62,
+        75
+      ]
+    },
+    {
+      "id": "bad-4",
+      "title": "Nothing went smoothly",
+      "description": "Borrow these patterns to tell this part of your day.",
+      "keys": [
+        70,
+        "nikui",
+        97,
+        7
+      ]
+    },
+    {
+      "id": "bad-5",
+      "title": "If only",
+      "description": "Borrow these patterns to tell this part of your day.",
+      "keys": [
+        84,
+        36,
+        86,
+        60
+      ]
+    },
+    {
+      "id": "bad-6",
+      "title": "Running behind",
+      "description": "Borrow these patterns to tell this part of your day.",
+      "keys": [
+        73,
+        65,
+        64,
+        42
+      ]
+    },
+    {
+      "id": "bad-7",
+      "title": "Feeling misunderstood",
+      "description": "Borrow these patterns to tell this part of your day.",
+      "keys": [
+        61,
+        57,
+        50,
+        45
+      ]
+    },
+    {
+      "id": "bad-8",
+      "title": "One thing after another",
+      "description": "Borrow these patterns to tell this part of your day.",
+      "keys": [
+        44,
+        68,
+        20,
+        24
+      ]
+    },
+    {
+      "id": "bad-9",
+      "title": "A small silver lining",
+      "description": "Borrow these patterns to tell this part of your day.",
+      "keys": [
+        39,
+        2,
+        25,
+        60
+      ]
+    },
+    {
+      "id": "bad-10",
+      "title": "Recovering tomorrow",
+      "description": "Borrow these patterns to tell this part of your day.",
+      "keys": [
+        23,
+        8,
+        48,
+        21
+      ]
+    }
+  ],
+  "okay": [
+    {
+      "id": "okay-1",
+      "title": "My usual rhythm",
+      "description": "Borrow these patterns to tell this part of your day.",
+      "keys": [
+        11,
+        12,
+        38,
+        74
+      ]
+    },
+    {
+      "id": "okay-2",
+      "title": "A little of everything",
+      "description": "Borrow these patterns to tell this part of your day.",
+      "keys": [
+        87,
+        88,
+        44,
+        45
+      ]
+    },
+    {
+      "id": "okay-3",
+      "title": "Getting things done",
+      "description": "Borrow these patterns to tell this part of your day.",
+      "keys": [
+        "hajimeru",
+        "owaru",
+        73,
+        8
+      ]
+    },
+    {
+      "id": "okay-4",
+      "title": "Small observations",
+      "description": "Borrow these patterns to tell this part of your day.",
+      "keys": [
+        13,
+        17,
+        94,
+        60
+      ]
+    },
+    {
+      "id": "okay-5",
+      "title": "Weighing options",
+      "description": "Borrow these patterns to tell this part of your day.",
+      "keys": [
+        58,
+        59,
+        37,
+        23
+      ]
+    },
+    {
+      "id": "okay-6",
+      "title": "Daily routines",
+      "description": "Borrow these patterns to tell this part of your day.",
+      "keys": [
+        71,
+        92,
+        "tsuzukeru",
+        48
+      ]
+    },
+    {
+      "id": "okay-7",
+      "title": "Nothing special",
+      "description": "Borrow these patterns to tell this part of your day.",
+      "keys": [
+        69,
+        74,
+        63,
+        45
+      ]
+    },
+    {
+      "id": "okay-8",
+      "title": "Conversations",
+      "description": "Borrow these patterns to tell this part of your day.",
+      "keys": [
+        61,
+        14,
+        15,
+        95
+      ]
+    },
+    {
+      "id": "okay-9",
+      "title": "Small adjustments",
+      "description": "Borrow these patterns to tell this part of your day.",
+      "keys": [
+        93,
+        "yasui",
+        "nikui",
+        86
+      ]
+    },
+    {
+      "id": "okay-10",
+      "title": "Thinking about tomorrow",
+      "description": "Borrow these patterns to tell this part of your day.",
+      "keys": [
+        22,
+        53,
+        36,
+        8
+      ]
+    }
+  ],
+  "great": [
+    {
+      "id": "great-1",
+      "title": "A little victory",
+      "description": "Borrow these patterns to tell this part of your day.",
+      "keys": [
+        9,
+        25,
+        49,
+        60
+      ]
+    },
+    {
+      "id": "great-2",
+      "title": "Better than expected",
+      "description": "Borrow these patterns to tell this part of your day.",
+      "keys": [
+        55,
+        40,
+        72,
+        7
+      ]
+    },
+    {
+      "id": "great-3",
+      "title": "Someone made my day",
+      "description": "Borrow these patterns to tell this part of your day.",
+      "keys": [
+        2,
+        3,
+        "kureru",
+        42
+      ]
+    },
+    {
+      "id": "great-4",
+      "title": "A happy discovery",
+      "description": "Borrow these patterns to tell this part of your day.",
+      "keys": [
+        13,
+        17,
+        94,
+        "yasui"
+      ]
+    },
+    {
+      "id": "great-5",
+      "title": "A plan came together",
+      "description": "Borrow these patterns to tell this part of your day.",
+      "keys": [
+        21,
+        46,
+        73,
+        25
+      ]
+    },
+    {
+      "id": "great-6",
+      "title": "Full of good things",
+      "description": "Borrow these patterns to tell this part of your day.",
+      "keys": [
+        44,
+        87,
+        88,
+        72
+      ]
+    },
+    {
+      "id": "great-7",
+      "title": "Worth repeating",
+      "description": "Borrow these patterns to tell this part of your day.",
+      "keys": [
+        9,
+        19,
+        23,
+        48
+      ]
+    },
+    {
+      "id": "great-8",
+      "title": "Sharing the happiness",
+      "description": "Borrow these patterns to tell this part of your day.",
+      "keys": [
+        "ageru",
+        1,
+        61,
+        50
+      ]
+    },
+    {
+      "id": "great-9",
+      "title": "Growing confidence",
+      "description": "Borrow these patterns to tell this part of your day.",
+      "keys": [
+        71,
+        "tsuzukeru",
+        49,
+        5
+      ]
+    },
+    {
+      "id": "great-10",
+      "title": "More to look forward to",
+      "description": "Borrow these patterns to tell this part of your day.",
+      "keys": [
+        22,
+        21,
+        31,
+        36
+      ]
+    }
+  ],
+  "nervous": [
+    {
+      "id": "nervous-1",
+      "title": "What if",
+      "description": "Borrow these patterns to tell this part of your day.",
+      "keys": [
+        53,
+        36,
+        35,
+        95
+      ]
+    },
+    {
+      "id": "nervous-2",
+      "title": "Before the moment",
+      "description": "Borrow these patterns to tell this part of your day.",
+      "keys": [
+        22,
+        73,
+        8,
+        65
+      ]
+    },
+    {
+      "id": "nervous-3",
+      "title": "Not knowing yet",
+      "description": "Borrow these patterns to tell this part of your day.",
+      "keys": [
+        58,
+        59,
+        15,
+        54
+      ]
+    },
+    {
+      "id": "nervous-4",
+      "title": "Hoping it goes well",
+      "description": "Borrow these patterns to tell this part of your day.",
+      "keys": [
+        55,
+        60,
+        39,
+        37
+      ]
+    },
+    {
+      "id": "nervous-5",
+      "title": "Practice helps",
+      "description": "Borrow these patterns to tell this part of your day.",
+      "keys": [
+        19,
+        9,
+        "tsuzukeru",
+        46
+      ]
+    },
+    {
+      "id": "nervous-6",
+      "title": "Looking for reassurance",
+      "description": "Borrow these patterns to tell this part of your day.",
+      "keys": [
+        57,
+        50,
+        61,
+        86
+      ]
+    },
+    {
+      "id": "nervous-7",
+      "title": "Reading the room",
+      "description": "Borrow these patterns to tell this part of your day.",
+      "keys": [
+        13,
+        16,
+        17,
+        52
+      ]
+    },
+    {
+      "id": "nervous-8",
+      "title": "Waiting for an answer",
+      "description": "Borrow these patterns to tell this part of your day.",
+      "keys": [
+        12,
+        20,
+        70,
+        58
+      ]
+    },
+    {
+      "id": "nervous-9",
+      "title": "Taking the first step",
+      "description": "Borrow these patterns to tell this part of your day.",
+      "keys": [
+        23,
+        31,
+        9,
+        25
+      ]
+    },
+    {
+      "id": "nervous-10",
+      "title": "Settling down",
+      "description": "Borrow these patterns to tell this part of your day.",
+      "keys": [
+        6,
+        49,
+        42,
+        60
+      ]
+    }
+  ],
+  "tired": [
+    {
+      "id": "tired-1",
+      "title": "I overdid it",
+      "description": "Borrow these patterns to tell this part of your day.",
+      "keys": [
+        18,
+        "tsuzukeru",
+        63,
+        7
+      ]
+    },
+    {
+      "id": "tired-2",
+      "title": "Still more to do",
+      "description": "Borrow these patterns to tell this part of your day.",
+      "keys": [
+        75,
+        73,
+        20,
+        65
+      ]
+    },
+    {
+      "id": "tired-3",
+      "title": "Running low",
+      "description": "Borrow these patterns to tell this part of your day.",
+      "keys": [
+        62,
+        70,
+        "nikui",
+        42
+      ]
+    },
+    {
+      "id": "tired-4",
+      "title": "Taking it slowly",
+      "description": "Borrow these patterns to tell this part of your day.",
+      "keys": [
+        71,
+        92,
+        86,
+        48
+      ]
+    },
+    {
+      "id": "tired-5",
+      "title": "Letting it wait",
+      "description": "Borrow these patterns to tell this part of your day.",
+      "keys": [
+        23,
+        22,
+        82,
+        97
+      ]
+    },
+    {
+      "id": "tired-6",
+      "title": "A helping hand",
+      "description": "Borrow these patterns to tell this part of your day.",
+      "keys": [
+        50,
+        3,
+        2,
+        57
+      ]
+    },
+    {
+      "id": "tired-7",
+      "title": "Time to rest",
+      "description": "Borrow these patterns to tell this part of your day.",
+      "keys": [
+        12,
+        11,
+        6,
+        42
+      ]
+    },
+    {
+      "id": "tired-8",
+      "title": "Making things easier",
+      "description": "Borrow these patterns to tell this part of your day.",
+      "keys": [
+        19,
+        "yasui",
+        93,
+        41
+      ]
+    },
+    {
+      "id": "tired-9",
+      "title": "Tomorrow can be different",
+      "description": "Borrow these patterns to tell this part of your day.",
+      "keys": [
+        84,
+        85,
+        21,
+        8
+      ]
+    },
+    {
+      "id": "tired-10",
+      "title": "A gentle evening",
+      "description": "Borrow these patterns to tell this part of your day.",
+      "keys": [
+        89,
+        87,
+        88,
+        23
+      ]
+    }
+  ],
+  "happy": [
+    {
+      "id": "happy-1",
+      "title": "Good news",
+      "description": "Borrow these patterns to tell this part of your day.",
+      "keys": [
+        14,
+        61,
+        15,
+        24
+      ]
+    },
+    {
+      "id": "happy-2",
+      "title": "Someone thought of me",
+      "description": "Borrow these patterns to tell this part of your day.",
+      "keys": [
+        "kureru",
+        "morau",
+        2,
+        43
+      ]
+    },
+    {
+      "id": "happy-3",
+      "title": "I managed it",
+      "description": "Borrow these patterns to tell this part of your day.",
+      "keys": [
+        9,
+        25,
+        49,
+        42
+      ]
+    },
+    {
+      "id": "happy-4",
+      "title": "A lovely surprise",
+      "description": "Borrow these patterns to tell this part of your day.",
+      "keys": [
+        40,
+        55,
+        72,
+        60
+      ]
+    },
+    {
+      "id": "happy-5",
+      "title": "Looking forward to it",
+      "description": "Borrow these patterns to tell this part of your day.",
+      "keys": [
+        22,
+        21,
+        31,
+        46
+      ]
+    },
+    {
+      "id": "happy-6",
+      "title": "Passing on kindness",
+      "description": "Borrow these patterns to tell this part of your day.",
+      "keys": [
+        "ageru",
+        1,
+        50,
+        61
+      ]
+    },
+    {
+      "id": "happy-7",
+      "title": "Appreciating little things",
+      "description": "Borrow these patterns to tell this part of your day.",
+      "keys": [
+        44,
+        90,
+        83,
+        60
+      ]
+    },
+    {
+      "id": "happy-8",
+      "title": "Enjoying the moment",
+      "description": "Borrow these patterns to tell this part of your day.",
+      "keys": [
+        11,
+        12,
+        20,
+        94
+      ]
+    },
+    {
+      "id": "happy-9",
+      "title": "A happy change",
+      "description": "Borrow these patterns to tell this part of your day.",
+      "keys": [
+        6,
+        49,
+        "tsuzukeru",
+        5
+      ]
+    },
+    {
+      "id": "happy-10",
+      "title": "More days like this",
+      "description": "Borrow these patterns to tell this part of your day.",
+      "keys": [
+        36,
+        37,
+        23,
+        48
+      ]
+    }
+  ],
+  "relaxed": [
+    {
+      "id": "relaxed-1",
+      "title": "No rush",
+      "description": "Borrow these patterns to tell this part of your day.",
+      "keys": [
+        82,
+        71,
+        12,
+        97
+      ]
+    },
+    {
+      "id": "relaxed-2",
+      "title": "A comfortable routine",
+      "description": "Borrow these patterns to tell this part of your day.",
+      "keys": [
+        11,
+        74,
+        92,
+        48
+      ]
+    },
+    {
+      "id": "relaxed-3",
+      "title": "Taking in my surroundings",
+      "description": "Borrow these patterns to tell this part of your day.",
+      "keys": [
+        94,
+        13,
+        16,
+        17
+      ]
+    },
+    {
+      "id": "relaxed-4",
+      "title": "An easy afternoon",
+      "description": "Borrow these patterns to tell this part of your day.",
+      "keys": [
+        89,
+        87,
+        88,
+        36
+      ]
+    },
+    {
+      "id": "relaxed-5",
+      "title": "Familiar comforts",
+      "description": "Borrow these patterns to tell this part of your day.",
+      "keys": [
+        19,
+        "yasui",
+        74,
+        60
+      ]
+    },
+    {
+      "id": "relaxed-6",
+      "title": "Making space",
+      "description": "Borrow these patterns to tell this part of your day.",
+      "keys": [
+        23,
+        93,
+        46,
+        8
+      ]
+    },
+    {
+      "id": "relaxed-7",
+      "title": "A gentle outing",
+      "description": "Borrow these patterns to tell this part of your day.",
+      "keys": [
+        5,
+        6,
+        22,
+        37
+      ]
+    },
+    {
+      "id": "relaxed-8",
+      "title": "Letting my mind wander",
+      "description": "Borrow these patterns to tell this part of your day.",
+      "keys": [
+        95,
+        53,
+        54,
+        60
+      ]
+    },
+    {
+      "id": "relaxed-9",
+      "title": "Slowing down after work",
+      "description": "Borrow these patterns to tell this part of your day.",
+      "keys": [
+        "owaru",
+        64,
+        42,
+        23
+      ]
+    },
+    {
+      "id": "relaxed-10",
+      "title": "It need not be perfect",
+      "description": "Borrow these patterns to tell this part of your day.",
+      "keys": [
+        69,
+        39,
+        45,
+        82
+      ]
+    }
+  ],
+  "fun": [
+    {
+      "id": "fun-1",
+      "title": "Something funny happened",
+      "description": "Borrow these patterns to tell this part of your day.",
+      "keys": [
+        68,
+        7,
+        61,
+        42
+      ]
+    },
+    {
+      "id": "fun-2",
+      "title": "Trying something new",
+      "description": "Borrow these patterns to tell this part of your day.",
+      "keys": [
+        9,
+        19,
+        "yasui",
+        25
+      ]
+    },
+    {
+      "id": "fun-3",
+      "title": "Making fun plans",
+      "description": "Borrow these patterns to tell this part of your day.",
+      "keys": [
+        30,
+        31,
+        89,
+        85
+      ]
+    },
+    {
+      "id": "fun-4",
+      "title": "So many things to do",
+      "description": "Borrow these patterns to tell this part of your day.",
+      "keys": [
+        87,
+        88,
+        44,
+        72
+      ]
+    },
+    {
+      "id": "fun-5",
+      "title": "Playful comparisons",
+      "description": "Borrow these patterns to tell this part of your day.",
+      "keys": [
+        17,
+        69,
+        18,
+        60
+      ]
+    },
+    {
+      "id": "fun-6",
+      "title": "Getting carried away",
+      "description": "Borrow these patterns to tell this part of your day.",
+      "keys": [
+        "hajimeru",
+        "tsuzukeru",
+        63,
+        7
+      ]
+    },
+    {
+      "id": "fun-7",
+      "title": "Everyone joined in",
+      "description": "Borrow these patterns to tell this part of your day.",
+      "keys": [
+        51,
+        50,
+        2,
+        61
+      ]
+    },
+    {
+      "id": "fun-8",
+      "title": "A first time",
+      "description": "Borrow these patterns to tell this part of your day.",
+      "keys": [
+        91,
+        9,
+        11,
+        49
+      ]
+    },
+    {
+      "id": "fun-9",
+      "title": "An unexpected twist",
+      "description": "Borrow these patterns to tell this part of your day.",
+      "keys": [
+        56,
+        40,
+        13,
+        95
+      ]
+    },
+    {
+      "id": "fun-10",
+      "title": "Lets do it again",
+      "description": "Borrow these patterns to tell this part of your day.",
+      "keys": [
+        23,
+        22,
+        37,
+        8
+      ]
+    }
+  ],
+  "angry": [
+    {
+      "id": "angry-1",
+      "title": "That felt unfair",
+      "description": "Borrow these patterns to tell this part of your day.",
+      "keys": [
+        40,
+        55,
+        45,
+        60
+      ]
+    },
+    {
+      "id": "angry-2",
+      "title": "Not this again",
+      "description": "Borrow these patterns to tell this part of your day.",
+      "keys": [
+        63,
+        74,
+        18,
+        44
+      ]
+    },
+    {
+      "id": "angry-3",
+      "title": "Kept waiting",
+      "description": "Borrow these patterns to tell this part of your day.",
+      "keys": [
+        70,
+        73,
+        12,
+        42
+      ]
+    },
+    {
+      "id": "angry-4",
+      "title": "What I wish they would do",
+      "description": "Borrow these patterns to tell this part of your day.",
+      "keys": [
+        50,
+        86,
+        85,
+        61
+      ]
+    },
+    {
+      "id": "angry-5",
+      "title": "My side of the story",
+      "description": "Borrow these patterns to tell this part of your day.",
+      "keys": [
+        57,
+        42,
+        43,
+        45
+      ]
+    },
+    {
+      "id": "angry-6",
+      "title": "Words said in anger",
+      "description": "Recall words you heard; blunt commands are not polite requests.",
+      "keys": [
+        32,
+        33,
+        34,
+        61
+      ]
+    },
+    {
+      "id": "angry-7",
+      "title": "Was it a misunderstanding",
+      "description": "Borrow these patterns to tell this part of your day.",
+      "keys": [
+        14,
+        15,
+        58,
+        59
+      ]
+    },
+    {
+      "id": "angry-8",
+      "title": "Before reacting",
+      "description": "Borrow these patterns to tell this part of your day.",
+      "keys": [
+        97,
+        36,
+        23,
+        48
+      ]
+    },
+    {
+      "id": "angry-9",
+      "title": "Cooling down",
+      "description": "Borrow these patterns to tell this part of your day.",
+      "keys": [
+        6,
+        93,
+        71,
+        60
+      ]
+    },
+    {
+      "id": "angry-10",
+      "title": "What needs to change",
+      "description": "Borrow these patterns to tell this part of your day.",
+      "keys": [
+        84,
+        37,
+        21,
+        5
+      ]
+    }
+  ]
+};
+    const moodPools = Object.fromEntries(Object.entries(moodDefinitions).map(([key, packets]) => [key, packets.map(({keys, ...packet}) => ({...packet, ids: keys.map(key => typeof key === 'number' ? points[key].id : variantPoints[key].id)}))]));
+    const ratings = [{id:'bad',label:'わるい',english:'Bad'}, {id:'okay',label:'まあまあ',english:'So-so'}, {id:'great',label:'すばらしい',english:'Wonderful'}];
+    const emotions = [{id:'nervous',face:'😬',label:'Nervous'}, {id:'tired',face:'😴',label:'Tired'}, {id:'happy',face:'😊',label:'Happy'}, {id:'relaxed',face:'😌',label:'Relaxed'}, {id:'fun',face:'😆',label:'Having fun'}, {id:'angry',face:'😠',label:'Angry'}];
+    function normalizeMood(mood = {}) { return {rating: ratings.some(x => x.id === mood.rating) ? mood.rating : 'okay', emotion: emotions.some(x => x.id === mood.emotion) ? mood.emotion : 'relaxed'}; }
+    function matchMoods(left, right) {
+        if (!left.length) return [];
+        for (let i=0;i<right.length;i++) {
+            if (left[0].ids.some(id => right[i].ids.includes(id))) continue;
+            const tail = matchMoods(left.slice(1), right.filter((_,j) => i !== j));
+            if (tail) return [[left[0], right[i]], ...tail];
+        }
+        return null;
+    }
+    const byId = new Map([...points, ...Object.values(variantPoints)].map(point => [point.id, point]));
     const epoch = Date.UTC(2026, 10, 27);
     const mod = (n, size) => ((n % size) + size) % size;
     function shuffled(items, seed) {
@@ -1306,13 +2342,14 @@
         }
         return null;
     }
-    function build(date, level, n5Grammar) {
+    function build(date, level, n5Grammar, mood) {
         const day = Math.floor((Date.parse(`${date}T00:00:00Z`) - epoch) / 86400000);
         if (!Number.isFinite(day)) throw new Error('Invalid diary date');
+        const selection = normalizeMood(mood);
         const catalog = level === 'N4' ? n4Packets : n5Packets;
-        const daysPerCycle = catalog.length / 2;
+        const daysPerCycle = level === 'N4' ? 10 : catalog.length / 2;
         const cycle = Math.floor(day / daysPerCycle);
-        const pairs = pairDeck(shuffled(catalog, `${level}:packets:v1:${cycle}`));
+        const pairs = level === 'N4' ? matchMoods(shuffled(moodPools[selection.rating], `rating:${cycle}:${selection.rating}:${selection.emotion}`), shuffled(moodPools[selection.emotion], `emotion:${cycle}:${selection.rating}:${selection.emotion}`)) : pairDeck(shuffled(catalog, `${level}:packets:v1:${cycle}`));
         if (!pairs) throw new Error('Packet catalog cannot be paired without repeats');
         const lookup = level === 'N4' ? byId : new Map(n5Grammar.map(point => [point.id, point]));
         const packets = pairs[mod(day, daysPerCycle)].map(packet => ({
@@ -1324,15 +2361,16 @@
         const challengeDeck = shuffled(stretchIds, `stretch:v1:${challengeCycle}`);
         const start = mod(day, challengeDays) * 2;
         const stretch = challengeDeck.slice(start, start + 2).map(id => ({ ...byId.get(id) }));
-        return { format: 'packets-v1', packets, stretchIds: stretch.map(point => point.id), grammar: [...packets.flatMap(packet => packet.ids.map(id => ({ ...lookup.get(id) }))), ...stretch] };
+        return { format: 'packets-v1', ...(level === 'N4' ? {mood: selection} : {}), packets, stretchIds: stretch.map(point => point.id), grammar: [...packets.flatMap(packet => packet.ids.map(id => ({ ...lookup.get(id) }))), ...stretch] };
     }
+    const activeIds = [...Object.values(moodPools).flatMap(packets => packets.flatMap(packet => packet.ids)), ...stretchIds];
     const coverage = {
         sourceCount: points.length,
-        includedCount: new Set([...n4Packets.flatMap(packet => packet.ids), ...stretchIds]).size,
-        packetCount: n4Packets.length,
-        packetCycleDays: n4Packets.length / 2,
+        includedCount: new Set(activeIds.map(id => byId.get(id).sourceId)).size,
+        packetCount: Object.values(moodPools).reduce((count, packets) => count + packets.length, 0),
+        packetCycleDays: 10,
         stretchCount: stretchIds.length,
         stretchCycleDays: stretchIds.length / 2
     };
-    return { build, coverage, n4Packets, n5Packets, points, stretchIds };
+    return { build, moodPools, ratings, emotions, normalizeMood, variantPoints, coverage, n4Packets, n5Packets, points, stretchIds };
 });

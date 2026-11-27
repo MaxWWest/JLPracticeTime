@@ -27,7 +27,10 @@ test('every date has two distinct four-point packets and two distinct stretch po
 test('all 98 source entries are accounted for in curated packets or the stretch pool', () => {
     const lib = diary.packetLibrary;
     const inventory = new Set(source.sourceIds.map(id => `n4:${id}`));
-    const coverage = new Set([...lib.n4Packets.flatMap(packet => packet.ids), ...lib.stretchIds]);
+    const lookup = new Map([...lib.points, ...Object.values(lib.variantPoints)].map(point => [point.id, point]));
+    const coverage = new Set([...Object.values(lib.moodPools).flatMap(packets => packets.flatMap(packet => packet.ids)), ...lib.stretchIds].map(id => `n4:${lookup.get(id).sourceId}`));
+    assert.equal(Object.values(lib.moodPools).length, 9);
+    assert(Object.values(lib.moodPools).every(packets => packets.length === 10 && packets.every(packet => new Set(packet.ids).size === 4)));
     assert.equal(inventory.size, 98);
     assert.deepEqual(coverage, inventory);
     assert.deepEqual(new Set(lib.points.map(point => point.id)), inventory);
@@ -43,15 +46,15 @@ test('all 98 source entries are accounted for in curated packets or the stretch 
 test('shuffled cycles cover every packet and stretch point without relying on chance', () => {
     for (let cycle = -4; cycle <= 4; cycle++) {
         const packets = new Set(), stretch = new Set();
-        for (let day = 0; day < 11; day++) {
-            const daily = diary.assignment(diary.shiftDate('2026-11-27', cycle * 11 + day), 'N4');
+        for (let day = 0; day < 10; day++) {
+            const daily = diary.assignment(diary.shiftDate('2026-11-27', cycle * 10 + day), 'N4');
             daily.packets.forEach(packet => { assert(!packets.has(packet.id)); packets.add(packet.id); });
         }
         for (let day = 0; day < 7; day++) {
             const daily = diary.assignment(diary.shiftDate('2026-11-27', cycle * 7 + day), 'N4');
             daily.stretchIds.forEach(id => { assert(!stretch.has(id)); stretch.add(id); });
         }
-        assert.equal(packets.size, 22);
+        assert.equal(packets.size, 20);
         assert.equal(stretch.size, 14);
     }
 });
@@ -137,4 +140,57 @@ test('usage keeps optional stretch separate and downloads preserve the packet gr
     assert(output.includes('OPTIONAL STRETCH POINTS'));
     assert(output.includes('[x] '));
     assert(output.includes(entry.text));
+});
+
+
+test('all mood pairs rotate every packet and always produce ten unique patterns', () => {
+    const lib = diary.packetLibrary;
+    for (const rating of lib.ratings) for (const emotion of lib.emotions) for (let cycle = -3; cycle <= 3; cycle++) {
+        const seen = [new Set(), new Set()];
+        for (let day = 0; day < 10; day++) {
+            const date = diary.shiftDate('2026-11-27', cycle * 10 + day);
+            const mood = {rating: rating.id, emotion: emotion.id};
+            const prompts = diary.assignment(date, 'N4', mood);
+            assert.equal(new Set(prompts.grammar.map(p => p.id)).size, 10);
+            assert(prompts.grammar.every(p => p.id && p.formation && p.example && p.translation));
+            assert.deepEqual(prompts, diary.assignment(date, 'N4', mood));
+            prompts.packets.forEach((packet, i) => {assert(!seen[i].has(packet.id)); seen[i].add(packet.id);});
+        }
+        assert.deepEqual(seen[0], new Set(lib.moodPools[rating.id].map(p => p.id)));
+        assert.deepEqual(seen[1], new Set(lib.moodPools[emotion.id].map(p => p.id)));
+    }
+});
+
+test('changing moods preserves writing, words, checks, and saved packet snapshots', () => {
+    const date = '2026-11-27';
+    const {entry} = diary.load(emptyStorage, date, 'N4');
+    entry.text = '今日は楽しかった。';
+    const original = structuredClone(entry.prompts);
+    entry.checked = [original.grammar[0].id, original.verbs[0].id];
+    diary.changeMood(entry, {rating:'bad', emotion:'angry'});
+    assert.equal(entry.text, '今日は楽しかった。');
+    assert.deepEqual(entry.prompts.verbs, original.verbs);
+    assert.deepEqual(entry.prompts.vocab, original.vocab);
+    assert(entry.checked.includes(original.verbs[0].id));
+    const saved = diary.load(stored(diary.keyFor(date, 'N4'), JSON.stringify(entry)), date, 'N4');
+    assert.equal(saved.error, null);
+    assert.deepEqual(saved.entry, entry);
+    diary.changeMood(saved.entry, original.mood);
+    assert.deepEqual(saved.entry.prompts, original);
+    assert.deepEqual(saved.entry.checked.sort(), [original.grammar[0].id, original.verbs[0].id].sort());
+    assert.match(diary.downloadText(entry), /Day: bad · Feeling: angry/);
+});
+
+test('existing themed saves migrate with their writing and earlier grammar preserved', () => {
+    const date = '2026-11-27';
+    const {entry} = diary.load(emptyStorage, date, 'N4');
+    delete entry.prompts.mood;
+    entry.text = 'Old writing';
+    entry.checked = [entry.prompts.grammar[0].id];
+    const raw = JSON.stringify(entry);
+    const migrated = diary.load(stored(diary.keyFor(date, 'N4'), raw), date, 'N4');
+    assert.equal(migrated.error, null);
+    assert.equal(migrated.entry.text, entry.text);
+    assert.deepEqual(migrated.entry.previousGrammar, {points:entry.prompts.grammar, checked:entry.checked});
+    assert.deepEqual(migrated.entry.prompts.mood, {rating:'okay',emotion:'relaxed'});
 });
