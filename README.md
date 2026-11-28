@@ -181,17 +181,26 @@ Open **Daily diary** or `main.html?tab=diary`. Each Japan-calendar date has two
 curated four-pattern packets plus two optional stretch patterns, ten verbs, and
 ten vocabulary words. Choose patterns that fit about five sentences; there is no
 required order or grammar quota. The two packets have distinct themes and no
-repeated patterns. Aim for three verbs and three vocabulary words.
+repeated patterns. Use as many of the ten verbs and ten vocabulary words as you can; counters show usage out of ten with no minimum.
 
 N4 has 90 mood packets: ten for each of three day ratings and six feelings.
 Choose わるい / まあまあ / すばらしい and nervous, tired, happy, relaxed,
 having fun, or angry. One four-pattern packet comes from each choice. For a
-fixed rating/feeling pair, a shuffled ten-day cycle serves each packet once;
-a deterministic matching step prevents overlap. Fourteen stretch patterns
-rotate separately in a seven-day cycle, two per day. All ten daily patterns
-are distinct. Defaults are まあまあ and relaxed; choices are saved per entry.
-Changing choices preserves writing and words, and returning to a previous
-combination restores its grammar snapshot and ticks. N5 keeps its existing flow.
+selected rating and feeling, choose one of three themes per side. Each theme
+keeps available authored patterns and fills remaining slots from the same mood
+pool, then the wider bank. The other selected packet stays intact when choosing
+a theme. All ten daily patterns are distinct, and grammar ticks survive switching
+themes. Defaults are まあまあ and relaxed; choices are saved per entry.
+Changing moods preserves writing and words and restores compatible saved snapshots.
+
+New dates avoid all grammar (including optional stretch), verbs and vocabulary in
+both adjacent saved dates at the same level. Calendar rotations also prevent
+consecutive-day overlap without saved history. N4 options obey the same exclusions,
+including after changing a mood or theme. Original saved prompts remain intact;
+already-existing repeats in older saves are not rewritten. A corrupt neighboring
+save blocks generation rather than being silently ignored. The finite bank can
+repeat after a gap. Banks include 30 N4 verbs and 30 N4 vocabulary words, allowing
+ten fresh words even between two different saved days.
 
 Across all mood pools and the stretch pool, every one of the 98 OpenJLPT N4
 study-list entries is represented. Bundled giving, ease/difficulty, and
@@ -199,8 +208,8 @@ start/finish/continue entries have separate prompts with shared source IDs.
 This is study-list coverage, not an official exhaustive exam syllabus or a
 guarantee of mastery. Vary mood choices to explore the full catalog.
 
-N5 retains its beginner vocabulary and uses four four-pattern starter packets,
-paired over two-day cycles, with the same optional N4 stretch pool clearly labeled.
+N5 retains its beginner vocabulary and uses eight four-pattern starter packets,
+paired over four-day cycles, with the same optional N4 stretch pool clearly labeled.
 The default level for new users is N4; existing level preferences are respected.
 
 Packet content is stored as a snapshot per date and level. New saves use
@@ -228,5 +237,5 @@ Tests audit those IDs independently against packet and stretch membership.
 The [JLPT FAQ](https://www.jlpt.jp/e/faq/index.html) explains why there is no
 published exhaustive grammar checklist.
 
-Run `node --test daily-diary.test.js` for coverage, complete shuffled cycles,
-non-overlapping daily selections, dates, saved snapshots, migration, and exports.
+Run `node --test daily-diary.test.js` for coverage, consecutive-day exclusions,
+three-theme choices, dates, saved snapshots, migration, and exports.

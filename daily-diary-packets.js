@@ -1278,6 +1278,14 @@
     ]
   }
 ];
+    n5Packets.push(
+        {id: 'n5-invitations', title: 'Wishes and invitations', description: 'What you like, what you want, and things to do together.', ids: ['suki', 'hoshii', 'invitation', 'lets']},
+        {id: 'n5-time', title: 'Times and journeys', description: 'When things happened, how often, and how you travelled.', ids: ['timeat', 'fromto', 'transport', 'frequency']}
+    );
+    n5Packets.push(
+        {id: 'n5-descriptions', title: 'People and things', description: 'Describe things around you and who they belong to.', ids: ['nounnegative', 'adjectivenegative', 'possession', 'nounmodifier']},
+        {id: 'n5-preferences', title: 'Outings and favorites', description: 'Describe an outing, compare things, and share your favorites.', ids: ['purposevisit', 'favorite', 'comparison', 'examples']}
+    );
     const stretchIds = ["n4:te-kudasaru-te-itadaku", "n4:te-aru", "n4:eru-rareru-potential", "n4:reru-rareru-passive", "n4:seru-saseru", "n4:serareru-saserareru", "n4:you-ni", "n4:sasete-kudasai", "n4:sonkeigo", "n4:kenjougo", "n4:o-ni-naru", "n4:o-suru", "n4:de-gozaimasu", "n4:te-kuremasen-ka-te-itadakemasen-ka"];
 
     // Split bundled study-list entries into individual writing prompts.
@@ -2637,15 +2645,6 @@
         return {english: `${adjective[0]} ${phrase[0].toLowerCase()}`, japanese: adjective[1] + phrase[1]};
     }
     function normalizeMood(mood = {}) { return {rating: ratings.some(x => x.id === mood.rating) ? mood.rating : 'okay', emotion: emotions.some(x => x.id === mood.emotion) ? mood.emotion : 'relaxed'}; }
-    function matchMoods(left, right) {
-        if (!left.length) return [];
-        for (let i=0;i<right.length;i++) {
-            if (left[0].ids.some(id => right[i].ids.includes(id))) continue;
-            const tail = matchMoods(left.slice(1), right.filter((_,j) => i !== j));
-            if (tail) return [[left[0], right[i]], ...tail];
-        }
-        return null;
-    }
     const byId = new Map([...points, ...Object.values(variantPoints)].map(point => [point.id, point]));
     const epoch = Date.UTC(2026, 10, 27);
     const mod = (n, size) => ((n % size) + size) % size;
@@ -2662,36 +2661,64 @@
         }
         return copy;
     }
-    function pairDeck(deck) {
-        if (!deck.length) return [];
-        const [first, ...rest] = deck;
-        for (let index = 0; index < rest.length; index++) {
-            const second = rest[index];
-            if (first.ids.some(id => second.ids.includes(id))) continue;
-            const tail = pairDeck(rest.filter((_, i) => i !== index));
-            if (tail) return [[first, second], ...tail];
-        }
-        return null;
-    }
-    function build(date, level, n5Grammar, mood) {
+    const ordinaryIds = [...new Set(Object.values(moodPools).flatMap(pool => pool.flatMap(packet => packet.ids)))].filter(id => !stretchIds.includes(id));
+    const ordinaryDeck = shuffled(ordinaryIds, 'diary:ordinary:no-repeat-v1');
+    function dayNumber(date) {
         const day = Math.floor((Date.parse(`${date}T00:00:00Z`) - epoch) / 86400000);
         if (!Number.isFinite(day)) throw new Error('Invalid diary date');
-        const selection = normalizeMood(mood);
-        const catalog = level === 'N4' ? n4Packets : n5Packets;
-        const daysPerCycle = level === 'N4' ? 10 : catalog.length / 2;
-        const cycle = Math.floor(day / daysPerCycle);
-        const pairs = level === 'N4' ? matchMoods(shuffled(moodPools[selection.rating], `rating:${cycle}:${selection.rating}:${selection.emotion}`), shuffled(moodPools[selection.emotion], `emotion:${cycle}:${selection.rating}:${selection.emotion}`)) : pairDeck(shuffled(catalog, `${level}:packets:v1:${cycle}`));
-        if (!pairs) throw new Error('Packet catalog cannot be paired without repeats');
+        return day;
+    }
+    function options(date, mood, group, excluded = [], oppositeIds = [], current) {
+        const selection = normalizeMood(mood), day = dayNumber(date);
+        const pool = moodPools[selection[group]];
+        // Disjoint alternating decks prevent consecutive-day repeats even without saves.
+        // Saved neighbors and the other selected packet are additional hard exclusions.
+        const blocked = new Set([...excluded, ...oppositeIds]);
+        const fresh = ordinaryDeck.filter((id, index) => index % 2 === mod(day, 2) && !blocked.has(id));
+        const available = new Set(fresh);
+        const related = shuffled([...new Set(pool.flatMap(packet => packet.ids))], `${date}:${selection[group]}:related`).filter(id => available.has(id));
+        const ranked = shuffled(pool, `${date}:${selection[group]}:options`);
+        const strong = ranked.filter(packet => packet.ids.filter(id => available.has(id)).length >= 2);
+        const candidates = strong.length >= 3 ? strong : ranked;
+        const choices = candidates.map(packet => {
+            const ids = [...new Set([...packet.ids.filter(id => available.has(id)), ...shuffled(related, `${date}:${packet.id}:related`), ...shuffled(fresh, `${date}:${packet.id}:fresh`)])].slice(0, 4);
+            if (ids.length !== 4) throw new Error('Not enough fresh grammar for packet choices');
+            return {id: packet.id, title: packet.title, description: packet.description, ids};
+        });
+        // Keep the saved selection and its exact prompts among the three options when safe.
+        if (current && pool.some(packet => packet.id === current.id) && !current.ids.some(id => blocked.has(id))) {
+            const index = choices.findIndex(packet => packet.id === current.id);
+            if (index >= 0) choices.splice(index, 1);
+            choices.unshift({...current, ids: current.ids.slice()});
+        }
+        return choices.slice(0, 3);
+    }
+    function build(date, level, n5Grammar, mood, excluded = [], retained = {}) {
+        const day = dayNumber(date), selection = normalizeMood(mood), blocked = new Set(excluded);
+        let packets;
+        if (level === 'N4') {
+            const keep = group => retained[group] && !retained[group].ids.some(id => blocked.has(id)) ? retained[group] : null;
+            const keptEmotion = keep('emotion');
+            const first = keep('rating') || options(date, selection, 'rating', excluded, keptEmotion?.ids || [])[0];
+            const second = keptEmotion || options(date, selection, 'emotion', excluded, first.ids)[0];
+            packets = [first, second];
+        } else {
+            const deck = shuffled(n5Packets, 'N5:packets:no-repeat-v1');
+            const start = mod(day * 2, deck.length);
+            const ordered = [...deck.slice(start), ...deck.slice(0, start)];
+            const used = new Set(blocked);
+            const fresh = ordered.flatMap(packet => packet.ids).filter(id => !blocked.has(id));
+            packets = ordered.slice(0, 2).map(packet => {
+                const ids = [...new Set([...packet.ids, ...fresh])].filter(id => !used.has(id)).slice(0, 4);
+                if (ids.length !== 4) throw new Error('Not enough fresh beginner patterns');
+                ids.forEach(id => used.add(id));
+                return {...packet, ids};
+            });
+        }
         const lookup = level === 'N4' ? byId : new Map(n5Grammar.map(point => [point.id, point]));
-        const packets = pairs[mod(day, daysPerCycle)].map(packet => ({
-            id: packet.id, title: packet.title, description: packet.description,
-            ids: packet.ids.slice()
-        }));
-        const challengeDays = stretchIds.length / 2;
-        const challengeCycle = Math.floor(day / challengeDays);
-        const challengeDeck = shuffled(stretchIds, `stretch:v1:${challengeCycle}`);
-        const start = mod(day, challengeDays) * 2;
-        const stretch = challengeDeck.slice(start, start + 2).map(id => ({ ...byId.get(id) }));
+        const deck = shuffled(stretchIds, 'stretch:no-repeat-v1');
+        const start = mod(day * 3, deck.length);
+        const stretch = [...deck.slice(start), ...deck.slice(0, start)].filter(id => !blocked.has(id)).slice(0, 2).map(id => ({...byId.get(id)}));
         return { format: 'packets-v1', ...(level === 'N4' ? {mood: selection} : {}), packets, stretchIds: stretch.map(point => point.id), grammar: [...packets.flatMap(packet => packet.ids.map(id => ({ ...lookup.get(id) }))), ...stretch] };
     }
     const activeIds = [...Object.values(moodPools).flatMap(packets => packets.flatMap(packet => packet.ids)), ...stretchIds];
@@ -2699,9 +2726,7 @@
         sourceCount: points.length,
         includedCount: new Set(activeIds.map(id => byId.get(id).sourceId)).size,
         packetCount: Object.values(moodPools).reduce((count, packets) => count + packets.length, 0),
-        packetCycleDays: 10,
-        stretchCount: stretchIds.length,
-        stretchCycleDays: stretchIds.length / 2
+        stretchCount: stretchIds.length
     };
-    return { build, nickname, nicknameAdjectives, nicknamePhrases, moodPools, ratings, emotions, normalizeMood, variantPoints, coverage, n4Packets, n5Packets, points, stretchIds };
+    return { build, options, pointFor: id => byId.get(id), nickname, nicknameAdjectives, nicknamePhrases, moodPools, ratings, emotions, normalizeMood, variantPoints, coverage, n4Packets, n5Packets, points, stretchIds };
 });

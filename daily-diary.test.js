@@ -43,19 +43,21 @@ test('all 98 source entries are accounted for in curated packets or the stretch 
     assert.match(stretchLabels, /〜せられる/);
 });
 
-test('shuffled cycles cover every packet and stretch point without relying on chance', () => {
-    for (let cycle = -4; cycle <= 4; cycle++) {
-        const packets = new Set(), stretch = new Set();
-        for (let day = 0; day < 10; day++) {
-            const daily = diary.assignment(diary.shiftDate('2026-11-27', cycle * 10 + day), 'N4');
-            daily.packets.forEach(packet => { assert(!packets.has(packet.id)); packets.add(packet.id); });
+function assertFresh(left, right) {
+    for (const group of ['grammar', 'verbs', 'vocab']) {
+        const previous = new Set(left[group].map(item => item.id));
+        assert.deepEqual(right[group].filter(item => previous.has(item.id)).map(item => item.id), [], `${group} must not repeat on adjacent dates`);
+    }
+}
+
+test('calendar assignments never repeat any category on consecutive days, including leap and cycle boundaries', () => {
+    for (const level of ['N5', 'N4']) {
+        let previous = diary.assignment('2025-12-30', level);
+        for (let i = 1; i <= 1200; i++) {
+            const current = diary.assignment(diary.shiftDate('2025-12-30', i), level);
+            assertFresh(previous, current);
+            previous = current;
         }
-        for (let day = 0; day < 7; day++) {
-            const daily = diary.assignment(diary.shiftDate('2026-11-27', cycle * 7 + day), 'N4');
-            daily.stretchIds.forEach(id => { assert(!stretch.has(id)); stretch.add(id); });
-        }
-        assert.equal(packets.size, 20);
-        assert.equal(stretch.size, 14);
     }
 });
 
@@ -143,21 +145,27 @@ test('usage keeps optional stretch separate and downloads preserve the packet gr
 });
 
 
-test('all mood pairs rotate every packet and always produce ten unique patterns', () => {
+test('every mood pairing offers three distinct safe themes per side, including changing mood between days', () => {
     const lib = diary.packetLibrary;
-    for (const rating of lib.ratings) for (const emotion of lib.emotions) for (let cycle = -3; cycle <= 3; cycle++) {
-        const seen = [new Set(), new Set()];
-        for (let day = 0; day < 10; day++) {
-            const date = diary.shiftDate('2026-11-27', cycle * 10 + day);
-            const mood = {rating: rating.id, emotion: emotion.id};
-            const prompts = diary.assignment(date, 'N4', mood);
-            assert.equal(new Set(prompts.grammar.map(p => p.id)).size, 10);
-            assert(prompts.grammar.every(p => p.id && p.formation && p.example && p.translation));
-            assert.deepEqual(prompts, diary.assignment(date, 'N4', mood));
-            prompts.packets.forEach((packet, i) => {assert(!seen[i].has(packet.id)); seen[i].add(packet.id);});
+    for (const rating of lib.ratings) for (const emotion of lib.emotions) for (let day = 0; day < 30; day++) {
+        const date = diary.shiftDate('2026-11-27', day);
+        const prompts = diary.assignment(date, 'N4', {rating: rating.id, emotion: emotion.id});
+        assert.equal(new Set(prompts.grammar.map(point => point.id)).size, 10);
+        assertFresh(diary.assignment(diary.shiftDate(date, -1), 'N4'), prompts);
+        const entry = {date, level: 'N4', text: '', checked: [], prompts};
+        for (const group of ['rating', 'emotion']) {
+            const options = diary.packetChoices(entry, group);
+            assert.equal(options.length, 3);
+            assert.equal(new Set(options.map(option => option.id)).size, 3);
+            assert.equal(new Set(options.map(option => option.ids.slice().sort().join('|'))).size, 3);
+            for (const option of options) {
+                const selected = structuredClone(entry);
+                assert(diary.choosePacket(selected, group, option.id));
+                assert.equal(new Set(selected.prompts.grammar.map(point => point.id)).size, 10);
+                assertFresh(diary.assignment(diary.shiftDate(date, -1), 'N4'), selected.prompts);
+                assertFresh(selected.prompts, diary.assignment(diary.shiftDate(date, 1), 'N4'));
+            }
         }
-        assert.deepEqual(seen[0], new Set(lib.moodPools[rating.id].map(p => p.id)));
-        assert.deepEqual(seen[1], new Set(lib.moodPools[emotion.id].map(p => p.id)));
     }
 });
 
@@ -193,4 +201,115 @@ test('existing themed saves migrate with their writing and earlier grammar prese
     assert.equal(migrated.entry.text, entry.text);
     assert.deepEqual(migrated.entry.previousGrammar, {points:entry.prompts.grammar, checked:entry.checked});
     assert.deepEqual(migrated.entry.prompts.mood, {rating:'okay',emotion:'relaxed'});
+});
+
+
+test('new entries exclude both saved neighbors when opening dates in shuffled order', () => {
+    for (const level of ['N5', 'N4']) {
+        const records = new Map(), storage = {getItem: key => records.get(key) ?? null};
+        // First create gaps, then fill them in reverse order.
+        const order = [...Array.from({length: 31}, (_, i) => i * 2), ...Array.from({length: 30}, (_, i) => 59 - i * 2)];
+        for (const i of order) {
+            const date = diary.shiftDate('2028-02-01', i);
+            const loaded = diary.load(storage, date, level);
+            assert.equal(loaded.error, null);
+            const entry = loaded.entry;
+            const excluded = diary.adjacentExclusions(storage, date, level);
+            if (level === 'N4') {
+                diary.changeMood(entry, {rating: ['bad', 'okay', 'great'][i % 3], emotion: diary.packetLibrary.emotions[i % 6].id}, excluded);
+                for (const group of ['rating', 'emotion']) {
+                    const options = diary.packetChoices(entry, group, excluded);
+                    assert.equal(options.length, 3);
+                    assert(diary.choosePacket(entry, group, options[i % 3].id, excluded));
+                }
+            }
+            records.set(diary.keyFor(date, level), JSON.stringify(entry));
+            assert.deepEqual(diary.load(storage, date, level), {entry, error: null});
+        }
+        for (let i = 0; i < 60; i++) {
+            const date = diary.shiftDate('2028-02-01', i);
+            assertFresh(diary.load(storage, date, level).entry.prompts, diary.load(storage, diary.shiftDate(date, 1), level).entry.prompts);
+        }
+    }
+});
+
+test('old adjacent snapshots are excluded without modifying their saved prompts or writing', () => {
+    for (const level of ['N5', 'N4']) {
+        const records = new Map(), storage = {getItem: key => records.get(key) ?? null};
+        const date = '2026-12-01';
+        for (const [offset, sourceDate] of [[-1, '2026-11-20'], [1, '2026-11-25']]) {
+            const neighbor = diary.load(emptyStorage, sourceDate, level).entry;
+            neighbor.date = diary.shiftDate(date, offset);
+            neighbor.text = 'Keep my old writing';
+            records.set(diary.keyFor(neighbor.date, level), JSON.stringify(neighbor));
+        }
+        const before = [...records];
+        const loaded = diary.load(storage, date, level);
+        assert.equal(loaded.error, null);
+        for (const [key, raw] of before) {
+            assertFresh(JSON.parse(raw).prompts, loaded.entry.prompts);
+            assert.equal(records.get(key), raw);
+        }
+    }
+});
+
+test('packet selection preserves the other packet, writing, words, and checkbox history', () => {
+    const entry = diary.load(emptyStorage, '2026-11-28', 'N4').entry;
+    entry.text = '今日の日記。';
+    const original = structuredClone(entry.prompts), first = original.packets[0];
+    entry.checked = [first.ids[0], original.verbs[0].id];
+    const choice = diary.packetChoices(entry, 'rating')[1];
+    assert(diary.choosePacket(entry, 'rating', choice.id));
+    assert.equal(entry.text, '今日の日記。');
+    assert.deepEqual(entry.prompts.packets[1], original.packets[1]);
+    assert.deepEqual(entry.prompts.verbs, original.verbs);
+    assert.deepEqual(entry.prompts.vocab, original.vocab);
+    assert(diary.choosePacket(entry, 'rating', first.id));
+    assert(entry.checked.includes(first.ids[0]));
+    assert(entry.checked.includes(original.verbs[0].id));
+    const saved = diary.load(stored(diary.keyFor(entry.date, 'N4'), JSON.stringify(entry)), entry.date, 'N4');
+    assert.deepEqual(saved, {entry, error: null});
+});
+
+test('corrupt adjacent saves block generation and in-memory neighbors also prevent repeats', () => {
+    const date = '2026-11-28';
+    assert(diary.load(stored(diary.keyFor('2026-11-27', 'N4'), '{broken'), date, 'N4').error);
+    const previous = diary.load(emptyStorage, '2026-11-27', 'N4').entry;
+    const session = new Map([[diary.keyFor(previous.date, 'N4'), {entry: previous, error: null}]]);
+    const current = diary.load(emptyStorage, date, 'N4', session);
+    assert.equal(current.error, null);
+    assertFresh(previous.prompts, current.entry.prompts);
+});
+
+
+test('two older ten-point N5 neighbors can span many starter packets without forcing repeats', () => {
+    const date = '2026-11-28', records = new Map();
+    for (const [offset, start] of [[-1, 0], [1, 10]]) {
+        const neighborDate = diary.shiftDate(date, offset);
+        const prompts = diary.assignment(neighborDate, 'N5');
+        const old = {date: neighborDate, level: 'N5', text: 'Preserve', checked: [], prompts: {
+            grammar: diary.banks.N5.grammar.slice(start, start + 10), verbs: prompts.verbs, vocab: prompts.vocab
+        }};
+        records.set(diary.previousKeyFor(neighborDate, 'N5'), JSON.stringify(old));
+    }
+    const storage = {getItem: key => records.get(key) ?? null};
+    const result = diary.load(storage, date, 'N5');
+    assert.equal(result.error, null);
+    for (const raw of records.values()) assertFresh(JSON.parse(raw).prompts, result.entry.prompts);
+});
+
+
+test('changing only the feeling keeps the chosen day theme and its checked grammar', () => {
+    const entry = diary.load(emptyStorage, '2026-11-28', 'N4').entry;
+    diary.choosePacket(entry, 'rating', diary.packetChoices(entry, 'rating')[2].id);
+    const dayPacket = structuredClone(entry.prompts.packets[0]);
+    entry.checked = [dayPacket.ids[0]];
+    diary.changeMood(entry, {...entry.prompts.mood, emotion: 'angry'});
+    assert.deepEqual(entry.prompts.packets[0], dayPacket);
+    assert(entry.checked.includes(dayPacket.ids[0]));
+    assert.equal(new Set(entry.prompts.grammar.map(point => point.id)).size, 10);
+    const feelingPacket = structuredClone(entry.prompts.packets[1]);
+    diary.changeMood(entry, {...entry.prompts.mood, rating: 'bad'});
+    assert.deepEqual(entry.prompts.packets[1], feelingPacket);
+    assert.equal(new Set(entry.prompts.grammar.map(point => point.id)).size, 10);
 });

@@ -59,9 +59,9 @@
     <script src="reading-skills.js?v=20261020-reading-v2" defer></script>
     <script src="reading-quality.js?v=20261020-reading-v2" defer></script>
     <script src="reading.js?v=20261020-reading-v2" defer></script>
-    <link rel="stylesheet" href="daily-diary.css?v=20261127-reference-layout-1">
-    <script src="daily-diary-packets.js?v=20261127-reference-layout-1" defer></script>
-    <script src="daily-diary.js?v=20261127-reference-layout-1" defer></script>
+    <link rel="stylesheet" href="daily-diary.css?v=20261128-choices-fresh-v1">
+    <script src="daily-diary-packets.js?v=20261128-choices-fresh-v1" defer></script>
+    <script src="daily-diary.js?v=20261128-choices-fresh-v1" defer></script>
 </head>
 <body>
     <div class="page-shell">
@@ -1429,7 +1429,7 @@
             <section class="tab-panel diary-panel" id="diary-panel" role="tabpanel" aria-labelledby="diary-tab" hidden>
                 <div class="diary-heading">
                     <div><p class="diary-eyebrow">毎日の日記 · DAILY WRITING</p><h2>A little of your day, in Japanese.</h2>
-                    <p>Write about five sentences with <strong>two themed packets of four grammar points</strong> and <strong>two optional stretch points</strong>. Choose what fits; you do not need to use every pattern. Aim to include 3 verbs and 3 vocab words.</p></div>
+                    <p>Write about five sentences with <strong>two themed packets of four grammar points</strong> and <strong>two optional stretch points</strong>. Choose what fits; you do not need to use every pattern. Use as many of the 10 verbs and 10 vocab words as you can.</p></div>
                     <span class="diary-seal" aria-hidden="true">日記</span>
                 </div>
                 <div class="diary-toolbar">
@@ -1439,23 +1439,25 @@
                 <p class="diary-note" id="diary-level-note" aria-live="polite"></p>
                 <p class="diary-note">Daily themed packets · Japan time. Each packet offers a flavor for your writing, with no fixed sentence order. Tick the patterns you use; this is a self-check, not automatic grading.</p>
                 <details class="diary-coverage diary-note"><summary>N4 library coverage · 98 of 98 study-list entries</summary>
-                    <p>90 mood packets and 14 stretch patterns cover every entry in Kotoba’s OpenJLPT N4 snapshot. Each day rating and emotion has ten packets. For a fixed pair of choices, a shuffled 10-day cycle serves each packet once; a separate 7-day cycle serves every stretch point once. Your ten daily patterns have no repeats. Some bundled study-list entries are split into individual prompts. Changing moods affects which patterns you review, so vary your choices to explore the full library.</p>
-                    <p>This is study-list coverage, not a guarantee of exam content or mastery. JLPT does not publish an exhaustive grammar checklist. Keep reviewing N5 foundations too. N5 mode uses four beginner packets and the same optional N4 stretch pool.</p>
+                    <p>90 mood packets and 14 stretch patterns cover every entry in Kotoba’s OpenJLPT N4 snapshot. Each day rating and emotion has ten packets. Choose from three themes for your day and three for your feeling. Patterns in each theme adapt to avoid repeats. New entries avoid grammar, verbs and vocabulary from adjacent saved dates at the same level; older saved prompts stay intact. Unsaved dates also follow a rotation with no consecutive-day repeats. Some bundled study-list entries are split into individual prompts. Changing moods affects which patterns you review, so vary your choices to explore the full library.</p>
+                    <p>This is study-list coverage, not a guarantee of exam content or mastery. JLPT does not publish an exhaustive grammar checklist. Keep reviewing N5 foundations too. N5 mode uses eight beginner packets and the same optional N4 stretch pool.</p>
                     <p>N4 explanations and examples adapted from <a href="https://github.com/evanclan/OpenJLPT">OpenJLPT</a> under <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a> (snapshot: November 27, 2026). Grouping and presentation adapted for Kotoba. <a href="https://www.jlpt.jp/e/faq/index.html">JLPT FAQ</a>.</p>
                 </details>
                 <section id="diary-moods" class="diary-card diary-moods" aria-label="Today’s mood">
                     <h3>How is your day going?</h3>
-                    <p class="diary-note">Start with a day rating and a feeling. Each supplies one four-pattern packet. Change either anytime; your writing stays here.</p>
+                    <p class="diary-note">Start with a day rating and a feeling. Pick one of three themes for each choice. Each theme supplies four fresh patterns. Change your choices anytime; your writing stays here.</p>
                     <div id="diary-rating" class="diary-rating" role="group" aria-label="Day rating"></div>
+                    <div id="diary-rating-packets" class="diary-packet-options" role="group" aria-label="Choose a theme for your day"></div>
                     <h4>How do you feel?</h4>
                     <div id="diary-emotion" class="diary-emotion" role="group" aria-label="Emotion"></div>
+                    <div id="diary-emotion-packets" class="diary-packet-options" role="group" aria-label="Choose a theme for your feeling"></div>
                     <div class="diary-nickname" aria-live="polite" aria-atomic="true"><p class="diary-eyebrow">TODAY’S LITTLE ALTER EGO</p><p id="diary-nickname"></p><p id="diary-nickname-ja" lang="ja"></p></div>
                 </section>
                 <div class="diary-layout">
                     <div class="diary-prompts">
                         <div class="diary-grammar-groups" id="diary-grammar"></div>
-                        <section class="diary-card"><div class="diary-card-heading"><h3>Verbs</h3><span>Choose at least 3</span></div><div class="diary-word-list" id="diary-verbs"></div></section>
-                        <section class="diary-card"><div class="diary-card-heading"><h3>Vocabulary</h3><span>Choose at least 3</span></div><div class="diary-word-list" id="diary-vocab"></div></section>
+                        <section class="diary-card"><div class="diary-card-heading"><h3>Verbs</h3><span>Use as many as you can</span></div><div class="diary-word-list" id="diary-verbs"></div></section>
+                        <section class="diary-card"><div class="diary-card-heading"><h3>Vocabulary</h3><span>Use as many as you can</span></div><div class="diary-word-list" id="diary-vocab"></div></section>
                     </div>
                     <div class="diary-writing">
                         <section class="diary-card diary-notebook">

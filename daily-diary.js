@@ -153,6 +153,24 @@
         ['sequence', '〜て、〜', 'Connect actions in order', 'First verb in て-form, then the next action', '朝ご飯を食べて、学校に行きました。', 'I ate breakfast and went to school.'],
         ['adjectives', '〜くて／〜で', 'Connect descriptions', 'い-adjective: replace final い with くて; な-adjective stem + で', 'この店は安くて、おいしいです。', 'This restaurant is cheap and the food is tasty.']
     ].map(([id, ja, meaning, formation, example, translation]) => ({ id, ja, meaning, formation, example, translation })));
+    n5Grammar.push(...[
+        ['suki', '〜が好きです', 'Say what you like', 'Noun + が好きです', '音楽が好きです。', 'I like music.'],
+        ['hoshii', '〜がほしいです', 'Say what you want', 'Thing + がほしいです', '新しい本がほしいです。', 'I want a new book.'],
+        ['invitation', '〜ませんか', 'Invite someone', 'Verb ます-stem + ませんか', '一緒にお茶を飲みませんか。', 'Would you like to have tea together?'],
+        ['lets', '〜ましょう', 'Suggest doing something together', 'Verb ます-stem + ましょう', '明日、公園に行きましょう。', 'Let’s go to the park tomorrow.'],
+        ['timeat', '〜時に', 'Say when you did something', 'Clock time + に + action', '七時に起きました。', 'I woke up at seven.'],
+        ['fromto', '〜から〜まで', 'Give a time range', 'Starting time + から + ending time + まで', '九時から五時まで働きました。', 'I worked from nine to five.'],
+        ['transport', '〜で行きます', 'Say how you travelled', 'Vehicle + で + 行く', '電車で学校に行きました。', 'I went to school by train.'],
+        ['nounnegative', '〜ではありません', 'Say what something is not', 'Noun or な-adjective stem + ではありません', '今日は休みではありません。', 'Today is not a day off.'],
+        ['adjectivenegative', '〜くないです', 'Describe what something is not like', 'い-adjective: replace final い with くないです; いい becomes よくないです', '今日は寒くないです。', 'It is not cold today.'],
+        ['possession', '〜の〜', 'Connect a person and their thing', 'Owner + の + thing', '友達の本を読みました。', 'I read my friend’s book.'],
+        ['nounmodifier', 'Adjective + noun', 'Describe a person or thing', 'い-adjective + noun; な-adjective stem + な + noun', '静かな店でお茶を飲みました。', 'I drank tea at a quiet shop.'],
+        ['purposevisit', '〜に行く (purpose)', 'Say what you went to do', 'Verb ます-stem + に行く', 'パンを買いに行きました。', 'I went to buy bread.'],
+        ['favorite', '〜がいちばん', 'Say what you like most', 'Group + で + item + がいちばん + adjective', '果物では、りんごがいちばん好きです。', 'Of fruits, I like apples best.'],
+        ['comparison', '〜より', 'Make a simple comparison', 'A は B より + adjective', '今日は昨日より暖かいです。', 'Today is warmer than yesterday.'],
+        ['examples', '〜や〜', 'Give examples of things', 'Noun + や + noun; this is not a complete list', 'パンや果物を買いました。', 'I bought things like bread and fruit.'],
+        ['frequency', '〜に〜回', 'Say how often', 'Time period + に + number + 回', '一週間に三回、走ります。', 'I run three times a week.']
+    ].map(([id, ja, meaning, formation, example, translation]) => ({id, ja, meaning, formation, example, translation})));
     const n4Verbs = makeWords(`
 考える|かんがえる|to think
 選ぶ|えらぶ|to choose
@@ -174,6 +192,16 @@
 見つける|みつける|to find
 運ぶ|はこぶ|to carry; to transport
 直す|なおす|to fix
+集める|あつめる|to collect
+伝える|つたえる|to convey; to tell
+届ける|とどける|to deliver
+訪ねる|たずねる|to visit someone
+戻る|もどる|to return
+変わる|かわる|to change
+慣れる|なれる|to get used to
+間違える|まちがえる|to make a mistake
+出発する|しゅっぱつする|to depart
+利用する|りようする|to use a service or facility
 `, 'verb');
     const n4Vocab = makeWords(`
 予定|よてい|plan; schedule
@@ -196,6 +224,16 @@
 残念|ざんねん|disappointing (な-adjective)
 無理|むり|unreasonable; impossible (な-adjective)
 十分|じゅうぶん|enough; sufficient
+景色|けしき|scenery
+季節|きせつ|season
+機会|きかい|opportunity
+場所|ばしょ|place
+安全|あんぜん|safe (な-adjective)
+便利|べんり|convenient (な-adjective)
+複雑|ふくざつ|complicated (な-adjective)
+特別|とくべつ|special
+急に|きゅうに|suddenly
+しっかり|しっかり|firmly; thoroughly
 `, 'vocab');
     const banks = {
         N5: { grammar: n5Grammar, verbs: verbs.filter(item => !n4Verbs.some(word => word.id === item.id)), vocab: vocab.filter(item => !n4Vocab.some(word => word.id === item.id)) },
@@ -221,12 +259,22 @@
         }
         return shuffled.slice(0, count).map(item => ({ ...item }));
     }
-    function assignment(date, level = 'N5', mood) {
+    function rotatingWords(pool, count, date, seed, excluded = []) {
+        const blocked = new Set(excluded);
+        const deck = pick(pool, pool.length, seed);
+        const day = Math.floor(Date.parse(`${date}T00:00:00Z`) / 86400000);
+        const stride = pool.length > count * 2 ? count + 1 : count;
+        const start = ((day * stride % deck.length) + deck.length) % deck.length;
+        const ordered = [...deck.slice(start), ...deck.slice(0, start)].filter(item => !blocked.has(item.id));
+        if (ordered.length < count) throw new Error('Not enough fresh diary words');
+        return ordered.slice(0, count).map(item => ({...item}));
+    }
+    function assignment(date, level = 'N5', mood, excluded = {}, retained = {}) {
         level = levelFor(level);
         return {
-            ...packetLibrary.build(date, level, n5Grammar, mood),
-            verbs: pick(banks[level].verbs, 10, `${date}:${level}:verbs:v2`),
-            vocab: pick(banks[level].vocab, 10, `${date}:${level}:vocab:v2`)
+            ...packetLibrary.build(date, level, n5Grammar, mood, excluded.grammar || [], retained),
+            verbs: rotatingWords(banks[level].verbs, 10, date, `${level}:verbs:no-repeat-v1`, excluded.verbs),
+            vocab: rotatingWords(banks[level].vocab, 10, date, `${level}:vocab:no-repeat-v1`, excluded.vocab)
         };
     }
     function today(now = new Date()) {
@@ -248,7 +296,7 @@
     const legacyKeyFor = date => `kotoba-diary-v1:${date}`;
     const previousKeyFor = (date, level = 'N5') => `kotoba-diary-v2:${levelFor(level)}:${date}`;
     const keyFor = (date, level = 'N5') => `kotoba-diary-v3:${levelFor(level)}:${date}`;
-    function blank(date, level) { return { date, level, prompts: assignment(date, level), text: '', checked: [], updatedAt: null }; }
+    function blank(date, level, excluded) { return { date, level, prompts: assignment(date, level, undefined, excluded), text: '', checked: [], updatedAt: null }; }
     function validPoint(item, group) {
         return item && ['id', 'ja', 'meaning', ...(group === 'grammar' ? ['formation', 'example', 'translation'] : ['reading'])].every(key => typeof item[key] === 'string');
     }
@@ -258,6 +306,7 @@
                 const items = entry.prompts?.[group];
                 return Array.isArray(items) && (items.length === count || (group === 'grammar' && items.length === 5)) && new Set(items.map(item => item?.id)).size === items.length && items.every(item => validPoint(item, group));
             }))) return false;
+        if (entry.packetChecks && (!Array.isArray(entry.packetChecks) || !entry.packetChecks.every(id => typeof id === 'string'))) return false;
         if (entry.prompts.format === undefined) return true; // v1/v2 saves, before packets.
         const { packets, stretchIds, grammar } = entry.prompts;
         if (entry.prompts.format !== 'packets-v1' || !Array.isArray(packets) || packets.length !== 2 ||
@@ -281,20 +330,39 @@
         }
         return true;
     }
-    function load(storage, date, level = 'N5') {
+    function adjacentExclusions(storage, date, level, session) {
+        const excluded = {grammar: [], verbs: [], vocab: []};
+        for (const offset of [-1, 1]) {
+            const neighborDate = shiftDate(date, offset);
+            if (!validDate(neighborDate)) continue;
+            const cached = session?.get(keyFor(neighborDate, level));
+            let neighbor = cached?.entry;
+            if (!neighbor) {
+                const raw = storage.getItem(keyFor(neighborDate, level)) ?? storage.getItem(previousKeyFor(neighborDate, level)) ??
+                    (level === 'N4' ? storage.getItem(legacyKeyFor(neighborDate)) : null);
+                if (raw !== null) {
+                    neighbor = JSON.parse(raw);
+                    if (!validEntry(neighbor, neighborDate)) throw new Error('Adjacent diary could not be read');
+                }
+            }
+            if (neighbor) for (const group of Object.keys(excluded)) excluded[group].push(...neighbor.prompts[group].map(item => item.id));
+        }
+        return excluded;
+    }
+    function load(storage, date, level = 'N5', session) {
         level = levelFor(level);
         try {
             const saved = storage.getItem(keyFor(date, level));
             if (saved !== null) {
                 const entry = JSON.parse(saved);
                 if (!validEntry(entry, date) || entry.level !== level || entry.prompts.format !== 'packets-v1') throw new Error('invalid entry');
-                if (level === 'N4' && !entry.prompts.mood) changeMood(entry, {});
+                if (level === 'N4' && !entry.prompts.mood) changeMood(entry, {}, adjacentExclusions(storage, date, level, session));
                 return { entry, error: null };
             }
             const previous = storage.getItem(previousKeyFor(date, level));
             const legacy = previous === null && level === 'N4' ? storage.getItem(legacyKeyFor(date)) : null;
             const raw = previous ?? legacy;
-            if (raw === null) return { entry: blank(date, level), error: null };
+            if (raw === null) return { entry: blank(date, level, adjacentExclusions(storage, date, level, session)), error: null };
             const old = JSON.parse(raw);
             if (!validEntry(old, date) || (legacy === null && old.level !== level)) throw new Error('invalid entry');
             const entry = blank(date, level);
@@ -306,19 +374,46 @@
             entry.checked = old.checked.filter(id => currentIds.has(id));
             entry.previousGrammar = { points: old.prompts.grammar, checked: old.checked.filter(id => old.prompts.grammar.some(point => point.id === id)) };
             return { entry, error: null };
-        } catch { return { entry: blank(date, level), error: 'This saved entry could not be read. Your existing save will not be overwritten. Download any new writing to keep it.' }; }
+        } catch { return { entry: blank(date, level), error: 'This entry or a neighboring saved entry could not be read. Existing saves will not be overwritten. Download any new writing to keep it.' }; }
     }
-    function changeMood(entry, mood) {
+    function changeMood(entry, mood, excluded = {}) {
         if (entry.level !== 'N4') return;
         const next = packetLibrary.normalizeMood(mood);
         const current = entry.prompts.mood;
         entry.moodSnapshots ||= {};
         if (current) entry.moodSnapshots[`${current.rating}:${current.emotion}`] = {prompts: entry.prompts, checked: entry.checked.filter(id => entry.prompts.grammar.some(point => point.id === id))};
         else if (!entry.previousGrammar) entry.previousGrammar = {points: entry.prompts.grammar, checked: entry.checked.filter(id => entry.prompts.grammar.some(point => point.id === id))};
-        const snapshot = entry.moodSnapshots[`${next.rating}:${next.emotion}`];
+        let snapshot = entry.moodSnapshots[`${next.rating}:${next.emotion}`];
+        if (snapshot?.prompts.grammar.some(point => excluded.grammar?.includes(point.id))) snapshot = null;
         const words = entry.checked.filter(id => [...entry.prompts.verbs, ...entry.prompts.vocab].some(point => point.id === id));
-        entry.prompts = {...(snapshot?.prompts || assignment(entry.date, entry.level, next)), verbs: entry.prompts.verbs, vocab: entry.prompts.vocab};
-        entry.checked = [...words, ...(snapshot?.checked || [])];
+        const retained = {};
+        if (current?.rating === next.rating) retained.rating = entry.prompts.packets[0];
+        if (current?.emotion === next.emotion) retained.emotion = entry.prompts.packets[1];
+        const checked = entry.checked.slice();
+        entry.prompts = {...(snapshot?.prompts || assignment(entry.date, entry.level, next, excluded, retained)), verbs: entry.prompts.verbs, vocab: entry.prompts.vocab};
+        entry.checked = [...new Set([...words, ...(snapshot?.checked || checked.filter(id => entry.prompts.grammar.some(point => point.id === id)))])];
+    }
+    function packetChoices(entry, group, excluded = {}) {
+        if (entry.level !== 'N4') return [];
+        const side = group === 'rating' ? 0 : 1;
+        return packetLibrary.options(entry.date, entry.prompts.mood, group, excluded.grammar || [],
+            entry.prompts.packets[1 - side].ids, entry.prompts.packets[side]);
+    }
+    function choosePacket(entry, group, id, excluded = {}) {
+        const choice = packetChoices(entry, group, excluded).find(packet => packet.id === id);
+        if (!choice) return false;
+        const side = group === 'rating' ? 0 : 1;
+        entry.packetChecks ||= [];
+        const currentIds = new Set(entry.prompts.grammar.map(point => point.id));
+        entry.packetChecks = [...new Set([...entry.packetChecks.filter(id => !currentIds.has(id)), ...entry.checked.filter(id => currentIds.has(id))])];
+        const packets = entry.prompts.packets.map((packet, i) => i === side ? choice : packet);
+        const stretch = entry.prompts.grammar.filter(point => entry.prompts.stretchIds.includes(point.id));
+        const savedPoints = new Map(entry.prompts.grammar.map(point => [point.id, point]));
+        const grammar = [...packets.flatMap(packet => packet.ids.map(id => ({...(savedPoints.get(id) || packetLibrary.pointFor(id))}))), ...stretch];
+        entry.prompts = {...entry.prompts, packets, grammar};
+        const words = entry.checked.filter(id => [...entry.prompts.verbs, ...entry.prompts.vocab].some(point => point.id === id));
+        entry.checked = [...words, ...entry.packetChecks.filter(id => grammar.some(point => point.id === id))];
+        return true;
     }
     function usage(entry) {
         const count = ids => ids.filter(id => entry.checked.includes(id)).length;
@@ -356,7 +451,7 @@
         const unsavedDates = new Set();
         function progress() {
             const counts = usage(entry);
-            el('progress').innerHTML = [`${counts.sentences} sentence${counts.sentences === 1 ? '' : 's'} · aim for 5`, `Packet picks ${counts.packets}/8`, `Stretch ${counts.stretch}/2 · optional`, `Verbs ${counts.verbs}/3`, `Vocab ${counts.vocab}/3`].map(label => `<span>${label}</span>`).join('');
+            el('progress').innerHTML = [`${counts.sentences} sentence${counts.sentences === 1 ? '' : 's'} · aim for 5`, `Packet picks ${counts.packets}/8`, `Stretch ${counts.stretch}/2 · optional`, `Verbs ${counts.verbs}/10`, `Vocab ${counts.vocab}/10`].map(label => `<span>${label}</span>`).join('');
         }
         function promptMarkup(item, grammar = false) {
             return `<div class="diary-prompt"><label><input type="checkbox" value="${escape(item.id)}" ${entry.checked.includes(item.id) ? 'checked' : ''}><span><strong lang="ja">${escape(item.ja)}</strong>${item.reading ? `<span class="diary-reading" lang="ja">${escape(item.reading)}</span>` : ''}<span class="diary-meaning">${escape(item.meaning)}</span></span></label>${grammar ? `<details><summary>How to use it</summary><p>${escape(item.formation)}</p><p lang="ja">${escape(item.example)}</p><p>${escape(item.translation)}</p>${item.notes ? `<p>${escape(item.notes)}</p>` : ''}</details>` : ''}</div>`;
@@ -379,7 +474,7 @@
         function render(date, level = currentLevel) {
             if (!validDate(date)) { el('date').value = currentDate; return; }
             currentDate = date; currentLevel = levelFor(level);
-            const loaded = session.get(keyFor(date, currentLevel)) || load(storage, date, currentLevel);
+            const loaded = session.get(keyFor(date, currentLevel)) || load(storage, date, currentLevel, session);
             entry = loaded.entry; readError = loaded.error;
             el('date').value = date;
             el('level').value = currentLevel;
@@ -390,6 +485,14 @@
             const mood = entry.prompts.mood || packetLibrary.normalizeMood();
             for (const [group, choices] of [['rating', packetLibrary.ratings], ['emotion', packetLibrary.emotions]]) {
                 el(group).innerHTML = choices.map(choice => `<button type="button" data-mood-group="${group}" data-mood="${choice.id}" aria-pressed="${mood[group] === choice.id}">${choice.face ? `<span aria-hidden="true" class="diary-face">${choice.face}</span>` : ''}<span>${choice.label}</span>${choice.english ? `<small>${choice.english}</small>` : ''}${choice.japanese ? `<small lang="ja">${choice.japanese}</small>` : ''}</button>`).join('');
+            }
+            let excluded;
+            try { excluded = adjacentExclusions(storage, date, currentLevel, session); }
+            catch { excluded = null; }
+            for (const group of ['rating', 'emotion']) {
+                const side = group === 'rating' ? 0 : 1;
+                el(`${group}-packets`).innerHTML = currentLevel !== 'N4' ? '' : excluded ? packetChoices(entry, group, excluded).map(choice =>
+                    `<button type="button" class="diary-packet-choice" data-packet-group="${group}" data-packet="${escape(choice.id)}" aria-pressed="${choice.id === entry.prompts.packets[side].id}"><strong>${escape(choice.title)}</strong><span>${choice.ids.map(id => escape(packetLibrary.pointFor(id).ja)).join(' · ')}</span></button>`).join('') : '<p class="diary-note">An adjacent entry could not be read. Packet changes are unavailable until it can be read.</p>';
             }
             const nickname = packetLibrary.nickname(date, mood, entry.prompts.packets[1].id);
             el('nickname').textContent = nickname.english;
@@ -413,10 +516,22 @@
             if (!button) return;
             const group = button.dataset.moodGroup, choice = button.dataset.mood;
             save();
-            changeMood(entry, {...entry.prompts.mood, [group]: choice});
+            try { changeMood(entry, {...entry.prompts.mood, [group]: choice}, adjacentExclusions(storage, currentDate, currentLevel, session)); }
+            catch { el('save-status').textContent = 'An adjacent entry could not be read. Your current prompts have been kept.'; return; }
             save();
             render(currentDate);
             el(group).querySelector(`[data-mood="${choice}"]`).focus();
+        });
+        el('moods').addEventListener('click', event => {
+            const button = event.target.closest('button[data-packet]');
+            if (!button) return;
+            save();
+            try { choosePacket(entry, button.dataset.packetGroup, button.dataset.packet, adjacentExclusions(storage, currentDate, currentLevel, session)); }
+            catch { el('save-status').textContent = 'An adjacent entry could not be read. Your current prompts have been kept.'; return; }
+            save();
+            const group = button.dataset.packetGroup, id = button.dataset.packet;
+            render(currentDate);
+            el(`${group}-packets`).querySelector(`[data-packet="${id}"]`)?.focus();
         });
         el('entry').addEventListener('input', () => { save(); progress(); });
         panel.addEventListener('change', event => {
@@ -448,5 +563,5 @@
         render(currentDate);
         if (new URLSearchParams(window.location.search).get('tab') === 'diary') document.querySelector('#diary-tab').click();
     }
-    return { assignment, changeMood, today, validDate, shiftDate, sentences, load, validEntry, keyFor, previousKeyFor, legacyKeyFor, banks, usage, downloadText, packetLibrary, mount };
+    return { adjacentExclusions, packetChoices, choosePacket, assignment, changeMood, today, validDate, shiftDate, sentences, load, validEntry, keyFor, previousKeyFor, legacyKeyFor, banks, usage, downloadText, packetLibrary, mount };
 });
